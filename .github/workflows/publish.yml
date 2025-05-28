@@ -77,6 +77,7 @@ jobs:
           end
           EOF
 
+          git remote set-url origin https://${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           git add gitmastery.rb
           git commit -m "Update to ${GITHUB_REF_NAME}"
           git push origin main
