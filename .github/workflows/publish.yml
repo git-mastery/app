@@ -53,7 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
-          git clone https://github.com/git-mastery/homebrew-gitmastery.git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git clone https://${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           cd homebrew-gitmastery
 
           cat <<EOF > gitmastery.rb
@@ -74,8 +77,6 @@ jobs:
           end
           EOF
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add gitmastery.rb
           git commit -m "Update to ${GITHUB_REF_NAME}"
           git push origin main
