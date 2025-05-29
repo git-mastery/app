@@ -4,11 +4,33 @@ import subprocess
 import click
 
 
-def check_binary(binary, error_message, verbose=False):
+def error(message: str):
+    click.echo(
+        f"{click.style(' ERROR ', fg='black', bg='bright_red', bold=True)} {message}"
+    )
+
+
+def info(message: str):
+    click.echo(
+        f"{click.style(' INFO ', fg='black', bg='bright_blue', bold=True)} {message}"
+    )
+
+
+def debug(message: str):
+    click.echo(f"{click.style(' DEBUG ', fg='white', bg='black', bold=True)} {message}")
+
+
+def warn(message: str):
+    click.echo(
+        f"{click.style(' WARN ', fg='black', bg='bright_yellow', bold=True)} {message}"
+    )
+
+
+def check_binary(binary: str, error_message: str, verbose: bool = False):
     stdout = None if verbose else subprocess.DEVNULL
     stderr = None if verbose else subprocess.DEVNULL
     if subprocess.call(["which", binary], stdout=stdout, stderr=stderr) != 0:
-        click.echo(f"[ERROR] {error_message}")
+        error(error_message)
         exit(1)
 
 
