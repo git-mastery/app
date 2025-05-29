@@ -38,7 +38,7 @@ jobs:
       - name: Generate SHA256
         id: checksum
         run: |
-          FILENAME=dist/gitmastery
+          FILENAME=gitmastery
           SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
@@ -48,11 +48,6 @@ jobs:
           files: dist/gitmastery
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Echo short token
-        run: 'echo "${GH_TOKEN:0:4}**** (length: ${#GH_TOKEN})"'
-        env:
-          GH_TOKEN: ${{ secrets.ORG_PAT }}
 
       - name: Update Homebrew Tap
         env:
