@@ -50,7 +50,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Echo short token
-        run: 'echo "${GH_TOKEN:0:4}**** (length: ${#GH_TOKEN})'
+        run: 'echo "${GH_TOKEN:0:4}**** (length: ${#GH_TOKEN})"'
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
 
