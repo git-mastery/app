@@ -408,18 +408,25 @@ def submit(ctx: click.Context) -> None:
     )
     current_branch = current_branch_result.stdout.strip()
 
+    info("Pushing all commits across all branches")
+    subprocess.run(["git", "push", "--all", "origin"], stderr=stderr, stdout=stdout)
+    info("Switching to submission branch")
     subprocess.run(["git", "checkout", "submission"], stdout=stdout, stderr=stderr)
+    info("Creating submission")
     subprocess.run(
         ["git", "commit", "--allow-empty", "-m", "Submission"],
         stdout=stdout,
         stderr=stderr,
     )
+    info("Pushing submission")
     subprocess.run(
         ["git", "push", "origin", "submission"], stdout=stdout, stderr=stderr
     )
+    info(f"Switching back to {current_branch}")
     subprocess.run(["git", "checkout", current_branch], stdout=stdout, stderr=stderr)
 
     if not pr_exists:
+        info("PR does not exist yet, creating a new one!")
         subprocess.run(
             [
                 "gh",
@@ -442,7 +449,7 @@ def submit(ctx: click.Context) -> None:
         info("Pull request created!")
         time.sleep(5)
     else:
-        info("A submission pull request already exists.")
+        info("A PR already exists, the latest push should update it.")
 
     user_prs = get_user_prs(f"git-mastery/{exercise_name}", verbose)
     if len(user_prs) == 0:
