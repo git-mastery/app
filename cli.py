@@ -98,7 +98,7 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         return []
 
 
-def get_user_prs(repo: str, head: str, verbose: bool = False) -> List[str]:
+def get_user_prs(repo: str, verbose: bool = False) -> List[str]:
     try:
         result = subprocess.run(
             [
@@ -110,7 +110,7 @@ def get_user_prs(repo: str, head: str, verbose: bool = False) -> List[str]:
                 "--author",
                 "@me",
                 "--head",
-                head,
+                "submission",
                 "--json",
                 "url",
                 "-q",
@@ -122,7 +122,6 @@ def get_user_prs(repo: str, head: str, verbose: bool = False) -> List[str]:
             env=dict(os.environ, **{"GH_PAGER": "cat"}),
         )
         prs = result.stdout.strip().splitlines()
-        print(prs)
         if verbose:
             info(", ".join(prs))
         return prs
@@ -445,7 +444,7 @@ def submit(ctx: click.Context) -> None:
     else:
         info("A submission pull request already exists.")
 
-    user_prs = get_user_prs(f"git-mastery/{exercise_name}", head, verbose)
+    user_prs = get_user_prs(f"git-mastery/{exercise_name}", verbose)
     if len(user_prs) == 0:
         warn(
             f"You should have one PR, but we could not detect it yet. Try visiting {click.style(f'https://github.com/git-mastery/{exercise_name}/pulls', bold=True, italic=True)} to find it"
