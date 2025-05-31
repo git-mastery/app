@@ -1,6 +1,9 @@
+import json
 import os
 import subprocess
-from typing import Any, List, Optional
+from pathlib import Path
+from sys import exit
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 
@@ -9,7 +12,7 @@ def error(message: str) -> None:
     click.echo(
         f"{click.style(' ERROR ', fg='black', bg='bright_red', bold=True)} {message}"
     )
-    exit(1)
+    exit()
 
 
 def info(message: str) -> None:
@@ -74,6 +77,22 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         if verbose:
             error(e.stderr)
         return []
+
+
+def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
+    current = Path.cwd()
+    steps = 0
+    for parent in [current] + list(current.parents):
+        if (parent / ".gitmastery.json").is_file():
+            return parent, steps
+        steps += 1
+
+    return None
+
+
+def read_gitmastery_config(gitmastery_config_path: Path) -> Dict:
+    with open(gitmastery_config_path / ".gitmastery.json", "r") as f:
+        return json.loads(f.read())
 
 
 @click.group()
@@ -143,10 +162,14 @@ def setup(ctx: click.Context) -> None:
 
     info(f"Creating directory {click.style(directory_path, italic=True, bold=True)}")
     os.makedirs(directory_name, exist_ok=True)
-    if org_name is not None:
-        info(f"Creating .org_name for {click.style(org_name, italic=True, bold=True)}")
-        with open(os.path.join(directory_name, ".org_name"), "w") as f:
-            f.write(org_name)
+    with open(os.path.join(directory_name, ".gitmastery.json"), "w") as f:
+        info(
+            f"Creating {click.style('.gitmastery.json', bold=True, italic=True)} with the configurations for {directory_name}"
+        )
+        config = {}
+        if org_name is not None:
+            config["org_name"] = org_name
+        f.write(json.dumps(config))
 
     info("Running diagnostics to ensure that Git-Mastery is properly setup.")
 
@@ -155,26 +178,42 @@ def setup(ctx: click.Context) -> None:
 
 @cli.command()
 @click.argument("exercise")
-@click.option("--org", default=None, help="GitHub organization")
 @click.pass_context
-def download(ctx, exercise, org):
+def download(ctx, exercise):
     """Download an exercise"""
     verbose = ctx.obj["VERBOSE"]
     check_binary("git", "You need to install Git", verbose)
     check_binary("gh", "You need to install the GitHub CLI", verbose)
 
     if not is_authenticated(verbose):
-        click.echo("You aren't logged into GitHub CLI. Run 'gh auth login' to login.")
-        exit(1)
+        error("You aren't logged into GitHub CLI. Run 'gh auth login' to login.")
 
-    click.echo(f"Downloading {exercise}...")
+    # Check to make sure that they are currently in the root of a gitmastery problem
+    # sets folder, denoted by the .gitmastery.json file
+    gitmastery_root = find_gitmastery_root()
+    if gitmastery_root is None:
+        error(
+            f"You are not in a Git-Mastery problem set folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+        )
+
+    # Just asserting since mypy doesn't recognize that error will exit the program
+    assert gitmastery_root is not None
+    gitmastery_root_path, steps_to_cd = gitmastery_root
+    if steps_to_cd != 0:
+        cd = "/".join([".."] * steps_to_cd)
+        error(
+            f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery problem set folder to download a new problem set."
+        )
+
+    config = read_gitmastery_config(gitmastery_root_path)
+
+    info(f"Downloading {exercise}...")
 
     stdout = None if verbose else subprocess.DEVNULL
     stderr = None if verbose else subprocess.DEVNULL
 
-    if os.path.exists(".org_name"):
-        with open(".org_name", "r") as f:
-            org = f.read().strip()
+    if "org_name" in config and config["org_name"].strip() != "":
+        org = config["org_name"]
         subprocess.run(
             [
                 "gh",
@@ -184,33 +223,31 @@ def download(ctx, exercise, org):
                 "--org",
                 org,
                 "--clone",
-                "--",
-                "--quiet",
             ],
             stdout=stdout,
             stderr=stderr,
         )
     else:
-        if not org:
-            click.echo(
-                "[ERROR] Please provide an organization name or run setup first."
-            )
-            exit(1)
         subprocess.run(
             [
                 "gh",
                 "repo",
                 "fork",
                 f"git-mastery/{exercise}",
-                "--org",
-                org,
                 "--clone",
-                "--",
-                "--quiet",
             ],
             stdout=stdout,
             stderr=stderr,
         )
+
+    info(
+        f"Downloaded {exercise} to {click.style('./' + exercise + '/', bold=True, italic=True)}, setting it up now..."
+    )
+    os.chdir(exercise)
+    subprocess.run(["bash", "./post-download.sh"], stdout=stdout, stderr=stderr)
+    info(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
+    info("Start working on it:")
+    info(click.style(f"cd {exercise}", bold=True, italic=True))
 
 
 @cli.command()
