@@ -441,13 +441,16 @@ def submit(ctx: click.Context) -> None:
             stderr=stderr,
         )
         info("Pull request created!")
-        time.sleep(2)
+        time.sleep(5)
     else:
         info("A submission pull request already exists.")
 
     user_prs = get_user_prs(f"git-mastery/{exercise_name}", head, verbose)
     if len(user_prs) == 0:
-        error("You should have one PR")
+        warn(
+            f"You should have one PR, but we could not detect it yet. Try visiting {click.style(f'https://github.com/git-mastery/{exercise_name}/pulls', bold=True, italic=True)} to find it"
+        )
+        exit()
 
     pr_url = user_prs[0]
     info("Submission completed!")
