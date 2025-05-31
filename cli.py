@@ -52,6 +52,24 @@ def is_authenticated(verbose: bool = False) -> bool:
     return subprocess.call(["gh", "auth", "status"], stdout=stdout, stderr=stderr) == 0
 
 
+def get_username(verbose: bool = False) -> str:
+    try:
+        result = subprocess.run(
+            ["gh", "api", "user", "-q", ".login"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        username = result.stdout.strip().splitlines()[0]
+        if verbose:
+            info(username)
+        return username
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            error(e.stderr)
+        return ""
+
+
 def get_user_orgs(verbose: bool = False) -> List[str]:
     try:
         result = subprocess.run(
@@ -73,6 +91,33 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         if verbose:
             info(", ".join(org_names))
         return org_names
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            error(e.stderr)
+        return []
+
+
+def get_user_prs(repo: str, author: str, verbose: bool = False) -> List[str]:
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                repo,
+                "--author",
+                author,
+                "--paginate",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        prs = result.stdout.strip().splitlines()
+        if verbose:
+            info(", ".join(prs))
+        return prs
     except subprocess.CalledProcessError as e:
         if verbose:
             error(e.stderr)
@@ -173,13 +218,27 @@ def setup(ctx: click.Context) -> None:
 
     info("Running diagnostics to ensure that Git-Mastery is properly setup.")
 
-    info(f"Setup complete. Your directory is: {directory_name}")
+    os.chdir(directory_name)
+    ctx.invoke(download, exercise="diagnostic")
+
+    current_username = get_username(verbose)
+    diagnostic_prs = get_user_prs("git-mastery/diagnostic", current_username)
+    if len(diagnostic_prs) == 0:
+        error("You should have a PR created for you.")
+    print(diagnostic_prs)
+    info(
+        f"Visit {click.style(f'', bold=True, italic=True)} to confirm the status of your Git-Mastery setup."
+    )
+
+    info(
+        f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
+    )
 
 
 @cli.command()
 @click.argument("exercise")
 @click.pass_context
-def download(ctx, exercise):
+def download(ctx: click.Context, exercise: str):
     """Download an exercise"""
     verbose = ctx.obj["VERBOSE"]
     check_binary("git", "You need to install Git", verbose)
