@@ -98,7 +98,7 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         return []
 
 
-def get_user_prs(repo: str, author: str, verbose: bool = False) -> List[str]:
+def get_user_prs(repo: str, head: str, verbose: bool = False) -> List[str]:
     try:
         result = subprocess.run(
             [
@@ -110,7 +110,7 @@ def get_user_prs(repo: str, author: str, verbose: bool = False) -> List[str]:
                 "--author",
                 "@me",
                 "--head",
-                "submission",
+                head,
                 "--json",
                 "url",
                 "-q",
@@ -445,7 +445,7 @@ def submit(ctx: click.Context) -> None:
     else:
         info("A submission pull request already exists.")
 
-    user_prs = get_user_prs(f"git-mastery/{exercise_name}", username, verbose)
+    user_prs = get_user_prs(f"git-mastery/{exercise_name}", head, verbose)
     if len(user_prs) == 0:
         error("You should have one PR")
 
