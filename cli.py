@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -7,6 +8,7 @@ from sys import exit
 from typing import Any, Dict, List, Optional, Tuple
 
 import click
+import requests
 
 
 def error(message: str) -> None:
@@ -461,6 +463,46 @@ def submit(ctx: click.Context) -> None:
     pr_url = user_prs[0]
     info("Submission completed!")
     info(f"Visit {click.style(pr_url, bold=True, italic=True)} for feedback!")
+
+
+@cli.command()
+@click.argument("script")
+@click.pass_context
+def verify(ctx: click.Context, script: str) -> None:
+    verbose = ctx.obj["VERBOSE"]
+
+    check_binary("git", "You need to install Git", verbose)
+    check_binary("gh", "You need to install the GitHub CLI", verbose)
+
+    script_regex = re.compile("^(hands-on|exercise)/(.*)$")
+    result = script_regex.search(script)
+    if result is None:
+        error("Invalid script path provided.")
+
+    assert result is not None
+    script_type = result.group(1)
+    script_name = result.group(2)
+
+    # TODO: Might want to think about how to harden this part of the application
+    script_url = f"https://raw.githubusercontent.com/git-mastery/local-verifications/refs/heads/main/{script_type}/{script_name}.sh"
+    info(
+        f"Retrieving local verification script for {click.style(f'{script_type}/{script_name}', bold=True, italic=True)}"
+    )
+    response = requests.get(script_url)
+
+    if response.status_code == 200:
+        info(
+            f"Successfully fetch local verification script for {click.style(f'{script_type}/{script_name}', bold=True, italic=True)}"
+        )
+        content = response.text
+        info(
+            "Running local verification, the following output is from the local verification script:"
+        )
+        subprocess.run(["bash", "-c", content])
+    else:
+        error(
+            f"Failed to fetch {click.style(f'{script_type}/{script_name}', bold=True, italic=True)}. Make sure it's a valid script provided."
+        )
 
 
 if __name__ == "__main__":
