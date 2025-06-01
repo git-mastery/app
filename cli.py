@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from sys import exit
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 import click
 import requests
@@ -100,7 +101,7 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         return []
 
 
-def get_user_prs(repo: str, verbose: bool = False) -> List[str]:
+def get_user_prs(repo: str, owner: str, verbose: bool = False) -> List[str]:
     try:
         result = subprocess.run(
             [
@@ -114,9 +115,11 @@ def get_user_prs(repo: str, verbose: bool = False) -> List[str]:
                 "--head",
                 "submission",
                 "--json",
+                "headRepositoryOwner",
+                "--json",
                 "url",
                 "-q",
-                ".[0].url",
+                f'.[] | select ( .headRepositoryOwner.login == "{owner}" ) | .url',
             ],
             capture_output=True,
             text=True,
@@ -226,7 +229,7 @@ def setup(ctx: click.Context) -> None:
         )
     else:
         confirm(
-            f"Please confirm that you wish to:\n\t1. Create the Git-Mastery folder under {click.style(directory_path, italic=True, bold=True)}",
+            f"Please confirm that you wish to:\n\t1. Create the Git-Mastery folder under {click.style(directory_path, italic=True, bold=True)}\n",
             abort=True,
         )
 
@@ -357,20 +360,20 @@ def submit(ctx: click.Context) -> None:
 
     gitmastery_config = read_gitmastery_config(gitmastery_root_path)
     org_name = gitmastery_config.get("org_name", "")
-    head = (
-        f"{username}:submission" if org_name.strip() == "" else f"{org_name}:submission"
-    )
+    has_org = org_name.strip() != ""
+    owner = org_name if has_org else username
 
     gitmastery_exercise_root = find_gitmastery_exercise_root()
     if gitmastery_exercise_root is None:
         error("You are not inside a Git-Mastery exercise folder.")
 
     assert gitmastery_exercise_root is not None
-    gitmastery_exercise_root_path, steps_to_cd = gitmastery_exercise_root
+    gitmastery_exercise_root_path, _ = gitmastery_exercise_root
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
     exercise_name = gitmastery_exercise_config.get("exercise_name")
+    exercise_repo_name = f"git-mastery/{exercise_name}"
 
     if (
         subprocess.call(
@@ -381,29 +384,8 @@ def submit(ctx: click.Context) -> None:
         info(f"Creating {click.style('submission', bold=True, italic=True)} branch")
         subprocess.run(["git", "branch", "submission"], stdout=stdout, stderr=stderr)
 
-    pr_exists_result = subprocess.run(
-        [
-            "gh",
-            "pr",
-            "list",
-            "--repo",
-            f"git-mastery/{exercise_name}",
-            "--state",
-            "open",
-            "--author",
-            "@me",
-            "--head",
-            head,
-            "--json",
-            "number",
-            "--jq",
-            ".[].number",
-        ],
-        capture_output=True,
-        text=True,
-        env=dict(os.environ, **{"GH_PAGER": "cat"}),
-    )
-    pr_exists = len(pr_exists_result.stdout.splitlines()) > 0
+    user_prs = get_user_prs(exercise_repo_name, owner, verbose)
+    pr_exists = len(user_prs) > 0
 
     current_branch_result = subprocess.run(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True
@@ -428,32 +410,49 @@ def submit(ctx: click.Context) -> None:
     subprocess.run(["git", "checkout", current_branch], stdout=stdout, stderr=stderr)
 
     if not pr_exists:
-        info("PR does not exist yet, creating a new one!")
-        subprocess.run(
-            [
-                "gh",
-                "pr",
-                "create",
-                "--repo",
-                f"git-mastery/{exercise_name}",
-                "--base",
-                "main",
-                "--head",
-                head,
-                "--title",
-                f"[{username}] [{exercise_name}] Submission",
-                "--body",
-                "Automated submission",
-            ],
-            stdout=stdout,
-            stderr=stderr,
-        )
+        if has_org:
+            info("You are using a Github Organization to attempt this problem set.")
+            warn(
+                "The Github CLI currently does not support creating PRs for an organization yet."
+            )
+            info(
+                f"Create the PR via the following link and click {click.style('Create Pull Request', bold=True)}:"
+            )
+            info(
+                click.style(
+                    f"https://github.com/git-mastery/diagnostic/compare/main...{org_name}:{exercise_name}:submission?expand=1&body={quote('Automated Submission')}&title={quote(f'[{org_name}] [{exercise_name}] Submission')}",
+                    bold=True,
+                    italic=True,
+                )
+            )
+            confirm("Have you created the pull request?")
+        else:
+            info("PR does not exist yet, creating a new one from your branch!")
+            subprocess.run(
+                [
+                    "gh",
+                    "pr",
+                    "create",
+                    "--repo",
+                    f"git-mastery/{exercise_name}",
+                    "--base",
+                    "main",
+                    "--head",
+                    f"{username}:submission",
+                    "--title",
+                    f"[{username}] [{exercise_name}] Submission",
+                    "--body",
+                    "Automated submission",
+                ],
+                stdout=stdout,
+                stderr=stderr,
+            )
         info("Pull request created!")
         time.sleep(5)
     else:
         info("A PR already exists, the latest push should update it.")
 
-    user_prs = get_user_prs(f"git-mastery/{exercise_name}", verbose)
+    user_prs = get_user_prs(exercise_repo_name, owner, verbose)
     if len(user_prs) == 0:
         warn(
             f"You should have one PR, but we could not detect it yet. Try visiting {click.style(f'https://github.com/git-mastery/{exercise_name}/pulls', bold=True, italic=True)} to find it"
