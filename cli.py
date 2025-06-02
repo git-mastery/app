@@ -57,12 +57,15 @@ def is_authenticated(verbose: bool = False) -> bool:
 
 
 def has_fork(fork_name: str, verbose: bool = False) -> bool:
+    stdout = None if verbose else subprocess.DEVNULL
+    stderr = None if verbose else subprocess.DEVNULL
     try:
         subprocess.run(
             ["gh", "repo", "view", fork_name], check=True, stdout=stdout, stderr=stderr
         )
-    except:
-        retur
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
 def get_username(verbose: bool = False) -> str:
