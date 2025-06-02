@@ -465,13 +465,45 @@ def submit(ctx: click.Context) -> None:
 
 
 @cli.command()
-@click.argument("script")
+@click.argument("script", required=False)
 @click.pass_context
-def verify(ctx: click.Context, script: str) -> None:
+def verify(ctx: click.Context, script: Optional[str]) -> None:
     verbose = ctx.obj["VERBOSE"]
 
     check_binary("git", "You need to install Git", verbose)
     check_binary("gh", "You need to install the GitHub CLI", verbose)
+
+    if script is None:
+        # Locally verify the changes
+        # Check that current folder is exercise
+        gitmastery_exercise_root = find_gitmastery_exercise_root()
+        if gitmastery_exercise_root is None:
+            error("You are not inside a Git-Mastery exercise folder.")
+
+        assert gitmastery_exercise_root is not None
+        gitmastery_exercise_root_path, _ = gitmastery_exercise_root
+        gitmastery_exercise_config = read_gitmastery_exercise_config(
+            gitmastery_exercise_root_path
+        )
+        exercise_name = gitmastery_exercise_config["exercise_name"]
+        verification = gitmastery_exercise_config.get(
+            "verification", f"exercise/{exercise_name}"
+        )
+        info(
+            f"Running local verification for {click.style(exercise_name, bold=True, italic=True)} using verification script {click.style(verification, bold=True, italic=True)}"
+        )
+        script_url = f"https://raw.githubusercontent.com/git-mastery/local-verifications/refs/heads/main/{verification}.sh"
+        response = requests.get(script_url)
+
+        if response.status_code == 200:
+            content = response.text
+            info("The following output is from the local verification script:")
+            subprocess.run(["bash", "-c", content])
+        else:
+            error(
+                f"Failed to fetch {click.style(verification, bold=True, italic=True)}. Inform the Git-Mastery team."
+            )
+        return
 
     script_regex = re.compile("^(hands-on|exercise)/(.*)$")
     result = script_regex.search(script)
