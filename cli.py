@@ -444,7 +444,7 @@ def submit(ctx: click.Context) -> None:
             )
             info(
                 click.style(
-                    f"https://github.com/git-mastery/diagnostic/compare/main...{org_name}:{exercise_name}:submission?expand=1&body={quote('Automated Submission')}&title={quote(f'[{org_name}] [{exercise_name}] Submission')}",
+                    f"https://github.com/git-mastery/{exercise_name}/compare/main...{org_name}:{exercise_name}:submission?expand=1&body={quote('Automated Submission')}&title={quote(f'[{org_name}] [{exercise_name}] Submission')}",
                     bold=True,
                     italic=True,
                 )
