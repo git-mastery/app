@@ -56,6 +56,15 @@ def is_authenticated(verbose: bool = False) -> bool:
     return subprocess.call(["gh", "auth", "status"], stdout=stdout, stderr=stderr) == 0
 
 
+def has_fork(fork_name: str, verbose: bool = False) -> bool:
+    try:
+        subprocess.run(
+            ["gh", "repo", "view", fork_name], check=True, stdout=stdout, stderr=stderr
+        )
+    except:
+        retur
+
+
 def get_username(verbose: bool = False) -> str:
     try:
         result = subprocess.run(
@@ -192,7 +201,8 @@ def setup(ctx: click.Context) -> None:
         "Welcome to Git-Mastery! We will be setting up several components of Git-Mastery to ensure an optimal experience working on the various exercises."
     )
     directory_name = prompt(
-        "What do you want to name your problem sets directory?", default="problem-sets"
+        "What do you want to name your exercises directory?",
+        default="gitmastery-exercises",
     )
 
     if os.path.isdir(directory_name):
@@ -224,7 +234,7 @@ def setup(ctx: click.Context) -> None:
             error(f"You are not part of {org_name}")
 
         confirm(
-            f"Please confirm that you wish to:\n\t1. Create the Git-Mastery folder under {click.style(directory_path, italic=True, bold=True)}\n\t2. Store all your problem sets under organization {click.style(org_name, italic=True, bold=True)}\n",
+            f"Please confirm that you wish to:\n\t1. Create the Git-Mastery folder under {click.style(directory_path, italic=True, bold=True)}\n\t2. Store all your exercises under organization {click.style(org_name, italic=True, bold=True)}\n",
             abort=True,
         )
     else:
@@ -267,12 +277,12 @@ def download(ctx: click.Context, exercise: str) -> None:
     if not is_authenticated(verbose):
         error("You aren't logged into GitHub CLI. Run 'gh auth login' to login.")
 
-    # Check to make sure that they are currently in the root of a gitmastery problem
-    # sets folder, denoted by the .gitmastery.json file
+    # Check to make sure that they are currently in the root of a gitmastery exercises
+    # folder, denoted by the .gitmastery.json file
     gitmastery_root = find_gitmastery_root()
     if gitmastery_root is None:
         error(
-            f"You are not in a Git-Mastery problem set folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     # Just asserting since mypy doesn't recognize that error will exit the program
@@ -281,7 +291,7 @@ def download(ctx: click.Context, exercise: str) -> None:
     if steps_to_cd != 0:
         cd = "/".join([".."] * steps_to_cd)
         error(
-            f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery problem set folder to download a new problem set."
+            f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
 
     config = read_gitmastery_config(gitmastery_root_path)
@@ -291,36 +301,50 @@ def download(ctx: click.Context, exercise: str) -> None:
     stdout = None if verbose else subprocess.DEVNULL
     stderr = None if verbose else subprocess.DEVNULL
 
-    if "org_name" in config and config["org_name"].strip() != "":
-        org = config["org_name"]
-        subprocess.run(
-            [
-                "gh",
-                "repo",
-                "fork",
-                f"git-mastery/{exercise}",
-                "--org",
-                org,
-                "--clone",
-            ],
-            stdout=stdout,
-            stderr=stderr,
-        )
-    else:
-        subprocess.run(
-            [
-                "gh",
-                "repo",
-                "fork",
-                f"git-mastery/{exercise}",
-                "--clone",
-            ],
-            stdout=stdout,
-            stderr=stderr,
+    if os.path.isdir(exercise):
+        error(
+            f"Current Git-Mastery exercises folder already contains {exercise}. If this is not the intended exercise, remove it and try again."
         )
 
+    info(f"Attempting to create a fork of git-mastery/{exercise}")
+    info("Checking if a fork already exists")
+
+    user = config.get("org_name", get_username())
+    fork_name = f"{user}/{exercise}"
+    if has_fork(fork_name):
+        warn("Fork already exists. Cloning it")
+        subprocess.run(["gh", "repo", "clone", fork_name], stdout=stdout, stderr=stderr)
+    else:
+        if "org_name" in config and config["org_name"].strip() != "":
+            org = config["org_name"]
+            subprocess.run(
+                [
+                    "gh",
+                    "repo",
+                    "fork",
+                    f"git-mastery/{exercise}",
+                    "--org",
+                    org,
+                    "--clone",
+                ],
+                stdout=stdout,
+                stderr=stderr,
+            )
+        else:
+            subprocess.run(
+                [
+                    "gh",
+                    "repo",
+                    "fork",
+                    f"git-mastery/{exercise}",
+                    "--clone",
+                ],
+                stdout=stdout,
+                stderr=stderr,
+            )
+
     info(
-        f"Downloaded {exercise} to {click.style('./' + exercise + '/', bold=True, italic=True)}, setting it up now..."
+        f"Downloaded {exercise} to {click.style(exercise + '/', bold=True, italic=True)}, setting it up now..."
     )
     os.chdir(exercise)
     subprocess.run(["bash", "./post-download.sh"], stdout=stdout, stderr=stderr)
@@ -346,12 +370,12 @@ def submit(ctx: click.Context) -> None:
 
     username = get_username(verbose)
 
-    # Check to make sure that they are currently in the root of a gitmastery problem
-    # sets folder, denoted by the .gitmastery.json file
+    # Check to make sure that they are currently in the root of a gitmastery exercises folder,
+    # denoted by the .gitmastery.json file
     gitmastery_root = find_gitmastery_root()
     if gitmastery_root is None:
         error(
-            f"You are not in a Git-Mastery problem set folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     # Just asserting since mypy doesn't recognize that error will exit the program
@@ -411,7 +435,7 @@ def submit(ctx: click.Context) -> None:
 
     if not pr_exists:
         if has_org:
-            info("You are using a Github Organization to attempt this problem set.")
+            info("You are using a Github Organization to attempt this exercise.")
             warn(
                 "The Github CLI currently does not support creating PRs for an organization yet."
             )
