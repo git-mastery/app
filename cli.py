@@ -1,17 +1,23 @@
+from genericpath import exists
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 from sys import exit
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import quote
 
 import click
-import pytermgui as ptg
 import requests
+from git_autograder import GitAutograderRepo
+
+GITMASTERY_EXERCISES_BASE_URL = (
+    "https://raw.githubusercontent.com/git-mastery/exercises/refs/heads/main/"
+)
 
 
 def error(message: str) -> None:
@@ -43,6 +49,68 @@ def prompt(message: str, default: Optional[Any] = None) -> Any:
 
 def confirm(message: str, abort: bool = False) -> bool:
     return click.confirm(f"\n{message}", abort=abort)
+
+
+def download_and_execute_py_file_function(
+    exercise: str, file_path: str, function_name: str, **params: Dict[str, Any]
+) -> Optional[Any]:
+    sys.dont_write_bytecode = True
+    py_file = fetch_file_contents(
+        get_gitmastery_file_path(f"{exercise}/{file_path}"), False
+    )
+    namespace: Dict[str, Any] = {}
+    exec(py_file, namespace)
+    result = namespace[function_name](**params)
+    sys.dont_write_bytecode = False
+    return result
+
+
+def execute_py_file_function(
+    file_path: str, function_name: str, **params: Dict[Any, Any]
+) -> Optional[Any]:
+    path = Path(file_path)
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location(function_name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    func = getattr(module, function_name, None)
+    if callable(func):
+        result = func(**params)
+        sys.dont_write_bytecode = False
+        return result
+    sys.dont_write_bytecode = False
+    return None
+
+
+def get_gitmastery_file_path(path: str):
+    return urllib.parse.urljoin(GITMASTERY_EXERCISES_BASE_URL, path)
+
+
+def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        if is_binary:
+            return response.content
+        return response.text
+    else:
+        error(
+            f"Failed to fetch resource {click.style(url, bold=True, italic=True)}. Inform the Git-Mastery team."
+        )
+    return ""
+
+
+def download_file(url: str, path: str, is_binary: bool) -> None:
+    contents = fetch_file_contents(url, is_binary)
+    if is_binary:
+        assert isinstance(contents, bytes)
+        with open(path, "wb") as file:
+            file.write(contents)
+    else:
+        assert isinstance(contents, str)
+        with open(path, "w+") as file:
+            file.write(contents)
 
 
 def check_binary(binary: str, error_message: str, verbose: bool = False) -> None:
@@ -224,11 +292,8 @@ def setup(_: click.Context) -> None:
 def download(ctx: click.Context, exercise: str) -> None:
     """Download an exercise"""
     verbose = ctx.obj["VERBOSE"]
-    check_binary("git", "You need to install Git", verbose)
-    check_binary("gh", "You need to install the GitHub CLI", verbose)
 
-    if not is_authenticated(verbose):
-        error("You aren't logged into GitHub CLI. Run 'gh auth login' to login.")
+    formatted_exercise = exercise.replace("-", "_")
 
     # Check to make sure that they are currently in the root of a gitmastery exercises
     # folder, denoted by the .gitmastery.json file
@@ -240,70 +305,63 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     # Just asserting since mypy doesn't recognize that error will exit the program
     assert gitmastery_root is not None
-    gitmastery_root_path, steps_to_cd = gitmastery_root
+    _, steps_to_cd = gitmastery_root
     if steps_to_cd != 0:
         cd = "/".join([".."] * steps_to_cd)
         error(
             f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
 
-    config = read_gitmastery_config(gitmastery_root_path)
-
     info(f"Downloading {exercise}...")
 
     stdout = None if verbose else subprocess.DEVNULL
     stderr = None if verbose else subprocess.DEVNULL
 
-    if os.path.isdir(exercise):
-        error(
-            f"Current Git-Mastery exercises folder already contains {exercise}. If this is not the intended exercise, remove it and try again."
+    info(
+        f"Downloaded {exercise} to {click.style(formatted_exercise + '/', bold=True, italic=True)}, setting it up now..."
+    )
+    if not os.path.isdir(formatted_exercise):
+        os.makedirs(formatted_exercise)
+
+    os.chdir(formatted_exercise)
+    info("Downloading base files...")
+    base_files = [
+        ".gitmastery-exercise.json",
+        "README.md",
+    ]
+    for file in base_files:
+        download_file(
+            get_gitmastery_file_path(f"{formatted_exercise}/{file}"), f"./{file}", False
+        )
+    config = read_gitmastery_exercise_config(Path("./"))
+
+    if len(config.get("resources", {})) > 0:
+        info("Downloading resources...")
+
+    for resource, path in config.get("resources", {}).items():
+        os.makedirs(Path(path).parent, exist_ok=True)
+        is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
+        # Download and load all of these resources
+        download_file(
+            get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
+            path,
+            is_binary,
         )
 
-    info(f"Attempting to create a fork of git-mastery/{exercise}")
-    info("Checking if a fork already exists")
-
-    user = config.get("org_name", get_username())
-    fork_name = f"{user}/{exercise}"
-    if has_fork(fork_name):
-        warn("Fork already exists. Cloning it")
-        subprocess.run(["gh", "repo", "clone", fork_name], stdout=stdout, stderr=stderr)
-    else:
-        if "org_name" in config and config["org_name"].strip() != "":
-            org = config["org_name"]
-            subprocess.run(
-                [
-                    "gh",
-                    "repo",
-                    "fork",
-                    f"git-mastery/{exercise}",
-                    "--org",
-                    org,
-                    "--clone",
-                ],
-                stdout=stdout,
-                stderr=stderr,
-            )
-        else:
-            subprocess.run(
-                [
-                    "gh",
-                    "repo",
-                    "fork",
-                    f"git-mastery/{exercise}",
-                    "--clone",
-                ],
-                stdout=stdout,
-                stderr=stderr,
-            )
-
-    info(
-        f"Downloaded {exercise} to {click.style(exercise + '/', bold=True, italic=True)}, setting it up now..."
+    if config.get("requires_repo", True):
+        info("Setting up exercise with Git")
+        subprocess.run(["git", "init"], stdout=stdout, stderr=stderr)
+        subprocess.run(["git", "add", "."], stdout=stdout, stderr=stderr)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"], stdout=stdout, stderr=stderr
+        )
+    info("Executing download setup")
+    download_and_execute_py_file_function(
+        formatted_exercise, "download.py", "setup", verbose=verbose
     )
-    os.chdir(exercise)
-    subprocess.run(["bash", "./post-download.sh"], stdout=stdout, stderr=stderr)
     info(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
     info("Start working on it:")
-    info(click.style(f"cd {exercise}", bold=True, italic=True))
+    info(click.style(f"cd {formatted_exercise}", bold=True, italic=True))
 
 
 @cli.command()
@@ -511,30 +569,6 @@ def verify(ctx: click.Context, script: Optional[str]) -> None:
         error(
             f"Failed to fetch {click.style(f'{script_type}/{script_name}', bold=True, italic=True)}. Make sure it's a valid script provided."
         )
-
-
-@cli.command()
-@click.argument("path")
-@click.pass_context
-def execute(ctx: click.Context, path: str) -> None:
-    info(path)
-    subprocess.run([sys.executable, path])
-
-
-@cli.command()
-@click.pass_context
-def hello(ctx: click.Context) -> None:
-    window = ptg.Window(
-        "[bold green]Hello from PyTermGUI!",
-        "",
-        "This window is launched via Click.",
-        "",
-        "[210 bold]Press q to quit.",
-        box="SINGLE",
-        width=50,
-    )
-    for line in window.get_lines():
-        print(line)
 
 
 if __name__ == "__main__":
