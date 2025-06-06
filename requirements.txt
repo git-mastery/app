@@ -3,3 +3,4 @@ mypy
 pyinstaller
 requests
 types-requests
+pytermgui
