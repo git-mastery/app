@@ -4,4 +4,5 @@ pyinstaller
 requests
 types-requests
 pytermgui
-git-autograder==4.0.4b1
+git-autograder==4.0.5b1
+pytz
