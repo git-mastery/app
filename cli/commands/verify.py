@@ -79,7 +79,7 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     push("origin", "main", verbose)
 
     username = get_username(verbose)
-    prs = get_prs("git-mastery/progress", username, verbose)
+    prs = get_prs("git-mastery/progress", "main", username, verbose)
     if len(prs) == 0:
         warn("No pull request created for progress. Creating one now")
         pull_request(

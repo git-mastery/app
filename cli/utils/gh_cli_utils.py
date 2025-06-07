@@ -63,7 +63,7 @@ def pull_request(
     )
 
 
-def get_prs(repo: str, owner: str, verbose: bool) -> List[str]:
+def get_prs(repo: str, head: str, owner: str, verbose: bool) -> List[str]:
     try:
         result = subprocess.run(
             [
@@ -75,7 +75,7 @@ def get_prs(repo: str, owner: str, verbose: bool) -> List[str]:
                 "--author",
                 "@me",
                 "--head",
-                "submission",
+                head,
                 "--json",
                 "headRepositoryOwner",
                 "--json",
