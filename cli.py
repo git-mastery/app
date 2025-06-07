@@ -285,6 +285,26 @@ def get_git_config(key: str, verbose: bool) -> Optional[str]:
         return None
 
 
+def is_github_cli_installed(verbose: bool) -> bool:
+    result = subprocess.run(["gh", "--version"], capture_output=True, text=True)
+    if verbose:
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(result.stderr)
+    return result.returncode == 0
+
+
+def is_github_cli_authed(verbose: bool) -> bool:
+    result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
+    if verbose:
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(result.stderr)
+    return result.returncode == 0
+
+
 @click.group()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
@@ -513,6 +533,18 @@ def check(ctx: click.Context, phase: str) -> None:
         success("Git is installed and configured")
     elif phase == "github":
         info("Checking that you have Github CLI is installed and configured")
+
+        if is_github_cli_installed(verbose):
+            info("Github CLI is installed")
+        else:
+            error("Github CLI is not installed yet")
+
+        if is_github_cli_authed(verbose):
+            info("You have authenticated Github CLI")
+        else:
+            error("You have not authenticated Github CLI")
+
+        success("Github CLI is installed and configured")
 
 
 if __name__ == "__main__":
