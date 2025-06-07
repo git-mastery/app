@@ -371,15 +371,14 @@ def download(ctx: click.Context, exercise: str) -> None:
 
 @cli.command()
 @click.pass_context
-def verify(ctx: click.Context) -> None:
-    verbose = ctx.obj["VERBOSE"]
-    started_at = datetime.now(tz=pytz.UTC)
-
+def verify(_ctx: click.Context) -> None:
     # Locally verify the changes
     # Check that current folder is exercise
     gitmastery_exercise_root = find_gitmastery_exercise_root()
     if gitmastery_exercise_root is None:
         error("You are not inside a Git-Mastery exercise folder.")
+
+    started_at = datetime.now(tz=pytz.UTC)
 
     assert gitmastery_exercise_root is not None
     gitmastery_exercise_root_path, _ = gitmastery_exercise_root
@@ -388,6 +387,11 @@ def verify(ctx: click.Context) -> None:
     )
     exercise_name = gitmastery_exercise_config["exercise_name"]
     formatted_exercise_name = exercise_name.replace("-", "_")
+
+    info(
+        f"Starting verification of {click.style(exercise_name, bold=True, italic=True)}"
+    )
+
     requires_repo = gitmastery_exercise_config.get("requires_repo", True)
     output: Optional[GitAutograderOutput]
     try:
@@ -429,7 +433,11 @@ def verify(ctx: click.Context) -> None:
         )
 
     assert output is not None
-    print(output)
+    info("Verification completed.")
+    info("")
+    info(f"{click.style('Status:', bold=True)} {output.status}")
+    info(click.style("Comments:", bold=True))
+    print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
 
 
 if __name__ == "__main__":
