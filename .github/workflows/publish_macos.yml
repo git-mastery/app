@@ -32,8 +32,7 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller gitmastery.spec
-          ls -lh dist/
+          pyinstaller --onefile --name gitmastery main.py
 
       - name: Generate SHA256
         id: checksum
