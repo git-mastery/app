@@ -1,8 +1,9 @@
 import os
-from os.path import isdir
+
 import click
 
-from cli.utils.click_utils import info, success, warn, error
+from cli.commands.check import check
+from cli.utils.click_utils import error, info, success, warn
 from cli.utils.gh_cli_utils import clone, fork, get_username, has_fork
 from cli.utils.gitmastery_utils import find_gitmastery_root
 
@@ -18,6 +19,9 @@ def progress() -> None:
 @click.pass_context
 def setup(ctx: click.Context) -> None:
     verbose = ctx.obj["VERBOSE"]
+
+    ctx.invoke(check, phase="git")
+    ctx.invoke(check, phase="github")
 
     gitmastery_root = find_gitmastery_root()
     if gitmastery_root is None:
