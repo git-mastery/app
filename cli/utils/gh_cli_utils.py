@@ -1,19 +1,23 @@
 import os
 import subprocess
-from typing import List
+from typing import List, Tuple, Optional
 
 from cli.utils.click_utils import error, info
 
 
-def is_authenticated(verbose: bool = False) -> bool:
+def get_stdout_stderr(verbose: bool) -> Tuple[Optional[int], Optional[int]]:
     stdout = None if verbose else subprocess.DEVNULL
     stderr = None if verbose else subprocess.DEVNULL
+    return stdout, stderr
+
+
+def is_authenticated(verbose: bool) -> bool:
+    stdout, stderr = get_stdout_stderr(verbose)
     return subprocess.call(["gh", "auth", "status"], stdout=stdout, stderr=stderr) == 0
 
 
-def has_fork(fork_name: str, verbose: bool = False) -> bool:
-    stdout = None if verbose else subprocess.DEVNULL
-    stderr = None if verbose else subprocess.DEVNULL
+def has_fork(fork_name: str, verbose: bool) -> bool:
+    stdout, stderr = get_stdout_stderr(verbose)
     try:
         subprocess.run(
             ["gh", "repo", "view", fork_name], check=True, stdout=stdout, stderr=stderr
@@ -23,7 +27,23 @@ def has_fork(fork_name: str, verbose: bool = False) -> bool:
         return False
 
 
-def get_username(verbose: bool = False) -> str:
+def fork(fork_name: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        ["gh", "repo", "fork", fork_name],
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def clone(repository_name: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        ["gh", "repo", "clone", repository_name], stdout=stdout, stderr=stderr
+    )
+
+
+def get_username(verbose: bool) -> str:
     try:
         result = subprocess.run(
             ["gh", "api", "user", "-q", ".login"],
@@ -41,7 +61,7 @@ def get_username(verbose: bool = False) -> str:
         return ""
 
 
-def get_user_orgs(verbose: bool = False) -> List[str]:
+def get_user_orgs(verbose: bool) -> List[str]:
     try:
         result = subprocess.run(
             [
@@ -68,7 +88,7 @@ def get_user_orgs(verbose: bool = False) -> List[str]:
         return []
 
 
-def get_user_prs(repo: str, owner: str, verbose: bool = False) -> List[str]:
+def get_user_prs(repo: str, owner: str, verbose: bool) -> List[str]:
     try:
         result = subprocess.run(
             [
