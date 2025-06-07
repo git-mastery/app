@@ -14,6 +14,7 @@ from git_autograder import (
 from git_autograder.output import GitAutograderOutput
 
 from cli.utils.click_utils import error, info, warn
+from cli.utils.gh_cli_utils import get_prs, get_username, pull_request
 from cli.utils.git_cli_utils import add_all, commit, push
 from cli.utils.gitmastery_utils import (
     execute_py_file_function_from_url,
@@ -76,6 +77,19 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     add_all(verbose)
     commit("Update progress", verbose)
     push("origin", "main", verbose)
+
+    username = get_username(verbose)
+    prs = get_prs("git-mastery/progress", username, verbose)
+    if len(prs) == 0:
+        warn("No pull request created for progress. Creating one now")
+        pull_request(
+            "git-mastery/progress",
+            "main",
+            f"{username}:main",
+            f"[{username}] Progress",
+            "Automated",
+            verbose,
+        )
 
     info("Updated your progress")
 

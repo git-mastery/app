@@ -38,6 +38,66 @@ def clone(repository_name: str, verbose: bool) -> None:
     )
 
 
+def pull_request(
+    repo: str, base: str, head: str, title: str, body: str, verbose: bool
+) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        [
+            "gh",
+            "pr",
+            "create",
+            "--repo",
+            repo,
+            "--base",
+            base,
+            "--head",
+            head,
+            "--title",
+            title,
+            "--body",
+            body,
+        ],
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def get_prs(repo: str, owner: str, verbose: bool) -> List[str]:
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                repo,
+                "--author",
+                "@me",
+                "--head",
+                "submission",
+                "--json",
+                "headRepositoryOwner",
+                "--json",
+                "url",
+                "-q",
+                f'.[] | select ( .headRepositoryOwner.login == "{owner}" ) | .url',
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=dict(os.environ, **{"GH_PAGER": "cat"}),
+        )
+        prs = result.stdout.strip().splitlines()
+        if verbose:
+            info(", ".join(prs))
+        return prs
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            error(e.stderr)
+        return []
+
+
 def get_username(verbose: bool) -> str:
     try:
         result = subprocess.run(
