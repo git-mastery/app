@@ -5,12 +5,13 @@ from pathlib import Path
 import click
 
 from cli.utils.click_utils import error, info
+from cli.utils.git_cli_utils import add_all, commit, init
 from cli.utils.gitmastery_utils import (
-    find_gitmastery_root,
-    read_gitmastery_exercise_config,
     download_file,
-    get_gitmastery_file_path,
     execute_py_file_function_from_url,
+    find_gitmastery_root,
+    get_gitmastery_file_path,
+    read_gitmastery_exercise_config,
 )
 
 
@@ -78,11 +79,9 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     if config.get("requires_repo", True):
         info("Setting up exercise with Git")
-        subprocess.run(["git", "init"], stdout=stdout, stderr=stderr)
-        subprocess.run(["git", "add", "."], stdout=stdout, stderr=stderr)
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"], stdout=stdout, stderr=stderr
-        )
+        init(verbose)
+        add_all(verbose)
+        commit("Initial commit", verbose)
     info("Executing download setup")
     execute_py_file_function_from_url(
         formatted_exercise, "download.py", "setup", verbose=verbose

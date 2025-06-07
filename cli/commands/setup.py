@@ -1,3 +1,4 @@
+import json
 import os
 
 import click
@@ -24,7 +25,8 @@ def setup(_: click.Context) -> None:
 
     info(f"Creating directory {click.style(directory_path, italic=True, bold=True)}")
     os.makedirs(directory_name, exist_ok=True)
-    open(os.path.join(directory_name, ".gitmastery.json"), "a").close()
+    with open(os.path.join(directory_name, ".gitmastery.json"), "w") as gitmastery_file:
+        gitmastery_file.write(json.dumps({}))
 
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"

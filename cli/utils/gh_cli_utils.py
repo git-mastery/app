@@ -1,14 +1,9 @@
 import os
 import subprocess
-from typing import List, Tuple, Optional
+from typing import List
 
+from cli.utils.cli_utils import get_stdout_stderr
 from cli.utils.click_utils import error, info
-
-
-def get_stdout_stderr(verbose: bool) -> Tuple[Optional[int], Optional[int]]:
-    stdout = None if verbose else subprocess.DEVNULL
-    stderr = None if verbose else subprocess.DEVNULL
-    return stdout, stderr
 
 
 def is_authenticated(verbose: bool) -> bool:

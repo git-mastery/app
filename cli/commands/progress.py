@@ -1,3 +1,4 @@
+import json
 import os
 
 import click
@@ -5,7 +6,11 @@ import click
 from cli.commands.check import check
 from cli.utils.click_utils import error, info, success, warn
 from cli.utils.gh_cli_utils import clone, fork, get_username, has_fork
-from cli.utils.gitmastery_utils import find_gitmastery_root
+from cli.utils.gitmastery_utils import (
+    GITMASTERY_CONFIG_NAME,
+    find_gitmastery_root,
+    read_gitmastery_config,
+)
 
 PROGRESS_REPOSITORY_NAME = "git-mastery/progress"
 
@@ -31,7 +36,7 @@ def setup(ctx: click.Context) -> None:
 
     # Just asserting since mypy doesn't recognize that error will exit the program
     assert gitmastery_root is not None
-    _, steps_to_cd = gitmastery_root
+    gitmastery_root_path, steps_to_cd = gitmastery_root
     if steps_to_cd != 0:
         cd = "/".join([".."] * steps_to_cd)
         error(
@@ -61,3 +66,10 @@ def setup(ctx: click.Context) -> None:
         clone(f"{username}/progress", verbose)
 
     success("You have setup the progress tracker for Git-Mastery!")
+
+    gitmastery_config = read_gitmastery_config(gitmastery_root_path)
+    gitmastery_config["progress_setup"] = True
+    with open(
+        gitmastery_root_path / GITMASTERY_CONFIG_NAME, "w"
+    ) as gitmastery_config_file:
+        gitmastery_config_file.write(json.dumps(gitmastery_config))

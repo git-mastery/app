@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime
 from typing import Optional
 
@@ -11,17 +13,78 @@ from git_autograder import (
 )
 from git_autograder.output import GitAutograderOutput
 
-from cli.utils.click_utils import error, info
+from cli.utils.click_utils import error, info, warn
+from cli.utils.git_cli_utils import add_all, commit, push
 from cli.utils.gitmastery_utils import (
     execute_py_file_function_from_url,
     find_gitmastery_exercise_root,
+    find_gitmastery_root,
+    read_gitmastery_config,
     read_gitmastery_exercise_config,
 )
 
 
+def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
+    # TODO: handle edge cases where the student might have deleted progress themselves
+    gitmastery_root = find_gitmastery_root()
+    if gitmastery_root is None:
+        error(
+            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+        )
+
+    # Just asserting since mypy doesn't recognize that error will exit the program
+    assert gitmastery_root is not None
+    gitmastery_root_path, _ = gitmastery_root
+    gitmastery_config = read_gitmastery_config(gitmastery_root_path)
+    progress_setup = gitmastery_config.get("progress_setup", False)
+
+    if not progress_setup:
+        warn(
+            f"Progress not submitted. Setup progress tracking via {click.style('gitmastery progress setup', bold=True, italic=True)}"
+        )
+        return
+
+    if not os.path.isdir(gitmastery_root_path / "progress"):
+        error(
+            f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
+        )
+
+    info("Saving progress of attempt")
+    os.chdir(gitmastery_root_path / "progress")
+    if not os.path.isfile("progress.json"):
+        warn("Progress tracking file not created yet, doing that now")
+        with open("progress.json", "w") as progress_file:
+            progress_file.write(json.dumps([]))
+
+    entry = {
+        "exercise_name": output.exercise_name,
+        "started_at": output.started_at.timestamp() if output.started_at else None,
+        "completed_at": output.completed_at.timestamp()
+        if output.completed_at
+        else None,
+        "comments": output.comments,
+        "status": output.status,
+    }
+    current_progress = []
+    with open("progress.json", "r") as progress_file:
+        current_progress = json.loads(progress_file.read())
+
+    current_progress.append(entry)
+    with open("progress.json", "w") as progress_file:
+        progress_file.write(json.dumps(current_progress))
+
+    add_all(verbose)
+    commit("Update progress", verbose)
+    push("origin", "main", verbose)
+
+    info("Updated your progress")
+
+
 @click.command()
 @click.pass_context
-def verify(_ctx: click.Context) -> None:
+def verify(ctx: click.Context) -> None:
+    verbose = ctx.obj["VERBOSE"]
+
     # Locally verify the changes
     # Check that current folder is exercise
     gitmastery_exercise_root = find_gitmastery_exercise_root()
@@ -88,3 +151,5 @@ def verify(_ctx: click.Context) -> None:
     info(f"{click.style('Status:', bold=True)} {output.status}")
     info(click.style("Comments:", bold=True))
     print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
+
+    submit_progress(output, verbose)
