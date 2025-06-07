@@ -25,7 +25,7 @@ def has_fork(fork_name: str, verbose: bool) -> bool:
 def fork(fork_name: str, verbose: bool) -> None:
     stdout, stderr = get_stdout_stderr(verbose)
     subprocess.run(
-        ["gh", "repo", "fork", fork_name],
+        ["gh", "repo", "fork", fork_name, "--default-branch-only"],
         stdout=stdout,
         stderr=stderr,
     )
