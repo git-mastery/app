@@ -25,6 +25,21 @@ from cli.utils.gitmastery_utils import (
 )
 
 
+def print_output(output: GitAutograderOutput) -> None:
+    color = (
+        "bright_green"
+        if output.status == GitAutograderStatus.SUCCESSFUL
+        else "bright_red"
+        if output.status == GitAutograderStatus.UNSUCCESSFUL
+        else "bright_yellow"
+    )
+    info("Verification completed.")
+    info("")
+    info(f"{click.style('Status:', bold=True)} {click.style(output.status, fg=color)}")
+    info(click.style("Comments:", bold=True))
+    print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
+
+
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     # TODO: handle edge cases where the student might have deleted progress themselves
     gitmastery_root = find_gitmastery_root()
@@ -160,10 +175,5 @@ def verify(ctx: click.Context) -> None:
         )
 
     assert output is not None
-    info("Verification completed.")
-    info("")
-    info(f"{click.style('Status:', bold=True)} {output.status}")
-    info(click.style("Comments:", bold=True))
-    print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
-
+    print_output(output)
     submit_progress(output, verbose)
