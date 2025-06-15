@@ -2,15 +2,17 @@ import json
 import os
 
 import click
+from cli.commands.check import check
 from cli.utils.click_utils import info, error, prompt
 
 
 @click.command()
 @click.pass_context
-def setup(_: click.Context) -> None:
+def setup(ctx: click.Context) -> None:
     info(
         "Welcome to Git-Mastery! We will be setting up several components of Git-Mastery to ensure an optimal experience working on the various exercises."
     )
+    ctx.invoke(check, phase="git")
     directory_name = prompt(
         "What do you want to name your exercises directory?",
         default="gitmastery-exercises",
