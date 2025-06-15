@@ -42,7 +42,6 @@ def print_output(output: GitAutograderOutput) -> None:
 
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     # TODO: handle edge cases where the student might have deleted progress themselves
-    # TODO: If student finishes exercise with SUCCESSFUL, stop updating progress
     # TODO: If student does not have Github, we create a local folder for progress instead, then once setup, we connect it with fork
 
     username = get_username(verbose)
