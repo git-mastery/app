@@ -42,6 +42,12 @@ def print_output(output: GitAutograderOutput) -> None:
 
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     # TODO: handle edge cases where the student might have deleted progress themselves
+    # TODO: If student finishes exercise with SUCCESSFUL, stop updating progress
+    # TODO: If student does not have Github, we create a local folder for progress instead, then once setup, we connect it with fork
+
+    username = get_username(verbose)
+    progress_name = f"{username}-gitmastery-progress"
+
     gitmastery_root = find_gitmastery_root()
     if gitmastery_root is None:
         error(
@@ -60,13 +66,13 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
         )
         return
 
-    if not os.path.isdir(gitmastery_root_path / "progress"):
+    if not os.path.isdir(gitmastery_root_path / progress_name):
         error(
             f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
 
     info("Saving progress of attempt")
-    os.chdir(gitmastery_root_path / "progress")
+    os.chdir(gitmastery_root_path / progress_name)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet, doing that now")
         with open("progress.json", "w") as progress_file:
@@ -85,6 +91,14 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     with open("progress.json", "r") as progress_file:
         current_progress = json.loads(progress_file.read())
 
+    # If the existing progress already contains a SUCCESSFUL, we can skip submitting the progress
+    for e in current_progress:
+        if e["exercise_name"] == output.exercise_name and e["status"] == "SUCCESSFUL":
+            warn(
+                "You have already completed this exercise. Your latest submission will not be tracked"
+            )
+            return
+
     current_progress.append(entry)
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(current_progress))
@@ -93,7 +107,6 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     commit("Update progress", verbose)
     push("origin", "main", verbose)
 
-    username = get_username(verbose)
     prs = get_prs("git-mastery/progress", "main", username, verbose)
     if len(prs) == 0:
         warn("No pull request created for progress. Creating one now")

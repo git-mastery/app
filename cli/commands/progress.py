@@ -25,6 +25,9 @@ def progress() -> None:
 def setup(ctx: click.Context) -> None:
     verbose = ctx.obj["VERBOSE"]
 
+    username = get_username(verbose)
+    fork_name = f"{username}-gitmastery-progress"
+
     ctx.invoke(check, phase="git")
     ctx.invoke(check, phase="github")
 
@@ -48,13 +51,11 @@ def setup(ctx: click.Context) -> None:
         f"Checking if you have fork of {click.style(PROGRESS_REPOSITORY_NAME, bold=True, italic=True)}"
     )
 
-    if has_fork("progress", verbose):
+    if has_fork(fork_name, verbose):
         info("You already have a fork")
     else:
         warn("You don't have a fork yet, creating one")
-        fork(PROGRESS_REPOSITORY_NAME, verbose)
-
-    username = get_username(verbose)
+        fork(PROGRESS_REPOSITORY_NAME, fork_name, verbose)
 
     info(
         f"Checking if you have a clone for {click.style('progress', bold=True, italic=True)}"

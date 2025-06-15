@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import List
+from typing import List, Optional
 
 from cli.utils.cli_utils import get_stdout_stderr
 from cli.utils.click_utils import error, info
@@ -12,20 +12,34 @@ def is_authenticated(verbose: bool) -> bool:
 
 
 def has_fork(fork_name: str, verbose: bool) -> bool:
-    stdout, stderr = get_stdout_stderr(verbose)
     try:
-        subprocess.run(
-            ["gh", "repo", "view", fork_name], check=True, stdout=stdout, stderr=stderr
+        result = subprocess.run(
+            ["gh", "repo", "view", fork_name, "--json", "isFork", "--jq", ".isFork"],
+            check=True,
+            capture_output=True,
+            env=dict(os.environ, **{"GH_PAGER": "cat"}),
         )
-        return True
-    except subprocess.CalledProcessError:
+        if verbose:
+            print(result.stdout)
+        return result.stdout.strip() == "true"
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(e.stderr)
         return False
 
 
-def fork(fork_name: str, verbose: bool) -> None:
+def fork(repository_name: str, fork_name: str, verbose: bool) -> None:
     stdout, stderr = get_stdout_stderr(verbose)
     subprocess.run(
-        ["gh", "repo", "fork", fork_name, "--default-branch-only"],
+        [
+            "gh",
+            "repo",
+            "fork",
+            repository_name,
+            "--default-branch-only",
+            "--fork-name",
+            fork_name,
+        ],
         stdout=stdout,
         stderr=stderr,
     )
