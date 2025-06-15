@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Dict, Optional
 
 import click
 
@@ -13,10 +14,14 @@ from cli.utils.gitmastery_utils import (
     execute_py_file_function_from_url,
     find_gitmastery_root,
     get_gitmastery_file_path,
+    get_variable_from_url,
     read_gitmastery_exercise_config,
 )
 
 
+# TODO: Add start time to config file once download
+# TODO: Think about streamlining the config location
+# TODO: Maybe store the random "keys" in config
 @click.command()
 @click.argument("exercise")
 @click.pass_context
@@ -96,7 +101,12 @@ def download(ctx: click.Context, exercise: str) -> None:
                 warn("Setup Github and Github CLI before downloading this exercise")
                 exit(1)
 
-    if len(config.get("resources", {})) > 0:
+    download_resources: Optional[Dict[str, str]] = get_variable_from_url(
+        formatted_exercise, "download.py", "__resources__", {}
+    )
+    if len(config.get("resources", {})) > 0 or (
+        download_resources and len(download_resources) > 0
+    ):
         info("Downloading resources...")
 
     for resource, path in config.get("resources", {}).items():
@@ -108,6 +118,17 @@ def download(ctx: click.Context, exercise: str) -> None:
             path,
             is_binary,
         )
+
+    if download_resources:
+        for resource, path in download_resources.items():
+            os.makedirs(Path(path).parent, exist_ok=True)
+            is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
+            # Download and load all of these resources
+            download_file(
+                get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
+                path,
+                is_binary,
+            )
 
     if config.get("requires_repo", True):
         info("Setting up exercise with Git")

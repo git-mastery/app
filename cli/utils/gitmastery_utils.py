@@ -3,7 +3,7 @@ import json
 import sys
 import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypeVar
 
 import click
 import requests
@@ -77,6 +77,26 @@ def download_file(url: str, path: str, is_binary: bool) -> None:
         assert isinstance(contents, str)
         with open(path, "w+") as file:
             file.write(contents)
+
+
+T = TypeVar("T")
+
+
+def get_variable_from_url(
+    exercise: str,
+    file_path: str,
+    variable_name: str,
+    default_value: Optional[T] = None,
+) -> Optional[T]:
+    sys.dont_write_bytecode = True
+    py_file = fetch_file_contents(
+        get_gitmastery_file_path(f"{exercise}/{file_path}"), False
+    )
+    namespace: Dict[str, Any] = {}
+    exec(py_file, namespace)
+    variable = namespace.get(variable_name, default_value)
+    sys.dont_write_bytecode = False
+    return variable
 
 
 def execute_py_file_function_from_url(
