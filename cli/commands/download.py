@@ -1,3 +1,5 @@
+from datetime import datetime
+import json
 import os
 import shutil
 import subprocess
@@ -5,6 +7,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import click
+import pytz
 
 from cli.commands.check import check
 from cli.utils.click_utils import error, info, success, warn
@@ -19,7 +22,6 @@ from cli.utils.gitmastery_utils import (
 )
 
 
-# TODO: Add start time to config file once download
 # TODO: Think about streamlining the config location
 # TODO: Maybe store the random "keys" in config
 @click.command()
@@ -27,6 +29,8 @@ from cli.utils.gitmastery_utils import (
 @click.pass_context
 def download(ctx: click.Context, exercise: str) -> None:
     """Download an exercise"""
+    download_time = datetime.now(tz=pytz.UTC)
+
     verbose = ctx.obj["VERBOSE"]
 
     formatted_exercise = exercise.replace("-", "_")
@@ -129,6 +133,10 @@ def download(ctx: click.Context, exercise: str) -> None:
                 path,
                 is_binary,
             )
+
+    config["downloaded_at"] = download_time.timestamp()
+    with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
+        gitmastery_exercise_file.write(json.dumps(config))
 
     if config.get("requires_repo", True):
         info("Setting up exercise with Git")
