@@ -129,13 +129,15 @@ def reset(ctx: click.Context) -> None:
     info(
         f"Resetting your progress for {click.style(exercise_name, bold=True, italic=True)}"
     )
-    with open("progress.json", "w") as progress_file:
+    clean_progress = []
+    with open("progress.json", "r") as progress_file:
         progress = json.load(progress_file)
-        clean_progress = []
         for entry in progress:
             if entry["exercise_name"] == exercise_name:
                 continue
             clean_progress.append(entry)
+
+    with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(clean_progress))
 
     success(
