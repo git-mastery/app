@@ -97,12 +97,7 @@ def reset(ctx: click.Context) -> None:
 
     # Just asserting since mypy doesn't recognize that error will exit the program
     assert gitmastery_root is not None
-    gitmastery_root_path, steps_to_cd = gitmastery_root
-    if steps_to_cd != 0:
-        cd = "/".join([".."] * steps_to_cd)
-        error(
-            f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
-        )
+    gitmastery_root_path, _ = gitmastery_root
     gitmastery_config = read_gitmastery_config(gitmastery_root_path)
 
     gitmastery_exercise_root = find_gitmastery_exercise_root()
