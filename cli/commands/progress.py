@@ -111,7 +111,7 @@ def reset(ctx: click.Context) -> None:
     )
     exercise_name = gitmastery_exercise_config["exercise_name"]
 
-    if gitmastery_config.get("progress_setup", False):
+    if not gitmastery_config.get("progress_setup", False):
         error(
             f"You have not setup progress tracking Git-Mastery yet. Do so with {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
