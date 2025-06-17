@@ -150,6 +150,7 @@ def verify(ctx: click.Context) -> None:
     output: Optional[GitAutograderOutput]
     try:
         if requires_repo:
+            os.chdir(gitmastery_exercise_root_path)
             current_repo = GitAutograderRepo(exercise_name, ".")
             output = execute_py_file_function_from_url(
                 formatted_exercise_name,
