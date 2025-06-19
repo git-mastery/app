@@ -149,8 +149,8 @@ def verify(ctx: click.Context) -> None:
     requires_repo = gitmastery_exercise_config.get("requires_repo", True)
     output: Optional[GitAutograderOutput]
     try:
+        os.chdir(gitmastery_exercise_root_path)
         if requires_repo:
-            os.chdir(gitmastery_exercise_root_path)
             current_repo = GitAutograderRepo(exercise_name, ".")
             output = execute_py_file_function_from_url(
                 formatted_exercise_name,
