@@ -3,7 +3,7 @@ import json
 import sys
 import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, TypeVar
+from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 
 import click
 import requests
@@ -65,6 +65,18 @@ def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
             f"Failed to fetch resource {click.style(url, bold=True, italic=True)}. Inform the Git-Mastery team."
         )
     return ""
+
+
+def fetch_file_contents_or_none(
+    url: str, is_binary: bool
+) -> Optional[Union[str, bytes]]:
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        if is_binary:
+            return response.content
+        return response.text
+    return None
 
 
 def download_file(url: str, path: str, is_binary: bool) -> None:

@@ -6,3 +6,4 @@ types-requests
 pytermgui
 git-autograder==4.*
 pytz
+PyYAML
