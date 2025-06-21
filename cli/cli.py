@@ -1,6 +1,6 @@
 import click
 
-from cli.commands import check, download, instructions, progress, setup, verify
+from cli.commands import check, download, progress, setup, verify
 
 
 @click.group()
@@ -15,7 +15,6 @@ def cli(ctx, verbose) -> None:
 def start() -> None:
     cli.add_command(check)
     cli.add_command(download)
-    cli.add_command(instructions)
     cli.add_command(progress)
     cli.add_command(setup)
     cli.add_command(verify)
