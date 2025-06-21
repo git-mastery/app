@@ -152,7 +152,6 @@ def download(ctx: click.Context, exercise: str) -> None:
                 exercise_repo, config.exercise_repo.repo_name, verbose
             )
 
-    print(os.listdir())
     os.chdir(config.exercise_repo.repo_name)
     download_resources: Optional[Dict[str, str]] = get_variable_from_url(
         formatted_exercise, "download.py", "__resources__", {}
