@@ -173,6 +173,8 @@ def execute_py_file_function_from_url(
     )
     namespace: Dict[str, Any] = {}
     exec(py_file, namespace)
+    if function_name not in namespace:
+        return None
     result = namespace[function_name](**params)
     sys.dont_write_bytecode = False
     return result
