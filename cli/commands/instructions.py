@@ -1,6 +1,5 @@
-from datetime import date
 from enum import Enum
-from typing import List
+
 import click
 import yaml
 
@@ -49,8 +48,8 @@ def view(
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
-    exercise_name = gitmastery_exercise_config["exercise_name"]
-    formatted_exercise_name = exercise_name.replace("-", "_")
+    exercise_name = gitmastery_exercise_config.exercise_name
+    formatted_exercise_name = gitmastery_exercise_config.formatted_exercise_name
 
     instructions_yml = fetch_file_contents_or_none(
         get_gitmastery_file_path(f"{formatted_exercise_name}/instructions.yml"),
@@ -141,8 +140,8 @@ def hints():
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
-    exercise_name = gitmastery_exercise_config["exercise_name"]
-    formatted_exercise_name = exercise_name.replace("-", "_")
+    exercise_name = gitmastery_exercise_config.exercise_name
+    formatted_exercise_name = gitmastery_exercise_config.formatted_exercise_name
 
     instructions_yml = fetch_file_contents_or_none(
         get_gitmastery_file_path(f"{formatted_exercise_name}/instructions.yml"),

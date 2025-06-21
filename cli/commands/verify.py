@@ -6,6 +6,7 @@ from typing import Optional
 import click
 import pytz
 from git_autograder import (
+    GitAutograderExercise,
     GitAutograderInvalidStateException,
     GitAutograderRepo,
     GitAutograderStatus,
@@ -139,29 +140,23 @@ def verify(ctx: click.Context) -> None:
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
-    exercise_name = gitmastery_exercise_config["exercise_name"]
-    formatted_exercise_name = exercise_name.replace("-", "_")
+    exercise_name = gitmastery_exercise_config.exercise_name
+    formatted_exercise_name = gitmastery_exercise_config.formatted_exercise_name
 
     info(
         f"Starting verification of {click.style(exercise_name, bold=True, italic=True)}"
     )
 
-    requires_repo = gitmastery_exercise_config.get("requires_repo", True)
     output: Optional[GitAutograderOutput]
     try:
         os.chdir(gitmastery_exercise_root_path)
-        if requires_repo:
-            current_repo = GitAutograderRepo(exercise_name, ".")
-            output = execute_py_file_function_from_url(
-                formatted_exercise_name,
-                "verify.py",
-                "verify",
-                repo=current_repo,  # type: ignore
-            )
-        else:
-            output = execute_py_file_function_from_url(
-                formatted_exercise_name, "verify.py", "verify"
-            )
+        exercise = GitAutograderExercise(gitmastery_exercise_root_path)
+        output = execute_py_file_function_from_url(
+            formatted_exercise_name,
+            "verify.py",
+            "verify",
+            {"exercise": exercise},  # type: ignore
+        )
     except (
         GitAutograderInvalidStateException,
         GitAutograderWrongAnswerException,
