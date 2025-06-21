@@ -52,6 +52,13 @@ def clone(repository_name: str, verbose: bool) -> None:
     )
 
 
+def clone_with_custom_name(repository_name: str, name: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        ["gh", "repo", "clone", repository_name, name], stdout=stdout, stderr=stderr
+    )
+
+
 def pull_request(
     repo: str, base: str, head: str, title: str, body: str, verbose: bool
 ) -> None:

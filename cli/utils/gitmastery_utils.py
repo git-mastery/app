@@ -2,8 +2,9 @@ import importlib.util
 import json
 import sys
 import urllib.parse
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
 import click
 import requests
@@ -15,6 +16,38 @@ GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
 GITMASTERY_EXERCISES_BASE_URL = (
     "https://raw.githubusercontent.com/git-mastery/exercises/refs/heads/main/"
 )
+
+
+@dataclass
+class ExerciseConfig:
+    @dataclass
+    class ExerciseRepoConfig:
+        repo_type: Literal["local", "remote"]
+        repo_name: str
+        repo_title: Optional[str]
+        create_fork: Optional[bool]
+        init: Optional[bool]
+
+    exercise_name: str
+    tags: List[str]
+    requires_git: bool
+    requires_github: bool
+    base_files: Dict[str, str]
+    exercise_repo: ExerciseRepoConfig
+
+    downloaded_at: Optional[float]
+
+    @property
+    def formatted_exercise_name(self) -> str:
+        # Used primarily to match the name of the folders of the exercises repository
+        return self.exercise_name.replace("-", "_")
+
+    def exercise_fork_name(self, username: str) -> str:
+        # Used to minimize conflicts with existing repositories on the user's account
+        return f"{username}-gitmastery-{self.exercise_repo.repo_title}"
+
+    def to_json(self) -> str:
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
 def find_root(filename: str) -> Optional[Tuple[Path, int]]:
@@ -45,8 +78,28 @@ def find_gitmastery_exercise_root() -> Optional[Tuple[Path, int]]:
     return find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
 
 
-def read_gitmastery_exercise_config(gitmastery_exercise_config_path: Path) -> Dict:
-    return read_config(gitmastery_exercise_config_path, GITMASTERY_EXERCISE_CONFIG_NAME)
+def read_gitmastery_exercise_config(
+    gitmastery_exercise_config_path: Path,
+) -> ExerciseConfig:
+    raw_config = read_config(
+        gitmastery_exercise_config_path, GITMASTERY_EXERCISE_CONFIG_NAME
+    )
+    exercise_repo = raw_config["exercise_repo"]
+    return ExerciseConfig(
+        exercise_name=raw_config["exercise_name"],
+        tags=raw_config["tags"],
+        requires_git=raw_config["requires_git"],
+        requires_github=raw_config["requires_github"],
+        base_files=raw_config["base_files"],
+        exercise_repo=ExerciseConfig.ExerciseRepoConfig(
+            repo_type=exercise_repo["repo_type"],  # type: ignore
+            repo_name=exercise_repo["repo_name"],
+            repo_title=exercise_repo["repo_title"],
+            create_fork=exercise_repo["create_fork"],
+            init=exercise_repo["init"],
+        ),
+        downloaded_at=None,
+    )
 
 
 def get_gitmastery_file_path(path: str):
