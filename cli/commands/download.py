@@ -2,9 +2,9 @@ import json
 import os
 import shutil
 import subprocess
+import time
 import webbrowser
 from datetime import datetime
-import time
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -177,7 +177,7 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     info("Executing download setup")
     execute_py_file_function_from_url(
-        formatted_exercise, "download.py", "setup", verbose=verbose
+        formatted_exercise, "download.py", "setup", {"verbose": verbose}
     )
 
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")

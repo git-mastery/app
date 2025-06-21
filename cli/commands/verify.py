@@ -6,11 +6,11 @@ from typing import Optional
 import click
 import pytz
 from git_autograder import (
+    GitAutograderExercise,
     GitAutograderInvalidStateException,
     GitAutograderRepo,
     GitAutograderStatus,
     GitAutograderWrongAnswerException,
-    GitAutograderExercise,
 )
 from git_autograder.output import GitAutograderOutput
 
@@ -155,7 +155,7 @@ def verify(ctx: click.Context) -> None:
             formatted_exercise_name,
             "verify.py",
             "verify",
-            exercise=exercise,  # type: ignore
+            {"exercise": exercise},  # type: ignore
         )
     except (
         GitAutograderInvalidStateException,

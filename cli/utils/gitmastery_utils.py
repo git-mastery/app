@@ -165,7 +165,7 @@ def get_variable_from_url(
 
 
 def execute_py_file_function_from_url(
-    exercise: str, file_path: str, function_name: str, **params: Dict[str, Any]
+    exercise: str, file_path: str, function_name: str, params: Dict[str, Any]
 ) -> Optional[Any]:
     sys.dont_write_bytecode = True
     py_file = fetch_file_contents(
