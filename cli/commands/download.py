@@ -1,8 +1,9 @@
-from datetime import datetime
 import json
 import os
 import shutil
 import subprocess
+import webbrowser
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -58,16 +59,15 @@ def download(ctx: click.Context, exercise: str) -> None:
     stderr = None if verbose else subprocess.DEVNULL
 
     info(
-        f"Downloaded {exercise} to {click.style(formatted_exercise + '/', bold=True, italic=True)}, setting it up now..."
+        f"Downloaded {exercise} to {click.style(exercise + '/', bold=True, italic=True)}, setting it up now..."
     )
-    if not os.path.isdir(formatted_exercise):
-        os.makedirs(formatted_exercise)
+    if not os.path.isdir(exercise):
+        os.makedirs(exercise)
 
-    os.chdir(formatted_exercise)
+    os.chdir(exercise)
     info("Downloading base files...")
     base_files = [
         ".gitmastery-exercise.json",
-        "README.md",
     ]
     for file in base_files:
         download_file(
@@ -149,4 +149,8 @@ def download(ctx: click.Context, exercise: str) -> None:
     )
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
     info("Start working on it:")
-    info(click.style(f"cd {formatted_exercise}", bold=True, italic=True))
+    info(click.style(f"cd {exercise}", bold=True, italic=True))
+    info("Opening instructions in your browser...")
+    url = f"https://git-mastery.github.io/exercises/{formatted_exercise}"
+
+    webbrowser.open(url, new=0, autoraise=True)
