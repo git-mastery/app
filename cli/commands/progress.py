@@ -109,7 +109,7 @@ def reset(ctx: click.Context) -> None:
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
-    exercise_name = gitmastery_exercise_config["exercise_name"]
+    exercise_name = gitmastery_exercise_config.exercise_name
 
     if not gitmastery_config.get("progress_setup", False):
         error(
