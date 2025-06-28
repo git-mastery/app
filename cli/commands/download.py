@@ -1,7 +1,5 @@
-import json
 import os
 import shutil
-import subprocess
 import time
 import webbrowser
 from datetime import datetime
@@ -14,7 +12,6 @@ import pytz
 from cli.commands.check import check
 from cli.utils.click_utils import error, info, success, warn
 from cli.utils.gh_cli_utils import (
-    clone,
     clone_with_custom_name,
     fork,
     get_username,
@@ -22,6 +19,7 @@ from cli.utils.gh_cli_utils import (
 )
 from cli.utils.git_cli_utils import add_all, commit, init
 from cli.utils.gitmastery_utils import (
+    ExerciseConfig,
     download_file,
     execute_py_file_function_from_url,
     find_gitmastery_root,
@@ -29,6 +27,76 @@ from cli.utils.gitmastery_utils import (
     get_variable_from_url,
     read_gitmastery_exercise_config,
 )
+
+
+def setup_exercise_folder(
+    download_time: datetime, config: ExerciseConfig, verbose: bool
+) -> None:
+    exercise = config.exercise_name
+    formatted_exercise = config.formatted_exercise_name
+
+    config.downloaded_at = download_time.timestamp()
+
+    with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
+        gitmastery_exercise_file.write(config.to_json())
+
+    if config.exercise_repo.repo_type == "local":
+        info("Creating custom exercise folder")
+        os.makedirs(config.exercise_repo.repo_name, exist_ok=True)
+    elif config.exercise_repo.repo_type == "remote":
+        # We have to assume that Github is checked
+        info("Retrieving exercise from Github")
+
+        username = get_username(verbose)
+        exercise_repo = f"git-mastery/{config.exercise_repo.repo_title}"
+        if config.exercise_repo.create_fork:
+            info("Checking if you already have a fork")
+            fork_name = config.exercise_fork_name(username)
+            if has_fork(fork_name, verbose):
+                info("You already have a fork")
+            else:
+                warn("You don't have a fork yet, creating one")
+                fork(exercise_repo, fork_name, verbose)
+            info("Creating clone of your fork")
+            clone_with_custom_name(
+                f"{username}/{fork_name}", config.exercise_repo.repo_name, verbose
+            )
+        else:
+            info("Creating clone of repository")
+            clone_with_custom_name(
+                exercise_repo, config.exercise_repo.repo_name, verbose
+            )
+
+    os.chdir(config.exercise_repo.repo_name)
+    download_resources: Optional[Dict[str, str]] = get_variable_from_url(
+        formatted_exercise, "download.py", "__resources__", {}
+    )
+    if download_resources and len(download_resources) > 0:
+        info("Downloading resources for the exercise...")
+
+    if download_resources:
+        for resource, path in download_resources.items():
+            os.makedirs(Path(path).parent, exist_ok=True)
+            is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
+            # Download and load all of these resources
+            download_file(
+                get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
+                path,
+                is_binary,
+            )
+
+    if config.exercise_repo.init:
+        init(verbose)
+        add_all(verbose)
+        commit("Initial commit", verbose)
+
+    info("Executing download setup")
+    execute_py_file_function_from_url(
+        formatted_exercise, "download.py", "setup", {"verbose": verbose}
+    )
+
+    success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
+    info("Start working on it:")
 
 
 # TODO: Think about streamlining the config location
@@ -121,68 +189,13 @@ def download(ctx: click.Context, exercise: str) -> None:
             is_binary,
         )
 
-    config.downloaded_at = download_time.timestamp()
-    with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
-        gitmastery_exercise_file.write(config.to_json())
-
-    if config.exercise_repo.repo_type == "local":
-        info("Creating custom exercise folder")
-        os.makedirs(config.exercise_repo.repo_name, exist_ok=True)
-    elif config.exercise_repo.repo_type == "remote":
-        # We have to assume that Github is checked
-        info("Retrieving exercise from Github")
-
-        username = get_username(verbose)
-        exercise_repo = f"git-mastery/{config.exercise_repo.repo_title}"
-        if config.exercise_repo.create_fork:
-            info("Checking if you already have a fork")
-            fork_name = config.exercise_fork_name(username)
-            if has_fork(fork_name, verbose):
-                info("You already have a fork")
-            else:
-                warn("You don't have a fork yet, creating one")
-                fork(exercise_repo, fork_name, verbose)
-            info("Creating clone of your fork")
-            clone_with_custom_name(
-                f"{username}/{fork_name}", config.exercise_repo.repo_name, verbose
-            )
-        else:
-            info("Creating clone of repository")
-            clone_with_custom_name(
-                exercise_repo, config.exercise_repo.repo_name, verbose
-            )
-
-    os.chdir(config.exercise_repo.repo_name)
-    download_resources: Optional[Dict[str, str]] = get_variable_from_url(
-        formatted_exercise, "download.py", "__resources__", {}
-    )
-    if download_resources and len(download_resources) > 0:
-        info("Downloading resources for the exercise...")
-
-    if download_resources:
-        for resource, path in download_resources.items():
-            os.makedirs(Path(path).parent, exist_ok=True)
-            is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
-            # Download and load all of these resources
-            download_file(
-                get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
-                path,
-                is_binary,
-            )
-
-    if config.exercise_repo.init:
-        init(verbose)
-        add_all(verbose)
-        commit("Initial commit", verbose)
-
-    info("Executing download setup")
-    execute_py_file_function_from_url(
-        formatted_exercise, "download.py", "setup", {"verbose": verbose}
+    setup_exercise_folder(download_time, config, verbose)
+    info(
+        click.style(
+            f"cd {exercise}/{config.exercise_repo.repo_name}", bold=True, italic=True
+        )
     )
 
-    success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
-    info("Start working on it:")
-    info(click.style(f"cd {exercise}", bold=True, italic=True))
     info("Opening instructions in your browser in a moment...")
     # We add a temporary delay so people can read the message
     time.sleep(2)

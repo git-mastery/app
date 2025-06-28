@@ -20,8 +20,8 @@ def has_fork(fork_name: str, verbose: bool) -> bool:
             env=dict(os.environ, **{"GH_PAGER": "cat"}),
         )
         if verbose:
-            print(result.stdout)
-        return result.stdout.strip() == "true"
+            print(result.stdout.strip())
+        return result.stdout.strip().decode("utf-8") == "true"
     except subprocess.CalledProcessError as e:
         if verbose:
             print(e.stderr)
@@ -56,6 +56,13 @@ def clone_with_custom_name(repository_name: str, name: str, verbose: bool) -> No
     stdout, stderr = get_stdout_stderr(verbose)
     subprocess.run(
         ["gh", "repo", "clone", repository_name, name], stdout=stdout, stderr=stderr
+    )
+
+
+def delete_repo(repository_name: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        ["gh", "repo", "delete", repository_name, "--yes"], stdout=stdout, stderr=stderr
     )
 
 

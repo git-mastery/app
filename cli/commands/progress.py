@@ -1,16 +1,21 @@
 import json
 import os
+import shutil
+import sys
+from datetime import datetime
 
 import click
+import pytz
 
 from cli.commands.check import check
+from cli.commands.download import setup_exercise_folder
 from cli.utils.click_utils import error, info, success, warn
-from cli.utils.gh_cli_utils import clone, fork, get_username, has_fork
+from cli.utils.gh_cli_utils import clone, delete_repo, fork, get_username, has_fork
 from cli.utils.gitmastery_utils import (
     GITMASTERY_CONFIG_NAME,
+    find_gitmastery_exercise_root,
     find_gitmastery_root,
     read_gitmastery_config,
-    find_gitmastery_exercise_root,
     read_gitmastery_exercise_config,
 )
 
@@ -83,6 +88,8 @@ def setup(ctx: click.Context) -> None:
 def reset(ctx: click.Context) -> None:
     verbose = ctx.obj["VERBOSE"]
 
+    download_time = datetime.now(tz=pytz.UTC)
+
     username = get_username(verbose)
     fork_name = f"{username}-gitmastery-progress"
 
@@ -105,11 +112,38 @@ def reset(ctx: click.Context) -> None:
         error("You are not inside a Git-Mastery exercise folder.")
 
     assert gitmastery_exercise_root is not None
-    gitmastery_exercise_root_path, _ = gitmastery_exercise_root
+    gitmastery_exercise_root_path, cds = gitmastery_exercise_root
     gitmastery_exercise_config = read_gitmastery_exercise_config(
         gitmastery_exercise_root_path
     )
+
+    if cds > 0:
+        cds_str = "/".join([".."] * cds)
+        error(
+            f"Go back to the root of the exercise to reset the exercise. Use {click.style(f'cd {cds_str}', bold=True, italic=True)}"
+        )
+
     exercise_name = gitmastery_exercise_config.exercise_name
+
+    os.chdir(gitmastery_exercise_root_path)
+    info("Resetting the exercise folder")
+    if gitmastery_exercise_config.exercise_repo.create_fork:
+        # Remove the fork first
+        username = get_username(verbose)
+        fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
+        delete_repo(fork_name, verbose)
+    shutil.rmtree(
+        gitmastery_exercise_root_path
+        / gitmastery_exercise_config.exercise_repo.repo_name
+    )
+    setup_exercise_folder(download_time, gitmastery_exercise_config, verbose)
+    info(
+        click.style(
+            f"cd {gitmastery_exercise_config.exercise_repo.repo_name}",
+            bold=True,
+            italic=True,
+        )
+    )
 
     if not gitmastery_config.get("progress_setup", False):
         error(
@@ -117,9 +151,10 @@ def reset(ctx: click.Context) -> None:
         )
 
     if not os.path.isdir(gitmastery_root_path / fork_name):
-        error(
+        warn(
             f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
+        sys.exit(0)
 
     os.chdir(gitmastery_root_path / fork_name)
     if not os.path.isfile("progress.json"):
