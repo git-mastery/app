@@ -9,6 +9,9 @@ from app.utils.click_utils import info, error, prompt
 @click.command()
 @click.pass_context
 def setup(ctx: click.Context) -> None:
+    """
+    Sets up Git-Mastery for your local machine.
+    """
     info(
         "Welcome to Git-Mastery! We will be setting up several components of Git-Mastery to ensure an optimal experience working on the various exercises."
     )
@@ -33,3 +36,11 @@ def setup(ctx: click.Context) -> None:
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
     )
+    info("Next steps:")
+    info(
+        f"\t1. Download exercises using {click.style('gitmastery download <exercise>', bold=True, italic=True, underline=True)}"
+    )
+    info(
+        f"\t2. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True, underline=True)}"
+    )
+    info("Enjoy!")
