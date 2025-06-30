@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import List, Optional
+from typing import List
 
 from app.utils.cli_utils import get_stdout_stderr
 from app.utils.click_utils import error, info

@@ -1,6 +1,3 @@
-import subprocess
-from typing import Optional
-
 import click
 
 from app.utils.click_utils import error, info, success
@@ -76,7 +73,7 @@ def check(ctx: click.Context, phase: str) -> None:
     """
     Verifies if Git/Github CLI is properly installed for Git-Mastery
 
-    PHASE can either be git or github.
+    PHASE can either be 'git' or 'github'.
     """
     verbose = ctx.obj["VERBOSE"]
     allowed = {"git", "github"}
