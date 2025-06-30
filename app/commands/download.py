@@ -22,10 +22,11 @@ from app.utils.git_cli_utils import add_all, commit, init
 from app.utils.gitmastery_utils import (
     download_file,
     execute_py_file_function_from_url,
-    find_gitmastery_root,
+    generate_cds_string,
     get_gitmastery_file_path,
     get_variable_from_url,
     read_gitmastery_exercise_config,
+    require_gitmastery_root,
 )
 
 
@@ -112,21 +113,10 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     formatted_exercise = exercise.replace("-", "_")
 
-    # Check to make sure that they are currently in the root of a gitmastery exercises
-    # folder, denoted by the .gitmastery.json file
-    gitmastery_root = find_gitmastery_root()
-    if gitmastery_root is None:
-        error(
-            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
-        )
-
-    # Just asserting since mypy doesn't recognize that error will exit the program
-    assert gitmastery_root is not None
-    _, steps_to_cd = gitmastery_root
+    _, steps_to_cd, _ = require_gitmastery_root()
     if steps_to_cd != 0:
-        cd = "/".join([".."] * steps_to_cd)
         error(
-            f"Use {click.style('cd ' + cd, bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
+            f"Use {click.style('cd ' + generate_cds_string(steps_to_cd), bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
 
     info(f"Downloading {exercise}...")

@@ -18,11 +18,8 @@ from app.utils.gh_cli_utils import get_prs, get_username, pull_request
 from app.utils.git_cli_utils import add_all, commit, push
 from app.utils.gitmastery_utils import (
     execute_py_file_function_from_url,
-    find_gitmastery_exercise_root,
-    find_gitmastery_root,
-    read_gitmastery_config,
-    read_gitmastery_exercise_config,
     require_gitmastery_exercise_root,
+    require_gitmastery_root,
 )
 
 
@@ -42,22 +39,12 @@ def print_output(output: GitAutograderOutput) -> None:
 
 
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
-    # TODO: handle edge cases where the student might have deleted progress themselves
     # TODO: If student does not have Github, we create a local folder for progress instead, then once setup, we connect it with fork
 
     username = get_username(verbose)
     progress_name = f"{username}-gitmastery-progress"
 
-    gitmastery_root = find_gitmastery_root()
-    if gitmastery_root is None:
-        error(
-            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
-        )
-
-    # Just asserting since mypy doesn't recognize that error will exit the program
-    assert gitmastery_root is not None
-    gitmastery_root_path, _ = gitmastery_root
-    gitmastery_config = read_gitmastery_config(gitmastery_root_path)
+    gitmastery_root_path, _, gitmastery_config = require_gitmastery_root()
     progress_setup = gitmastery_config.get("progress_setup", False)
 
     if not progress_setup:
@@ -94,7 +81,7 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     # If the existing progress already contains a SUCCESSFUL, we can skip submitting the progress
     for e in current_progress:
         if e["exercise_name"] == output.exercise_name and e["status"] == "SUCCESSFUL":
-            warn(
+            info(
                 "You have already completed this exercise. Your latest submission will not be tracked"
             )
             return
@@ -125,6 +112,9 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
 @click.command()
 @click.pass_context
 def verify(ctx: click.Context) -> None:
+    """
+    Verifies the state of the exercise attempt.
+    """
     verbose = ctx.obj["VERBOSE"]
 
     started_at = datetime.now(tz=pytz.UTC)

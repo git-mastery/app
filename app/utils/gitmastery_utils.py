@@ -61,17 +61,6 @@ def find_gitmastery_exercise_root() -> Optional[Tuple[Path, int]]:
     return find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
 
 
-def require_gitmastery_exercise_root() -> Tuple[Path, int, ExerciseConfig]:
-    root = find_gitmastery_exercise_root()
-    if root is None:
-        error("You are not inside a Git-Mastery exercise folder.")
-
-    assert root is not None
-    root_path, cds = root
-    config = read_gitmastery_exercise_config(root_path)
-    return root_path, cds, config
-
-
 def read_gitmastery_exercise_config(
     gitmastery_exercise_config_path: Path,
 ) -> ExerciseConfig:
@@ -94,6 +83,22 @@ def read_gitmastery_exercise_config(
         ),
         downloaded_at=None,
     )
+
+
+def require_gitmastery_exercise_root() -> Tuple[Path, int, ExerciseConfig]:
+    root = find_gitmastery_exercise_root()
+    if root is None:
+        error("You are not inside a Git-Mastery exercise folder.")
+
+    assert root is not None
+    root_path, cds = root
+    config = read_gitmastery_exercise_config(root_path)
+    return root_path, cds, config
+
+
+def generate_cds_string(cds: int) -> str:
+    # TODO: Maybe support Windows as well?
+    return "/".join([".."] * cds)
 
 
 def get_gitmastery_file_path(path: str):
