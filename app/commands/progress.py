@@ -34,14 +34,14 @@ def setup(ctx: click.Context) -> None:
     username = get_username(verbose)
     fork_name = f"{username}-gitmastery-progress"
 
-    ctx.invoke(check, phase="git")
-    ctx.invoke(check, phase="github")
-
     gitmastery_root_path, cds, gitmastery_config = require_gitmastery_root()
     if cds != 0:
         error(
             f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
+
+    ctx.invoke(check, phase="git")
+    ctx.invoke(check, phase="github")
 
     info("Setting up progress tracker for you")
     info(
