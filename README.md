@@ -1,6 +1,6 @@
-# cli
+# app
 
-CLI for Git-Mastery to centralize and perform key operations of adapters
+Git-Mastery CLI to centralize and perform key operations of adapters
 
 ## Installation
 

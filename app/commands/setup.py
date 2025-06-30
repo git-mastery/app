@@ -2,8 +2,8 @@ import json
 import os
 
 import click
-from cli.commands.check import check
-from cli.utils.click_utils import info, error, prompt
+from app.commands.check import check
+from app.utils.click_utils import info, error, prompt
 
 
 @click.command()

@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 import click
 import requests
 
-from cli.utils.click_utils import error
+from app.utils.click_utils import error
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"

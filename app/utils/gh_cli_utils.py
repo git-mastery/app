@@ -2,8 +2,18 @@ import os
 import subprocess
 from typing import List, Optional
 
-from cli.utils.cli_utils import get_stdout_stderr
-from cli.utils.click_utils import error, info
+from app.utils.cli_utils import get_stdout_stderr
+from app.utils.click_utils import error, info
+
+
+def is_github_cli_installed(verbose: bool) -> bool:
+    result = subprocess.run(["gh", "--version"], capture_output=True, text=True)
+    if verbose:
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(result.stderr)
+    return result.returncode == 0
 
 
 def is_authenticated(verbose: bool) -> bool:

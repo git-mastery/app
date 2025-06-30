@@ -7,11 +7,11 @@ from datetime import datetime
 import click
 import pytz
 
-from cli.commands.check import check
-from cli.commands.download import setup_exercise_folder
-from cli.utils.click_utils import error, info, success, warn
-from cli.utils.gh_cli_utils import clone, delete_repo, fork, get_username, has_fork
-from cli.utils.gitmastery_utils import (
+from app.commands.check import check
+from app.commands.download import setup_exercise_folder
+from app.utils.click_utils import error, info, success, warn
+from app.utils.gh_cli_utils import clone, delete_repo, fork, get_username, has_fork
+from app.utils.gitmastery_utils import (
     GITMASTERY_CONFIG_NAME,
     find_gitmastery_exercise_root,
     find_gitmastery_root,

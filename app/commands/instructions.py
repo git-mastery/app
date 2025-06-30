@@ -3,8 +3,8 @@ from enum import Enum
 import click
 import yaml
 
-from cli.utils.click_utils import confirm, error, info, prompt, warn
-from cli.utils.gitmastery_utils import (
+from app.utils.click_utils import confirm, error, info, prompt, warn
+from app.utils.gitmastery_utils import (
     fetch_file_contents,
     fetch_file_contents_or_none,
     find_gitmastery_exercise_root,

@@ -14,10 +14,10 @@ from git_autograder import (
 )
 from git_autograder.output import GitAutograderOutput
 
-from cli.utils.click_utils import error, info, warn
-from cli.utils.gh_cli_utils import get_prs, get_username, pull_request
-from cli.utils.git_cli_utils import add_all, commit, push
-from cli.utils.gitmastery_utils import (
+from app.utils.click_utils import error, info, warn
+from app.utils.gh_cli_utils import get_prs, get_username, pull_request
+from app.utils.git_cli_utils import add_all, commit, push
+from app.utils.gitmastery_utils import (
     execute_py_file_function_from_url,
     find_gitmastery_exercise_root,
     find_gitmastery_root,
