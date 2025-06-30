@@ -8,7 +8,6 @@ import pytz
 from git_autograder import (
     GitAutograderExercise,
     GitAutograderInvalidStateException,
-    GitAutograderRepo,
     GitAutograderStatus,
     GitAutograderWrongAnswerException,
 )
@@ -23,6 +22,7 @@ from app.utils.gitmastery_utils import (
     find_gitmastery_root,
     read_gitmastery_config,
     read_gitmastery_exercise_config,
+    require_gitmastery_exercise_root,
 )
 
 
@@ -127,21 +127,11 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
 def verify(ctx: click.Context) -> None:
     verbose = ctx.obj["VERBOSE"]
 
-    # Locally verify the changes
-    # Check that current folder is exercise
-    gitmastery_exercise_root = find_gitmastery_exercise_root()
-    if gitmastery_exercise_root is None:
-        error("You are not inside a Git-Mastery exercise folder.")
-
     started_at = datetime.now(tz=pytz.UTC)
 
-    assert gitmastery_exercise_root is not None
-    gitmastery_exercise_root_path, _ = gitmastery_exercise_root
-    gitmastery_exercise_config = read_gitmastery_exercise_config(
-        gitmastery_exercise_root_path
-    )
-    exercise_name = gitmastery_exercise_config.exercise_name
-    formatted_exercise_name = gitmastery_exercise_config.formatted_exercise_name
+    exercise_path, _, config = require_gitmastery_exercise_root()
+    exercise_name = config.exercise_name
+    formatted_exercise_name = config.formatted_exercise_name
 
     info(
         f"Starting verification of {click.style(exercise_name, bold=True, italic=True)}"
@@ -149,8 +139,8 @@ def verify(ctx: click.Context) -> None:
 
     output: Optional[GitAutograderOutput]
     try:
-        os.chdir(gitmastery_exercise_root_path)
-        exercise = GitAutograderExercise(gitmastery_exercise_root_path)
+        os.chdir(exercise_path)
+        exercise = GitAutograderExercise(exercise_path)
         output = execute_py_file_function_from_url(
             formatted_exercise_name,
             "verify.py",

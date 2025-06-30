@@ -10,6 +10,7 @@ import click
 import pytz
 
 from app.commands.check import check
+from app.exercise_config import ExerciseConfig
 from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import (
     clone_with_custom_name,
@@ -19,7 +20,6 @@ from app.utils.gh_cli_utils import (
 )
 from app.utils.git_cli_utils import add_all, commit, init
 from app.utils.gitmastery_utils import (
-    ExerciseConfig,
     download_file,
     execute_py_file_function_from_url,
     find_gitmastery_root,

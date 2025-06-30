@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 import click
 import requests
 
+from app.exercise_config import ExerciseConfig
 from app.utils.click_utils import error
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
@@ -16,38 +17,6 @@ GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
 GITMASTERY_EXERCISES_BASE_URL = (
     "https://raw.githubusercontent.com/git-mastery/exercises/refs/heads/main/"
 )
-
-
-@dataclass
-class ExerciseConfig:
-    @dataclass
-    class ExerciseRepoConfig:
-        repo_type: Literal["local", "remote"]
-        repo_name: str
-        repo_title: Optional[str]
-        create_fork: Optional[bool]
-        init: Optional[bool]
-
-    exercise_name: str
-    tags: List[str]
-    requires_git: bool
-    requires_github: bool
-    base_files: Dict[str, str]
-    exercise_repo: ExerciseRepoConfig
-
-    downloaded_at: Optional[float]
-
-    @property
-    def formatted_exercise_name(self) -> str:
-        # Used primarily to match the name of the folders of the exercises repository
-        return self.exercise_name.replace("-", "_")
-
-    def exercise_fork_name(self, username: str) -> str:
-        # Used to minimize conflicts with existing repositories on the user's account
-        return f"{username}-gitmastery-{self.exercise_repo.repo_title}"
-
-    def to_json(self) -> str:
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
 def find_root(filename: str) -> Optional[Tuple[Path, int]]:
@@ -70,12 +39,37 @@ def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
     return find_root(GITMASTERY_CONFIG_NAME)
 
 
+def require_gitmastery_root() -> Tuple[Path, int, Dict]:
+    root = find_gitmastery_root()
+    if root is None:
+        error(
+            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+        )
+
+    # Just asserting since mypy doesn't recognize that error will exit the program
+    assert root is not None
+    root_path, cds = root
+    config = read_gitmastery_config(root_path)
+    return root_path, cds, config
+
+
 def read_gitmastery_config(gitmastery_config_path: Path) -> Dict:
     return read_config(gitmastery_config_path, GITMASTERY_CONFIG_NAME)
 
 
 def find_gitmastery_exercise_root() -> Optional[Tuple[Path, int]]:
     return find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
+
+
+def require_gitmastery_exercise_root() -> Tuple[Path, int, ExerciseConfig]:
+    root = find_gitmastery_exercise_root()
+    if root is None:
+        error("You are not inside a Git-Mastery exercise folder.")
+
+    assert root is not None
+    root_path, cds = root
+    config = read_gitmastery_exercise_config(root_path)
+    return root_path, cds, config
 
 
 def read_gitmastery_exercise_config(
