@@ -67,6 +67,9 @@ jobs:
 
   debian-publish:
     needs: debian-build
+    strategy:
+      matrix:
+        architecture: [arm64, amd64]
     runs-on: ubuntu-latest
 
     steps:
@@ -76,8 +79,11 @@ jobs:
           path: "app"
 
       - name: Extract variables
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
         run: |
           echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+          echo "ARCHITECTURE=${ARCHITECTURE}" >> $GITHUB_ENV
 
           # Get the tag's commit message
           cd app/
@@ -91,22 +97,22 @@ jobs:
 
       - name: Create folder structure for amd64 distribution
         run: |
-          mkdir gitmastery-${VERSION}-amd64
+          mkdir gitmastery-${VERSION}-${ARCHITECTURE}
 
-      - name: Download amd64 binaries from artifacts
+      - name: Download ${{ matrix.architecture }} binaries from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: gitmastery-${{ env.VERSION }}-linux-amd64
-          path: gitmastery-${{ env.VERSION }}-amd64/
+          name: gitmastery-${{ env.VERSION }}-linux-${ARCHITECTURE}
+          path: gitmastery-${{ env.VERSION }}-${ARCHITECTURE}/
 
       - name: Create upstream tarball .orig.tar.gz
         run: |
           # Create .orig.tar.gz file
-          tar -czf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-amd64/gitmastery-${VERSION}-linux-amd64
+          tar -czf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-${ARCHITECTURE}/gitmastery-${VERSION}-linux-${ARCHITECTURE}
           tree
 
       - name: Generate Debian packaging files
-        working-directory: gitmastery-${{ env.VERSION }}-amd64
+        working-directory: gitmastery-${{ env.VERSION }}-${{ matrix.architecture }}
         # TODO: Update to something agnostic
         env:
           EMAIL: woojiahao1234@gmail.com
@@ -129,7 +135,7 @@ jobs:
           Build-Depends: debhelper-compat (= 13)
 
           Package: gitmastery
-          Architecture: amd64
+          Architecture: ${ARCHITECTURE}
           Depends: ${shlibs:Depends}, ${misc:Depends}
           Description: execute Git-Mastery
             gitmastery is a Git learning tool built by the National University of Singapore School of Computing
@@ -150,7 +156,7 @@ jobs:
           \tdh \$@
           \n
           override_dh_auto_install:
-          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 build/usr/bin/gitmastery
+          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-${ARCHITECTURE} build/usr/bin/gitmastery
           """ > debian/rules
 
           echo """usr/bin
@@ -164,17 +170,6 @@ jobs:
       - name: Logging
         run: |
           tree
-          cat gitmastery-${VERSION}/debian/changelog
-          cat gitmastery-${VERSION}/debian/control
-          cat gitmastery-${VERSION}/debian/copyright
-          cat gitmastery-${VERSION}/debian/source/format
-          cat gitmastery-${VERSION}/debian/rules
-
-      # - name: Download arm64 binaries from artifacts
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: gitmastery-${{ env.VERSION }}-linux-arm64
-      #     path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-arm64
 
   windows:
     runs-on: windows-latest
