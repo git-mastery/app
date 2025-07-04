@@ -66,7 +66,11 @@ jobs:
         env:
           OS_VERSION: ${{ matrix.os }}
         run: |
-          ARCHITECTURE=$([$OS_VERSION = "ubuntu-latest"] && "amd64" || "arm64")
+          if [ $"OS_VERSION" = "ubuntu-latest" ]; then
+            ARCHITECTURE=amd64
+          else
+            ARCHITECTURE=arm64
+          fi
           FILENAME=gitmastery-${GITHUB_REF_NAME#v}-linux-$ARCHITECTURE
           echo "binary=$FILENAME" >> $GITHUB_OUTPUT
 
