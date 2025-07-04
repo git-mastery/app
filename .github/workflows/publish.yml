@@ -81,6 +81,7 @@ jobs:
         run: |
           echo $BINARY_NAME
           pyinstaller --onefile main.py --name $BINARY_NAME
+          tree
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
