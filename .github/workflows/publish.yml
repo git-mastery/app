@@ -66,7 +66,7 @@ jobs:
         env:
           OS_VERSION: ${{ matrix.os }}
         run: |
-          if [ $"OS_VERSION" = "ubuntu-latest" ]; then
+          if [ $OS_VERSION = "ubuntu-latest" ]; then
             ARCHITECTURE=amd64
           else
             ARCHITECTURE=arm64
