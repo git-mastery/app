@@ -98,9 +98,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract version
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          path: "app"
+
+      - name: Extract variables
         run: |
           echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+          # Get the tag's commit message
+          cd app/
+          CHANGELOG_MESSAGE=$(git show ${GITHUB_REF_NAME} --no-patch --pretty=format:%s)
+          echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
+          echo $CHANGELOG_MESSAGE
 
       - name: Create folder structure
         run: |
@@ -127,9 +138,6 @@ jobs:
         run: |
           # Create the debian folder
           mkdir debian
-
-          # Get the tag's commit message
-          CHANGELOG_MESSAGE=$(git show ${VERSION} --no-patch --pretty=format:%s)
 
           # Set the email and name in the changelog
           # TODO: Update to something agnostic
