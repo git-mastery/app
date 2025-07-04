@@ -66,7 +66,7 @@ jobs:
           path: dist/${{ steps.binary-name.outputs.binary }}
 
   debian-publish:
-    needs: debian-build
+    needs: linux-build
     strategy:
       matrix:
         architecture: [arm64, amd64]
