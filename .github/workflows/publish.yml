@@ -89,7 +89,6 @@ jobs:
           cd app/
           CHANGELOG_MESSAGE=$(git show ${GITHUB_REF_NAME} --no-patch --pretty=format:%s)
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
-          echo $CHANGELOG_MESSAGE
 
       - name: Install Debian packaging tools
         run: |
@@ -170,6 +169,13 @@ jobs:
       - name: Logging
         run: |
           tree
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/gitmastery_${{ env.VERSION }}-1-${{ matrix.architecture }}.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows:
     runs-on: windows-latest
