@@ -142,7 +142,7 @@ jobs:
 
           Package: gitmastery
           Architecture: ${ARCHITECTURE}
-          Depends: ${shlibs:Depends}, ${misc:Depends}
+          Depends: ${shlibs:Depends}, ${misc:Depends}, libc6 (>= 2.35), python3
           Description: execute Git-Mastery
             gitmastery is a Git learning tool built by the National University of Singapore School of Computing
           """ > debian/control
