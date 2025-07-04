@@ -130,7 +130,7 @@ jobs:
       - name: Create upstream tarball .orig.tar.gz
         run: |
           # Create .orig.tar.gz file
-          tar -cvf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-amd64/gitmastery-${VERSION}-linux-amd64
+          tar -czf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-amd64/gitmastery-${VERSION}-linux-amd64
           tree
 
       - name: Generate Debian packaging files
