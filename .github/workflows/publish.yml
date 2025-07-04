@@ -86,16 +86,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ steps.binary-name.output.binary }}
+          files: dist/${{ steps.binary-name.outputs.binary }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BINARY_NAME: ${{ steps.binary-name.output.binary }}
 
       - name: Publish package as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.binary-name.output.binary }}
-          path: dist/${{ steps.binary-name.output.binary }}
+          name: ${{ steps.binary-name.outputs.binary }}
+          path: dist/${{ steps.binary-name.outputs.binary }}
 
   debian-publish:
     needs: debian-build
