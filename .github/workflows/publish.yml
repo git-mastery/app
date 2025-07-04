@@ -186,7 +186,7 @@ jobs:
     needs: debian-build
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
     with:
-      version: ${{ env.VERSION }}
+      version: ${{ github.ref_name }}
     secrets: inherit
 
   windows:
