@@ -77,7 +77,7 @@ jobs:
 
       - name: Build binary
         env:
-          BINARY_NAME: ${{ steps.binary-name.output.binary }}
+          BINARY_NAME: ${{ steps.binary-name.outputs.binary }}
         run: |
           echo $BINARY_NAME
           pyinstaller --onefile main.py --name $BINARY_NAME
