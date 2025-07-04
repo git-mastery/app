@@ -169,7 +169,7 @@ jobs:
           echo -e $"""
           #!/usr/bin/make -f
           %:
-          \tdh $@
+          \tdh \$@
 
           override_dh_auto_install:
           \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 \$(DESTDIR)/usr/bin/gitmastery
