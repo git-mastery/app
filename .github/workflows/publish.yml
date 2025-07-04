@@ -135,14 +135,13 @@ jobs:
 
       - name: Generate Debian packaging files
         working-directory: gitmastery-${{ env.VERSION }}
+        # TODO: Update to something agnostic
+        env:
+          EMAIL: woojiahao1234@gmail.com
+          NAME: Jiahao, Woo
         run: |
           # Create the debian folder
           mkdir debian
-
-          # Set the email and name in the changelog
-          # TODO: Update to something agnostic
-          EMAIL="woojiahao1234@gmail.com"
-          NAME="Jiahao, Woo"
 
           # Generate the changelog
           # TODO: Maybe detect if major version change, then make it urgent
