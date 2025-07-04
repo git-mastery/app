@@ -78,7 +78,8 @@ jobs:
         env:
           BINARY_NAME: ${{ steps.binary-name.output.binary }}
         run: |
-          pyinstaller --onefile --name $BINARY_NAME main.py
+          echo $BINARY_NAME
+          pyinstaller --onefile main.py --name $BINARY_NAME
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
