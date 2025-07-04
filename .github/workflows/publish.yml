@@ -123,6 +123,7 @@ jobs:
           EMAIL: woojiahao1234@gmail.com
           NAME: Jiahao, Woo
         run: |
+          file gitmastery-${VERSION}-linux-${ARCHITECTURE}
           # Create the debian folder
           mkdir debian
 
