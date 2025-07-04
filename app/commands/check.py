@@ -40,7 +40,7 @@ def check_git(verbose: bool) -> None:
         )
     elif config_default_branch_name != "main":
         error(
-            f"{click.style('user.email', bold=True)} needs to be 'main'. Run {click.style('git config --global init.defaultBranch main', bold=True, italic=True)}."
+            f"{click.style('init.defaultBranch', bold=True)} needs to be 'main'. Run {click.style('git config --global init.defaultBranch main', bold=True, italic=True)}."
         )
     else:
         info(
