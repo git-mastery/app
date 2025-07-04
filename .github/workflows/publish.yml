@@ -65,7 +65,7 @@ jobs:
           name: ${{ steps.binary-name.outputs.binary }}
           path: dist/${{ steps.binary-name.outputs.binary }}
 
-  debian-publish:
+  debian-build:
     needs: linux-build
     strategy:
       matrix:
@@ -181,6 +181,13 @@ jobs:
           files: gitmastery_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  debian-publish-apt:
+    needs: debian-build
+    uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
+    with:
+      version: ${{ env.VERSION }}
+    secrets: inherit
 
   windows:
     runs-on: windows-latest
