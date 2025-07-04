@@ -184,6 +184,7 @@ jobs:
 
   debian-publish-apt:
     needs: debian-build
+    permissions: write-all
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
     with:
       version: ${{ github.ref_name }}
