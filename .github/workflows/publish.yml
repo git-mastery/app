@@ -145,7 +145,7 @@ jobs:
 
           # Generate the changelog
           # TODO: Maybe detect if major version change, then make it urgent
-          dch --create -v $VERSION -u low --package gitmastery $CHANGELOG_MESSAGE
+          dch --create -v ${VERSION}-1 -u low --package gitmastery $CHANGELOG_MESSAGE
 
           # Create the control file
           # TODO: Maybe detect if major version change, then make it mandatory
@@ -169,6 +169,8 @@ jobs:
           mkdir debian/source
           echo "3.0 (quilt)" > debian/source/format
 
+          mkdir build
+
           # Provide the rules for installation, using -e to preserve the tab character as per:
           # https://wiki.debian.org/Packaging/Intro
           echo -e $"""#!/usr/bin/make -f
@@ -176,7 +178,7 @@ jobs:
           \tdh \$@
           \n
           override_dh_auto_install:
-          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 \$(DESTDIR)/usr/bin/gitmastery
+          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 build/usr/bin/gitmastery
           """ > debian/rules
 
           echo """usr/bin
