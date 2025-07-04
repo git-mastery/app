@@ -115,7 +115,7 @@ jobs:
 
       - name: Install Debian packaging tools
         run: |
-          sudo apt-get install devscripts
+          sudo apt-get install devscripts build-essential debhelper-compat
 
       - name: Create folder structure for amd64 distribution
         run: |
