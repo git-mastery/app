@@ -41,6 +41,85 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  debian-build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Get binary name
+        id: binary-name
+        env:
+          OS_VERSION: ${{ matrix.os }}
+        run: |
+          ARCHITECTURE=$([$OS_VERSION = "ubuntu-latest"] && "amd64" || "arm64")
+          FILENAME=gitmastery-${GITHUB_REF_NAME#v}-linux-$ARCHITECTURE
+          echo "binary=$FILENAME" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          BINARY_NAME: ${{ steps.binary-name.output.binary }}
+        run: |
+          pyinstaller --onefile --name $BINARY_NAME main.py
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ steps.binary-name.output.binary }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BINARY_NAME: ${{ steps.binary-name.output.binary }}
+
+      - name: Publish package as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.binary-name.output.binary }}
+          path: dist/${{ steps.binary-name.output.binary }}
+
+  debian-publish:
+    needs: debian-build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract version
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Create folder structure
+        run: |
+          mkdir gitmastery-${VERSION}
+
+      - name: Download amd64 binaries from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gitmastery-${{ env.VERSION }}-linux-amd64
+          path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-amd64
+
+      - name: Download arm64 binaries from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gitmastery-${{ env.VERSION }}-linux-arm64
+          path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-arm64
+
+      - name: Logging
+        run: |
+          ls gitmastery-${VERSION}
+          pwd
+
   windows:
     runs-on: windows-latest
 
