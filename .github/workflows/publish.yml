@@ -169,7 +169,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: gitmastery_${{ env.VERSION }}-1-${{ matrix.architecture }}.deb
+          files: gitmastery_${{ env.VERSION }}-1_${{ matrix.architecture }}.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
