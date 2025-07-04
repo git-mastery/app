@@ -108,6 +108,7 @@ jobs:
       - name: Create folder structure
         run: |
           mkdir gitmastery-${VERSION}
+          ls -a
 
       - name: Download amd64 binaries from artifacts
         uses: actions/download-artifact@v4
