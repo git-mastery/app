@@ -95,15 +95,15 @@ jobs:
         run: |
           sudo apt-get install devscripts build-essential debhelper-compat
 
-      - name: Create folder structure for amd64 distribution
+      - name: Create folder structure for ${{ matrix.architecture }} distribution
         run: |
           mkdir gitmastery-${VERSION}-${ARCHITECTURE}
 
       - name: Download ${{ matrix.architecture }} binaries from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: gitmastery-${{ env.VERSION }}-linux-${ARCHITECTURE}
-          path: gitmastery-${{ env.VERSION }}-${ARCHITECTURE}/
+          name: gitmastery-${{ env.VERSION }}-linux-${{ matrix.architecture }}
+          path: gitmastery-${{ env.VERSION }}-${{ matrix.architecture }}/
 
       - name: Create upstream tarball .orig.tar.gz
         run: |
@@ -165,7 +165,7 @@ jobs:
           cat debian/rules
 
           # Build the package
-          dpkg-buildpackage -us -uc -a amd64
+          dpkg-buildpackage -us -uc -a ${ARCHITECTURE}
 
       - name: Logging
         run: |
