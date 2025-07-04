@@ -113,28 +113,22 @@ jobs:
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
           echo $CHANGELOG_MESSAGE
 
-      - name: Create folder structure
+      - name: Install Debian packaging tools
         run: |
-          mkdir gitmastery-${VERSION}
+          sudo apt-get install devscripts
+
+      - name: Create folder structure for amd64 distribution
+        run: |
+          mkdir gitmastery-${VERSION}-amd64
 
       - name: Download amd64 binaries from artifacts
         uses: actions/download-artifact@v4
         with:
           name: gitmastery-${{ env.VERSION }}-linux-amd64
-          path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-amd64
-
-      - name: Download arm64 binaries from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: gitmastery-${{ env.VERSION }}-linux-arm64
-          path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-arm64
-
-      - name: Install Debian packaging tools
-        run: |
-          sudo apt-get install devscripts
+          path: gitmastery-${{ env.VERSION }}-amd64/
 
       - name: Generate Debian packaging files
-        working-directory: gitmastery-${{ env.VERSION }}
+        working-directory: gitmastery-${{ env.VERSION }}-amd64
         # TODO: Update to something agnostic
         env:
           EMAIL: woojiahao1234@gmail.com
@@ -147,10 +141,57 @@ jobs:
           # TODO: Maybe detect if major version change, then make it urgent
           dch --create -v $VERSION -u low --package gitmastery $CHANGELOG_MESSAGE
 
+          # Create the control file
+          # TODO: Maybe detect if major version change, then make it mandatory
+          echo """
+          Source: gitmastery
+          Maintainer: $NAME <$EMAIL>
+          Section: misc
+          Priority: optional
+          Standards-Version: 4.7.0
+          Build-Depends: debhelper-compat (= 13)
+
+          Package: gitmastery
+          Architecture: amd64
+          Depends: ${shlibs:Depends}, ${misc:Depends}
+          Description: execute Git-Mastery
+            gitmastery is a Git learning tool built by the National University of Singapore School of Computing
+          """ > debian/control
+
+          # Copy over the MIT license from the main app to this release
+          cat ../app/LICENSE > debian/copyright
+
+          mkdir debian/source
+          echo "3.0 (quilt)" > debian/source/format
+
+          # Provide the rules for installation, using -e to preserve the tab character as per:
+          # https://wiki.debian.org/Packaging/Intro
+          echo -e $"""
+          #!/usr/bin/make -f
+          %:
+          \tdh $@
+
+          override_dh_auto_install:
+          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 $(DESTDIR)/usr/bin/gitmastery
+          """ > debian/rules
+
+          # Build the package
+          debuild -us -uc
+
       - name: Logging
         run: |
           tree
           cat gitmastery-${VERSION}/debian/changelog
+          cat gitmastery-${VERSION}/debian/control
+          cat gitmastery-${VERSION}/debian/copyright
+          cat gitmastery-${VERSION}/debian/source/format
+          cat gitmastery-${VERSION}/debian/rules
+
+      - name: Download arm64 binaries from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gitmastery-${{ env.VERSION }}-linux-arm64
+          path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-arm64
 
   windows:
     runs-on: windows-latest
