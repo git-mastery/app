@@ -13,35 +13,7 @@ permissions:
   issues: read
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Build binary
-        run: |
-          pyinstaller --onefile --name gitmastery-linux main.py
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/gitmastery-linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  debian-build:
+  linux-build:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
