@@ -131,7 +131,7 @@ jobs:
 
       - name: Install Debian packaging tools
         run: |
-          sudo apt-get install devscripts git-buildpackage
+          sudo apt-get install devscripts
 
       - name: Generate Debian packaging files
         working-directory: gitmastery-${{ env.VERSION }}
