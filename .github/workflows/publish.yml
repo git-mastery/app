@@ -185,7 +185,7 @@ jobs:
           cat debian/rules
 
           # Build the package
-          debuild -us -uc
+          dpkg-buildpackage -us -uc -a amd64
 
       - name: Logging
         run: |
