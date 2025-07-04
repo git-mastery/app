@@ -127,6 +127,12 @@ jobs:
           name: gitmastery-${{ env.VERSION }}-linux-amd64
           path: gitmastery-${{ env.VERSION }}-amd64/
 
+      - name: Create upstream tarball .orig.tar.gz
+        run: |
+          # Create .orig.tar.gz file
+          tar -cvf gitmastery-${VERSION}-amd64.orig.tar.gz gitmastery-${VERSION}-amd64/gitmastery-${VERSION}-linux-amd64
+          tree
+
       - name: Generate Debian packaging files
         working-directory: gitmastery-${{ env.VERSION }}-amd64
         # TODO: Update to something agnostic
