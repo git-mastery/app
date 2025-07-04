@@ -72,6 +72,7 @@ jobs:
             ARCHITECTURE=arm64
           fi
           FILENAME=gitmastery-${GITHUB_REF_NAME#v}-linux-$ARCHITECTURE
+          echo $FILENAME
           echo "binary=$FILENAME" >> $GITHUB_OUTPUT
 
       - name: Build binary
