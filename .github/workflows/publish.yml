@@ -72,16 +72,13 @@ jobs:
             ARCHITECTURE=arm64
           fi
           FILENAME=gitmastery-${GITHUB_REF_NAME#v}-linux-$ARCHITECTURE
-          echo $FILENAME
           echo "binary=$FILENAME" >> $GITHUB_OUTPUT
 
       - name: Build binary
         env:
           BINARY_NAME: ${{ steps.binary-name.outputs.binary }}
         run: |
-          echo $BINARY_NAME
           pyinstaller --onefile main.py --name $BINARY_NAME
-          tree
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -108,7 +105,6 @@ jobs:
       - name: Create folder structure
         run: |
           mkdir gitmastery-${VERSION}
-          ls -a
 
       - name: Download amd64 binaries from artifacts
         uses: actions/download-artifact@v4
@@ -122,10 +118,32 @@ jobs:
           name: gitmastery-${{ env.VERSION }}-linux-arm64
           path: gitmastery-${{ env.VERSION }}/gitmastery-${{ env.VERSION }}-linux-arm64
 
+      - name: Install Debian packaging tools
+        run: |
+          sudo apt-get install devscripts git-buildpackage
+
+      - name: Generate Debian packaging files
+        working-directory: gitmastery-${{ env.VERSION }}
+        run: |
+          # Create the debian folder
+          mkdir debian
+
+          # Get the tag's commit message
+          CHANGELOG_MESSAGE=$(git show ${VERSION} --no-patch --pretty=format:%s)
+
+          # Set the email and name in the changelog
+          # TODO: Update to something agnostic
+          EMAIL="woojiahao1234@gmail.com"
+          NAME="Jiahao, Woo"
+
+          # Generate the changelog
+          # TODO: Maybe detect if major version change, then make it urgent
+          dch --create -v $VERSION -u low --package gitmastery $CHANGELOG_MESSAGE
+
       - name: Logging
         run: |
-          ls gitmastery-${VERSION}
-          pwd
+          tree
+          cat gitmastery-${VERSION}/debian/changelog
 
   windows:
     runs-on: windows-latest
