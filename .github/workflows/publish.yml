@@ -143,8 +143,7 @@ jobs:
 
           # Create the control file
           # TODO: Maybe detect if major version change, then make it mandatory
-          echo """
-          Source: gitmastery
+          echo """Source: gitmastery
           Maintainer: $NAME <$EMAIL>
           Section: misc
           Priority: optional
@@ -166,17 +165,15 @@ jobs:
 
           # Provide the rules for installation, using -e to preserve the tab character as per:
           # https://wiki.debian.org/Packaging/Intro
-          echo -e $"""
-          #!/usr/bin/make -f
+          echo -e $"""#!/usr/bin/make -f
           %:
           \tdh \$@
-
+          \n
           override_dh_auto_install:
           \tinstall -D -m 0755 gitmastery-${VERSION}-linux-amd64 \$(DESTDIR)/usr/bin/gitmastery
           """ > debian/rules
 
-          echo """
-          usr/bin
+          echo """usr/bin
           """ > debian/gitmastery.dirs
 
           cat debian/rules
