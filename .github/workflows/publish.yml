@@ -166,14 +166,10 @@ jobs:
           # Build the package
           dpkg-buildpackage -us -uc -a ${ARCHITECTURE}
 
-      - name: Logging
-        run: |
-          tree
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/gitmastery_${{ env.VERSION }}-1-${{ matrix.architecture }}.deb
+          files: gitmastery_${{ env.VERSION }}-1-${{ matrix.architecture }}.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
