@@ -167,8 +167,6 @@ jobs:
           echo """usr/bin
           """ > debian/gitmastery.dirs
 
-          mkdir -p 
-
           cat debian/rules
 
           # Build the package
