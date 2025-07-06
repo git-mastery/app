@@ -66,6 +66,8 @@ jobs:
           path: dist/${{ steps.binary-name.outputs.binary }}
 
   debian-build:
+    # We support both ARM64 and AMD64 since Debian comes with support for
+    # these two out of the box
     needs: linux-build
     strategy:
       matrix:
@@ -114,7 +116,6 @@ jobs:
         run: |
           # Create .orig.tar.gz file
           tar -czf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-${ARCHITECTURE}/gitmastery-${VERSION}-linux-${ARCHITECTURE}
-          tree
 
       - name: Generate Debian packaging files
         working-directory: gitmastery-${{ env.VERSION }}-${{ env.ARCHITECTURE }}
@@ -155,6 +156,8 @@ jobs:
 
           # Provide the rules for installation, using -e to preserve the tab character as per:
           # https://wiki.debian.org/Packaging/Intro
+          # $(DESTDIR) resolves to debian/binarypackage/ as seen in 
+          # https://www.debian.org/doc/manuals/debmake-doc/ch06.en.html#ftn.idp1797
           echo -e $"""#!/usr/bin/make -f
           %:
           \tdh \$@
@@ -189,6 +192,96 @@ jobs:
     with:
       version: ${{ github.ref_name }}
     secrets: inherit
+
+  arch-publish:
+    # Since Arch linux currently only supports x86_64 out of the box, we will focus
+    # on supporting that first
+    needs: linux-build
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    env:
+      ARCHITECTURE: amd64
+
+    environment: Main
+
+    steps:
+      - name: Setup Arch dependencies
+        run: |
+          pacman -Syu --noconfirm git base-devel
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder /github
+
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          path: "app"
+
+      - name: Set environment variables
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+          # Get the tag's commit message
+          cd app/
+          CHANGELOG_MESSAGE=$(git show ${GITHUB_REF_NAME} --no-patch --pretty=format:%s)
+          echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
+
+      - name: Setup SSH for Github Actions
+        env:
+          AUR_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${AUR_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          # TODO: Maybe swap to a SoC specific account
+          git config --global user.name "Jiahao, Woo"
+          git config --global user.email "woojiahao1234@gmail.com"
+
+      - name: Create AUR package repository
+        run: git clone ssh://aur@aur.archlinux.org/gitmastery.git aur-pkg
+
+      - name: Download ${{ env.ARCHITECTURE }} binaries from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gitmastery-${{ env.VERSION }}-linux-${{ env.ARCHITECTURE }}
+          path: aur-pkg/
+
+      - name: Publish to AUR
+        run: |
+          cd aur-pkg
+
+          BINARY_NAME=gitmastery-${VERSION}-linux-${ARCHITECTURE}
+
+          echo -e $"""$CHANGELOG_MESSAGE\n""" >> gitmastery.changelog
+
+          echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
+          pkgname=gitmastery
+          pkgver=\"${GITHUB_REF_NAME}\"
+          pkgrel=1
+          pkgdesc=\"Git-Mastery CLI for practicing Git\"
+          arch=('x86_64')
+          url='https://github.com/git-mastery/app'
+          license=('MIT')
+          depends=(
+            'python'
+          )
+          changelog=\"gitmastery.changelog\"
+          source=(\"${BINARY_NAME}\")
+          sha256sums=('SKIP')
+
+          package() {
+            install -D -m 0755 \"\$srdir/$BINARY_NAME\" \"\$pkgdir/usr/bin/gitmastery\"
+            chmod 755 \"\$pkgdir/usr/bin/gitmastery\"
+          }
+          """ >> PKGBUILD
+
+          sudo -u builder bash -c "makepkg --printsrcinfo" > .SRCINFO
+
+          git add .
+          git commit -m "Update package"
+          git push
 
   windows:
     runs-on: windows-latest
