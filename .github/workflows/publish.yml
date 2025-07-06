@@ -248,7 +248,7 @@ jobs:
           cat gitmastery.changelog
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
-          pkgname=gitmastery
+          pkgname=gitmastery-bin
           pkgver=\"${GITHUB_REF_NAME}\"
           pkgrel=1
           pkgdesc=\"Git-Mastery CLI for practicing Git\"
