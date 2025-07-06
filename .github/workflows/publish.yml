@@ -130,7 +130,7 @@ jobs:
 
           # Generate the changelog
           # TODO: Maybe detect if major version change, then make it urgent
-          dch --create -v ${VERSION}-1 -u low --package gitmastery $CHANGELOG_MESSAGE
+          dch --create -v ${VERSION}-1 -u low --package gitmastery "$CHANGELOG_MESSAGE"
 
           # Create the control file
           # TODO: Maybe detect if major version change, then make it mandatory
