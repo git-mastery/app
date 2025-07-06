@@ -205,13 +205,6 @@ jobs:
     environment: Main
 
     steps:
-      - name: Setup Arch dependencies
-        run: |
-          pacman -Syu --noconfirm git base-devel
-          useradd -m builder
-          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R builder:builder /github
-
       - name: Checkout source
         uses: actions/checkout@v3
         with:
