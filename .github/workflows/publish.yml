@@ -233,7 +233,7 @@ jobs:
           git config --global init.defaultBranch master
 
       - name: Create AUR package repository
-        run: git clone ssh://aur@aur.archlinux.org/gitmastery.git aur-pkg
+        run: git clone ssh://aur@aur.archlinux.org/gitmastery-bin.git aur-pkg
 
       - name: Publish to AUR
         env:
