@@ -285,6 +285,8 @@ jobs:
               chown -R builder:builder /pkg && \
               su builder -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'
             "
+          # Fix file ownership after Docker run
+          sudo chown -R $(id -u):$(id -g) .
 
           tree
 
