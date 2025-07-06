@@ -198,7 +198,6 @@ jobs:
     # on supporting that first
     needs: linux-build
     runs-on: ubuntu-latest
-    container: archlinux:base-devel
 
     env:
       ARCHITECTURE: amd64
@@ -277,7 +276,14 @@ jobs:
           }
           """ >> PKGBUILD
 
-          sudo -u builder bash -c "makepkg --printsrcinfo" > .SRCINFO
+          # Generate the .SRCINFO within a Docker container
+          # We attach the current directory (aur-pkg) as the pkg directory volume
+          docker run --rm \
+            -v $PWD:/pkg \
+            archlinux:base-devel \
+            bash -c "pacman -Syu --noconfirm && cd /pkg && makepkg --printsrcinfo > .SRCINFO
+
+          tree
 
           git add .
           git commit -m "Update package"
