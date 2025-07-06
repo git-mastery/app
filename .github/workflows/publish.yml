@@ -230,6 +230,7 @@ jobs:
           # TODO: Maybe swap to a SoC specific account
           git config --global user.name "Jiahao, Woo"
           git config --global user.email "woojiahao1234@gmail.com"
+          git config --global init.defaultBranch master
 
       - name: Create AUR package repository
         run: git clone ssh://aur@aur.archlinux.org/gitmastery.git aur-pkg
@@ -247,6 +248,7 @@ jobs:
           BINARY_NAME=gitmastery-${VERSION}-linux-${ARCHITECTURE}
 
           echo -e $"""$CHANGELOG_MESSAGE\n""" >> gitmastery.changelog
+          cat gitmastery.changelog
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
           pkgname=gitmastery
@@ -268,13 +270,14 @@ jobs:
             chmod 755 \"\$pkgdir/usr/bin/gitmastery\"
           }
           """ >> PKGBUILD
+          cat PKGBUILD
 
           # Generate the .SRCINFO within a Docker container
           # We attach the current directory (aur-pkg) as the pkg directory volume
           docker run --rm \
             -v $PWD:/pkg \
             archlinux:base-devel \
-            bash -c "pacman -Syu --noconfirm && cd /pkg && makepkg --printsrcinfo > .SRCINFO
+            bash -c "pacman -Syu --noconfirm && cd /pkg && makepkg --printsrcinfo > .SRCINFO"
 
           tree
 
