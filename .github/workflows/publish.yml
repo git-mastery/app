@@ -235,13 +235,9 @@ jobs:
       - name: Create AUR package repository
         run: git clone ssh://aur@aur.archlinux.org/gitmastery.git aur-pkg
 
-      - name: Download ${{ env.ARCHITECTURE }} binaries from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: gitmastery-${{ env.VERSION }}-linux-${{ env.ARCHITECTURE }}
-          path: aur-pkg/
-
       - name: Publish to AUR
+        env:
+          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ github.ref_name }}/gitmastery-${{ github.ref_name }}-linux-amd64
         run: |
           cd aur-pkg
 
@@ -263,7 +259,7 @@ jobs:
             'python'
           )
           changelog=\"gitmastery.changelog\"
-          source=(\"${BINARY_NAME}\")
+          source=(\"${BINARY_NAME}::${RELEASE_AMD64_URL}\")
           sha256sums=('SKIP')
 
           package() {
