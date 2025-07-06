@@ -43,7 +43,7 @@ To develop the CLI locally, create a virtualenv and download the requirements to
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```                                                &
+```
 
 ## Publishing
 
