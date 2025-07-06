@@ -18,4 +18,7 @@ git tag v*.*.*
 git push --tags
 ```
 
-A Github Actions workflow exists to automatically publish the changes to Homebrew (more support to come).
+A Github Actions workflow exists to automatically publish the changes to Homebrew.
+
+Linux packaging is performed to Debian and Arch based distros. Notes can be
+[found here.](https://woojiahao.notion.site/linux-packaging-226f881eda0580d68bc8dc6f8e1d5d0d?source=copy_link)
