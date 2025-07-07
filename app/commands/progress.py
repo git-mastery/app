@@ -7,7 +7,7 @@ from datetime import datetime
 import click
 import pytz
 
-from app.commands.check import check
+from app.commands.check import git, github
 from app.commands.download import setup_exercise_folder
 from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import clone, delete_repo, fork, get_username, has_fork
@@ -23,6 +23,9 @@ PROGRESS_REPOSITORY_NAME = "git-mastery/progress"
 
 @click.group()
 def progress() -> None:
+    """
+    Tracks the progress made by students on Git-Mastery exercises.
+    """
     pass
 
 
@@ -40,8 +43,8 @@ def setup(ctx: click.Context) -> None:
             f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
 
-    ctx.invoke(check, phase="git")
-    ctx.invoke(check, phase="github")
+    ctx.invoke(git)
+    ctx.invoke(github)
 
     info("Setting up progress tracker for you")
     info(
@@ -82,8 +85,8 @@ def reset(ctx: click.Context) -> None:
     username = get_username(verbose)
     fork_name = f"{username}-gitmastery-progress"
 
-    ctx.invoke(check, phase="git")
-    ctx.invoke(check, phase="github")
+    ctx.invoke(git)
+    ctx.invoke(github)
 
     gitmastery_path, _, gitmastery_config = require_gitmastery_root()
     gitmastery_exercise_path, cds, gitmastery_exercise_config = (

@@ -9,7 +9,7 @@ from typing import Dict, Optional
 import click
 import pytz
 
-from app.commands.check import check
+from app.commands.check import git
 from app.exercise_config import ExerciseConfig
 from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import (
@@ -140,7 +140,7 @@ def download(ctx: click.Context, exercise: str) -> None:
     if config.requires_git:
         try:
             info("Exercise requires Git, checking if you have it setup")
-            ctx.invoke(check, phase="git")
+            ctx.invoke(git)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
@@ -155,7 +155,7 @@ def download(ctx: click.Context, exercise: str) -> None:
     if config.requires_github:
         try:
             info("Exercise requires Github, checking if you have it setup")
-            ctx.invoke(check, phase="github")
+            ctx.invoke(git)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
