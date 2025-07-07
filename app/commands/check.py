@@ -8,7 +8,7 @@ from app.utils.git_cli_utils import get_git_config, is_git_installed
 @click.group()
 def check() -> None:
     """
-    Verifies if Git/Github CLI is properly installed for Git-Mastery
+    Verifies if Git/Github CLI is properly installed for Git-Mastery.
     """
     pass
 
