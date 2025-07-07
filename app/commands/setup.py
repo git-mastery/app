@@ -39,12 +39,12 @@ def setup(ctx: click.Context) -> None:
     )
     info("Next steps:")
     info(
-        f"\t1. Download exercises using {click.style('gitmastery download <exercise>', bold=True, italic=True, underline=True)}"
+        f"\t1. Download exercises using {click.style('gitmastery download <exercise>', bold=True, italic=True)}"
     )
     info(
         f"\t2. Get the list of available exercises here: {click.style('https://git-mastery.github.io/exercises', bold=True, italic=True, underline=True)}"
     )
     info(
-        f"\t3. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True, underline=True)}"
+        f"\t3. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True)}"
     )
     info("Enjoy, and all the best!")
