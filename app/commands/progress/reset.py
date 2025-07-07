@@ -7,7 +7,8 @@ from datetime import datetime
 import click
 import pytz
 
-from app.commands.check import git, github
+from app.commands.check.git import git
+from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
 from app.commands.progress.constants import STUDENT_PROGRESS_FORK_NAME
 from app.utils.click_utils import error, info, success, warn

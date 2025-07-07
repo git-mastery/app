@@ -9,7 +9,7 @@ from typing import Dict, Optional
 import click
 import pytz
 
-from app.commands.check import git
+from app.commands.check.git import git
 from app.exercise_config import ExerciseConfig
 from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import (

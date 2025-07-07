@@ -3,7 +3,8 @@ import os
 
 import click
 
-from app.commands.check import git, github
+from app.commands.check.git import git
+from app.commands.check.github import github
 from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
     STUDENT_PROGRESS_FORK_NAME,

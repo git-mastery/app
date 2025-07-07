@@ -3,7 +3,7 @@ import os
 
 import click
 
-from app.commands.check import git
+from app.commands.check.git import git
 from app.commands.progress.constants import PROGRESS_REPOSITORY_NAME
 from app.utils.click_utils import error, info, prompt
 from app.utils.gh_cli_utils import clone
