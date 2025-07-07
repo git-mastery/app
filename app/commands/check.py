@@ -5,9 +5,46 @@ from app.utils.gh_cli_utils import is_authenticated, is_github_cli_installed
 from app.utils.git_cli_utils import get_git_config, is_git_installed
 
 
-def check_git(verbose: bool) -> None:
+@click.group()
+def check() -> None:
+    """
+    Verifies if Git/Github CLI is properly installed for Git-Mastery
+    """
+    pass
+
+
+@check.command()
+@click.pass_context
+def github(ctx: click.Context) -> None:
+    """
+    Verifies if Github and Github CLI is installed and setup for Git-Mastery.
+    """
+    verbose = ctx.obj["VERBOSE"]
+
+    info("Checking that you have Github CLI is installed and configured")
+
+    if is_github_cli_installed(verbose):
+        info("Github CLI is installed")
+    else:
+        error("Github CLI is not installed yet")
+
+    if is_authenticated(verbose):
+        info("You have authenticated Github CLI")
+    else:
+        error("You have not authenticated Github CLI")
+
+    success("Github CLI is installed and configured")
+
+
+@check.command()
+@click.pass_context
+def git(ctx: click.Context) -> None:
+    """
+    Verifies if Git is installed and setup for Git-Mastery.
+    """
+    verbose = ctx.obj["VERBOSE"]
+
     info("Checking that you have Git installed and configured")
-    # TODO: verify that exit code is 1 on failure
     if is_git_installed(verbose):
         info("Git is installed")
     else:
@@ -48,42 +85,3 @@ def check_git(verbose: bool) -> None:
         )
 
     success("Git is installed and configured")
-
-
-def check_github(verbose: bool) -> None:
-    info("Checking that you have Github CLI is installed and configured")
-
-    if is_github_cli_installed(verbose):
-        info("Github CLI is installed")
-    else:
-        error("Github CLI is not installed yet")
-
-    if is_authenticated(verbose):
-        info("You have authenticated Github CLI")
-    else:
-        error("You have not authenticated Github CLI")
-
-    success("Github CLI is installed and configured")
-
-
-@click.command()
-@click.argument("phase")
-@click.pass_context
-def check(ctx: click.Context, phase: str) -> None:
-    """
-    Verifies if Git/Github CLI is properly installed for Git-Mastery
-
-    PHASE can either be 'git' or 'github'.
-    """
-    verbose = ctx.obj["VERBOSE"]
-    allowed = {"git", "github"}
-    phase = phase.strip().lower()
-    if phase not in allowed:
-        error("Select 'git' or 'github' for the phase to check")
-
-    info(f"Checking {phase}...")
-
-    if phase == "git":
-        check_git(verbose)
-    elif phase == "github":
-        check_github(verbose)

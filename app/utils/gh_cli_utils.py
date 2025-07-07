@@ -8,6 +8,8 @@ from app.utils.click_utils import error, info
 
 def is_github_cli_installed(verbose: bool) -> bool:
     result = subprocess.run(["gh", "--version"], capture_output=True, text=True)
+    # If git is not installed yet, we should expect a 127 exit code
+    # 127 indicating that the command not found: https://stackoverflow.com/questions/1763156/127-return-code-from
     if verbose:
         if result.returncode == 0:
             print(result.stdout)

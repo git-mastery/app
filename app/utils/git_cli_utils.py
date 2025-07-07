@@ -25,6 +25,8 @@ def push(remote: str, branch: str, verbose: bool) -> None:
 
 
 def is_git_installed(verbose: bool) -> bool:
+    # If git is not installed yet, we should expect a 127 exit code
+    # 127 indicating that the command not found: https://stackoverflow.com/questions/1763156/127-return-code-from
     result = subprocess.run(["git", "--version"], capture_output=True, text=True)
     if verbose:
         if result.returncode == 0:
