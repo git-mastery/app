@@ -36,6 +36,11 @@ def is_git_installed(verbose: bool) -> bool:
     return result.returncode == 0
 
 
+def remove_remote(remote: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(["git", "remote", "remove", remote], stdout=stdout, stderr=stderr)
+
+
 def get_git_config(key: str, verbose: bool) -> Optional[str]:
     result = subprocess.run(
         ["git", "config", "--global", "--get", key], capture_output=True, text=True

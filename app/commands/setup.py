@@ -4,7 +4,10 @@ import os
 import click
 
 from app.commands.check import git
+from app.commands.progress import PROGRESS_REPOSITORY_NAME
 from app.utils.click_utils import error, info, prompt
+from app.utils.gh_cli_utils import clone
+from app.utils.git_cli_utils import remove_remote
 
 
 @click.command()
@@ -13,6 +16,8 @@ def setup(ctx: click.Context) -> None:
     """
     Sets up Git-Mastery for your local machine.
     """
+    verbose = ctx.obj["VERBOSE"]
+
     info(
         "Welcome to Git-Mastery! We will be setting up Git-Mastery for your local machine."
     )
@@ -31,9 +36,17 @@ def setup(ctx: click.Context) -> None:
 
     info(f"Creating directory {click.style(directory_path, italic=True, bold=True)}")
     os.makedirs(directory_name, exist_ok=False)
+    os.chdir(directory_path)
 
-    with open(os.path.join(directory_name, ".gitmastery.json"), "w") as gitmastery_file:
-        gitmastery_file.write(json.dumps({}))
+    info("Setting up your local progress tracker...")
+    clone(PROGRESS_REPOSITORY_NAME, verbose)
+    with open(".gitmastery.json", "w") as gitmastery_file:
+        gitmastery_file.write(
+            json.dumps({"progress_local": True, "progress_remote": False})
+        )
+
+    os.chdir(os.path.join(directory_path, "progress"))
+    remove_remote("origin", verbose)
 
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
@@ -46,6 +59,6 @@ def setup(ctx: click.Context) -> None:
         f"\t2. Get the list of available exercises here: {click.style('https://git-mastery.github.io/exercises', bold=True, italic=True, underline=True)}"
     )
     info(
-        f"\t3. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True)}"
+        f"\t3. Setup remote progress tracking using {click.style('gitmastery progress sync on', bold=True, italic=True)}"
     )
     info("Enjoy, and all the best!")
