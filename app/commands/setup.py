@@ -13,7 +13,7 @@ def setup(ctx: click.Context) -> None:
     Sets up Git-Mastery for your local machine.
     """
     info(
-        "Welcome to Git-Mastery! We will be setting up several components of Git-Mastery to ensure an optimal experience working on the various exercises."
+        "Welcome to Git-Mastery! We will be setting up Git-Mastery for your local machine."
     )
     ctx.invoke(check, phase="git")
     directory_name = prompt(
@@ -29,7 +29,8 @@ def setup(ctx: click.Context) -> None:
     directory_path = os.path.join(os.getcwd(), directory_name)
 
     info(f"Creating directory {click.style(directory_path, italic=True, bold=True)}")
-    os.makedirs(directory_name, exist_ok=True)
+    os.makedirs(directory_name, exist_ok=False)
+
     with open(os.path.join(directory_name, ".gitmastery.json"), "w") as gitmastery_file:
         gitmastery_file.write(json.dumps({}))
 
@@ -41,6 +42,9 @@ def setup(ctx: click.Context) -> None:
         f"\t1. Download exercises using {click.style('gitmastery download <exercise>', bold=True, italic=True, underline=True)}"
     )
     info(
-        f"\t2. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True, underline=True)}"
+        f"\t2. Get the list of available exercises using {click.style('gitmastery exercises', bold=True, italic=True, underline=True)}"
     )
-    info("Enjoy!")
+    info(
+        f"\t3. Setup progress tracking using {click.style('gitmastery progress setup', bold=True, italic=True, underline=True)}"
+    )
+    info("Enjoy, and all the best!")
