@@ -34,7 +34,10 @@ def success(message: str) -> None:
 
 
 def prompt(message: str, default: Optional[Any] = None) -> Any:
-    return click.prompt(f"\n{message}", default=default)
+    return click.prompt(
+        f"{click.style(' PROMPT ', fg='black', bg='magenta', bold=True)} {message}",
+        default=default,
+    )
 
 
 def confirm(message: str, abort: bool = False) -> bool:
