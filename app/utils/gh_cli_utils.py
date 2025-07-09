@@ -1,6 +1,7 @@
 import os
+import re
 import subprocess
-from typing import List
+from typing import Dict, List, Literal, Optional
 
 from app.utils.cli_utils import get_stdout_stderr
 from app.utils.click_utils import error, info
@@ -16,6 +17,30 @@ def is_github_cli_installed(verbose: bool) -> bool:
         else:
             print(result.stderr)
     return result.returncode == 0
+
+
+def get_https_or_ssh(verbose: bool) -> Optional[str]:
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=dict(os.environ, **{"GH_PAGER": "cat"}),
+        )
+        if verbose:
+            print(result.stdout.strip())
+        regex = re.compile(r"Git operations protocol: (\w+)")
+        match = regex.search(result.stdout.strip())
+        if match:
+            protocol = match.group(1).lower()
+            return protocol
+        else:
+            return None
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(e.stderr)
+        return None
 
 
 def is_authenticated(verbose: bool) -> bool:
@@ -38,6 +63,42 @@ def has_fork(fork_name: str, verbose: bool) -> bool:
         if verbose:
             print(e.stderr)
         return False
+
+
+def get_repo_ssh_url(repo: str, verbose: bool) -> Optional[str]:
+    try:
+        result = subprocess.run(
+            ["gh", "repo", "view", repo, "--json", "sshUrl", "--jq", ".sshUrl"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=dict(os.environ, **{"GH_PAGER": "cat"}),
+        )
+        if verbose:
+            print(result.stdout.strip())
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(e.stderr)
+        return None
+
+
+def get_repo_https_url(repo: str, verbose: bool) -> Optional[str]:
+    try:
+        result = subprocess.run(
+            ["gh", "repo", "view", repo, "--json", "url", "--jq", ".url"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=dict(os.environ, **{"GH_PAGER": "cat"}),
+        )
+        if verbose:
+            print(result.stdout.strip())
+        return result.stdout.strip() + ".git"
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(e.stderr)
+        return None
 
 
 def fork(repository_name: str, fork_name: str, verbose: bool) -> None:

@@ -41,6 +41,11 @@ def remove_remote(remote: str, verbose: bool) -> None:
     subprocess.run(["git", "remote", "remove", remote], stdout=stdout, stderr=stderr)
 
 
+def add_remote(remote: str, url: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(["git", "remote", "add", remote, url], stdout=stdout, stderr=stderr)
+
+
 def get_git_config(key: str, verbose: bool) -> Optional[str]:
     result = subprocess.run(
         ["git", "config", "--global", "--get", key], capture_output=True, text=True
