@@ -23,6 +23,9 @@ from app.utils.gitmastery_utils import (
 @click.command()
 @click.pass_context
 def reset(ctx: click.Context) -> None:
+    """
+    Resets the progress of the current exercise.
+    """
     verbose = ctx.obj["VERBOSE"]
 
     download_time = datetime.now(tz=pytz.UTC)
