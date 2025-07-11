@@ -105,17 +105,17 @@ def on(ctx: click.Context) -> None:
         commit("Sync progress with local machine", verbose)
         push("origin", "main", verbose)
 
-        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
-        if len(prs) == 0:
-            warn("No pull request created for progress. Creating one now")
-            pull_request(
-                "git-mastery/progress",
-                "main",
-                f"{username}:main",
-                f"[{username}] Progress",
-                "Automated",
-                verbose,
-            )
+    prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+    if len(prs) == 0:
+        warn("No pull request created for progress. Creating one now")
+        pull_request(
+            "git-mastery/progress",
+            "main",
+            f"{username}:main",
+            f"[{username}] Progress",
+            "Automated",
+            verbose,
+        )
 
     success("You have setup the progress tracker for Git-Mastery!")
 
