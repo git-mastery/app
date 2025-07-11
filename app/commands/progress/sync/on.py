@@ -15,8 +15,10 @@ from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import (
     clone_with_custom_name,
     fork,
+    get_prs,
     get_username,
     has_fork,
+    pull_request,
 )
 from app.utils.git_cli_utils import add_all, add_remote, commit, push
 from app.utils.gitmastery_utils import (
@@ -102,6 +104,18 @@ def on(ctx: click.Context) -> None:
         add_all(verbose)
         commit("Sync progress with local machine", verbose)
         push("origin", "main", verbose)
+
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        if len(prs) == 0:
+            warn("No pull request created for progress. Creating one now")
+            pull_request(
+                "git-mastery/progress",
+                "main",
+                f"{username}:main",
+                f"[{username}] Progress",
+                "Automated",
+                verbose,
+            )
 
     success("You have setup the progress tracker for Git-Mastery!")
 
