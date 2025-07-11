@@ -19,6 +19,13 @@ def commit(message: str, verbose: bool) -> None:
     subprocess.run(["git", "commit", "-m", message], stdout=stdout, stderr=stderr)
 
 
+def empty_commit(message: str, verbose: bool) -> None:
+    stdout, stderr = get_stdout_stderr(verbose)
+    subprocess.run(
+        ["git", "commit", "-m", message, "--allow-empty"], stdout=stdout, stderr=stderr
+    )
+
+
 def push(remote: str, branch: str, verbose: bool) -> None:
     stdout, stderr = get_stdout_stderr(verbose)
     subprocess.run(["git", "push", "-u", remote, branch], stdout=stdout, stderr=stderr)

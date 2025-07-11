@@ -18,7 +18,7 @@ from app.utils.gh_cli_utils import (
     get_username,
     has_fork,
 )
-from app.utils.git_cli_utils import add_all, commit, init
+from app.utils.git_cli_utils import add_all, commit, empty_commit, init
 from app.utils.gitmastery_utils import (
     download_file,
     execute_py_file_function_from_url,
@@ -88,8 +88,11 @@ def setup_exercise_folder(
 
     if config.exercise_repo.init:
         init(verbose)
-        add_all(verbose)
-        commit("Initial commit", verbose)
+        if download_resources:
+            add_all(verbose)
+            commit("Initial commit", verbose)
+        else:
+            empty_commit("Initial commit", verbose)
 
     info("Executing download setup")
     execute_py_file_function_from_url(
