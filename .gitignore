@@ -174,3 +174,5 @@ cython_debug/
 .pypirc
 
 gitmastery-exercises/
+
+Gemfile.lock
