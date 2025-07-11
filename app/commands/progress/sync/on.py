@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+from re import LOCALE
 
 import click
 
@@ -21,7 +23,7 @@ from app.utils.gh_cli_utils import (
     get_username,
     has_fork,
 )
-from app.utils.git_cli_utils import add_remote
+from app.utils.git_cli_utils import add_all, add_remote, commit, push
 from app.utils.gitmastery_utils import (
     GITMASTERY_CONFIG_NAME,
     generate_cds_string,
@@ -60,39 +62,51 @@ def on(ctx: click.Context) -> None:
         warn("You don't have a fork yet, creating one")
         fork(PROGRESS_REPOSITORY_NAME, fork_name, verbose)
 
-    info(
-        f"Checking if you have a clone for {click.style(fork_name, bold=True, italic=True)}"
+    # To avoid sync issues, we save the local progress and delete the local repository
+    # before cloning again. This should automatically setup the origin and upstream
+    # remotes as well
+    local_progress = []
+    local_progress_filepath = os.path.join(LOCAL_FOLDER_NAME, "progress.json")
+    if os.path.isfile(local_progress_filepath):
+        with open(local_progress_filepath, "r") as file:
+            local_progress = json.load(file)
+    shutil.rmtree(LOCAL_FOLDER_NAME)
+
+    clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME, verbose)
+
+    # To reconcile the difference between local and remote progress, we merge by
+    # (exercise_name, start_time) which should be unique
+    remote_progress = []
+    if os.path.isfile(local_progress_filepath):
+        with open(local_progress_filepath, "r") as file:
+            remote_progress = json.load(file)
+
+    synced_progress = []
+    seen = set()
+    for entry in local_progress + remote_progress:
+        key = (entry["exercise_name"], entry["started_at"])
+        if key in seen:
+            # Seen this entry before so we can ignore it
+            continue
+        seen.add(key)
+        synced_progress.append(entry)
+
+    synced_progress.sort(
+        key=lambda entry: (entry["exercise_name"], entry["started_at"])
     )
-    if os.path.isdir(LOCAL_FOLDER_NAME):
-        info("You already have the progress repository cloned")
-    else:
-        warn("You don't have a clone of the progress repository yet, creating one")
-        clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME, verbose)
 
-    os.chdir("progress")
-    auth_type = get_https_or_ssh(verbose)
-    if auth_type is None:
-        error(
-            "You should have been authenticated via HTTPS or SSH. Check your Github CLI installation"
-        )
+    with open(local_progress_filepath, "w") as file:
+        file.write(json.dumps(synced_progress))
 
-    origin_fork_url = (
-        get_repo_ssh_url(fork_name, verbose)
-        if auth_type == "ssh"
-        else get_repo_https_url(fork_name, verbose)
-    )
-    if origin_fork_url is None:
-        error("Fork URL should be present. Contact the Git-Mastery team.")
-
-    assert origin_fork_url is not None
-    add_remote("origin", origin_fork_url, verbose)
-
-    upstream_fork_url = (
-        "git@github.com:git-mastery/progress.git"
-        if auth_type == "ssh"
-        else "https://github.com/git-mastery/progress.git"
-    )
-    add_remote("upstream", upstream_fork_url, verbose)
+    # If we have seen more unique entries than what was stored remotely, we need to
+    # push the changes
+    had_update = len(seen) > len(remote_progress)
+    if had_update:
+        os.chdir(LOCAL_FOLDER_NAME)
+        print("Had update")
+        add_all(verbose)
+        commit("Sync progress with local machine", verbose)
+        push("origin", "main", verbose)
 
     success("You have setup the progress tracker for Git-Mastery!")
 

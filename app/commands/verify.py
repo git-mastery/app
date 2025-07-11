@@ -13,6 +13,11 @@ from git_autograder import (
 )
 from git_autograder.output import GitAutograderOutput
 
+from app.commands.progress.constants import (
+    LOCAL_FOLDER_NAME,
+    PROGRESS_REPOSITORY_NAME,
+    STUDENT_PROGRESS_FORK_NAME,
+)
 from app.utils.click_utils import error, info, warn
 from app.utils.gh_cli_utils import get_prs, get_username, pull_request
 from app.utils.git_cli_utils import add_all, commit, push
@@ -39,27 +44,25 @@ def print_output(output: GitAutograderOutput) -> None:
 
 
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
-    # TODO: If student does not have Github, we create a local folder for progress instead, then once setup, we connect it with fork
-
     username = get_username(verbose)
-    progress_name = f"{username}-gitmastery-progress"
+    progress_name = STUDENT_PROGRESS_FORK_NAME.format(username=username)
 
     gitmastery_root_path, _, gitmastery_config = require_gitmastery_root()
-    progress_setup = gitmastery_config.get("progress_setup", False)
+    progress_local = gitmastery_config.get("progress_local", False)
 
-    if not progress_setup:
+    if not progress_local:
         warn(
-            f"Progress not submitted. Setup progress tracking via {click.style('gitmastery progress setup', bold=True, italic=True)}"
+            f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
         return
 
-    if not os.path.isdir(gitmastery_root_path / progress_name):
+    if not os.path.isdir(gitmastery_root_path / LOCAL_FOLDER_NAME):
         error(
-            f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
+            f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     info("Saving progress of attempt")
-    os.chdir(gitmastery_root_path / progress_name)
+    os.chdir(gitmastery_root_path / LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet, doing that now")
         with open("progress.json", "w") as progress_file:
@@ -90,21 +93,24 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(current_progress))
 
-    add_all(verbose)
-    commit("Update progress", verbose)
-    push("origin", "main", verbose)
+    progress_remote = gitmastery_config.get("progress_remote", False)
+    if progress_remote:
+        info("Updating your remote progress as well")
+        add_all(verbose)
+        commit("Update progress", verbose)
+        push("origin", "main", verbose)
 
-    prs = get_prs("git-mastery/progress", "main", username, verbose)
-    if len(prs) == 0:
-        warn("No pull request created for progress. Creating one now")
-        pull_request(
-            "git-mastery/progress",
-            "main",
-            f"{username}:main",
-            f"[{username}] Progress",
-            "Automated",
-            verbose,
-        )
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        if len(prs) == 0:
+            warn("No pull request created for progress. Creating one now")
+            pull_request(
+                "git-mastery/progress",
+                "main",
+                f"{username}:main",
+                f"[{username}] Progress",
+                "Automated",
+                verbose,
+            )
 
     info("Updated your progress")
 
@@ -156,8 +162,8 @@ def verify(ctx: click.Context) -> None:
         # Unexpected exception
         output = GitAutograderOutput(
             exercise_name=exercise_name,
-            started_at=None,
-            completed_at=None,
+            started_at=started_at,
+            completed_at=datetime.now(tz=pytz.UTC),
             comments=[str(e)],
             status=GitAutograderStatus.ERROR,
         )
