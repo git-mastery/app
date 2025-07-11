@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-from re import LOCALE
 
 import click
 
@@ -14,12 +13,8 @@ from app.commands.progress.constants import (
 )
 from app.utils.click_utils import error, info, success, warn
 from app.utils.gh_cli_utils import (
-    clone,
     clone_with_custom_name,
     fork,
-    get_https_or_ssh,
-    get_repo_https_url,
-    get_repo_ssh_url,
     get_username,
     has_fork,
 )

@@ -41,4 +41,7 @@ def prompt(message: str, default: Optional[Any] = None) -> Any:
 
 
 def confirm(message: str, abort: bool = False) -> bool:
-    return click.confirm(f"\n{message}", abort=abort)
+    return click.confirm(
+        f"{click.style(' CONFIRM ', fg='black', bg='bright_cyan', bold=True)} {message}",
+        abort=abort,
+    )
