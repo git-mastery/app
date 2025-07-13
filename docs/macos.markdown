@@ -83,6 +83,20 @@ Configure Git to use `main` as the default branch name for new repositories:
 git config --global init.defaultBranch main
 ```
 
+## Git-Mastery
+
+Add the Git-Mastery [tap](https://docs.brew.sh/Taps):
+
+```bash
+brew tap git-mastery/gitmastery
+```
+
+Install Git-Mastery using Homebrew:
+
+```bash
+brew install gitmastery
+```
+
 ## GitHub
 
 ### Create Account
@@ -181,3 +195,8 @@ gh auth status
 
 You should see confirmation that you're logged in with SSH protocol.
 
+Verify that Github and Github CLI is setup for Git-Mastery:
+
+```bash
+gitmastery check github
+```
