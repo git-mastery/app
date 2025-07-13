@@ -8,7 +8,8 @@ Check out the installation instructions below:
 
 - [Linux](/app/linux)
 - [MacOS](/app/macos)
-- [Windows](/app/windows)
+- [Windows Preferred (WSL)](/app/windows-wsl)
+- [Windows (Git Bash)](/app/windows-git-bash)
 
 This is the overview of the commands available for Git-Mastery:
 
