@@ -1,6 +1,7 @@
 import click
 
 from app.commands import check, download, progress, setup, verify
+from app.commands.version import version
 
 
 @click.group()
@@ -18,4 +19,5 @@ def start() -> None:
     cli.add_command(progress)
     cli.add_command(setup)
     cli.add_command(verify)
+    cli.add_command(version)
     cli(obj={})
