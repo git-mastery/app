@@ -50,7 +50,7 @@ jobs:
         env:
           BINARY_NAME: ${{ steps.binary-name.outputs.binary }}
         run: |
-          echo '__version__ = "${GITHUB_REF_NAME}"' > app/version.py
+          echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
           pyinstaller --onefile main.py --name $BINARY_NAME
 
       - name: Create GitHub Release
@@ -348,7 +348,7 @@ jobs:
 
       - name: Build binary
         run: |
-          echo '__version__ = "${GITHUB_REF_NAME}"' > app/version.py
+          echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
           pyinstaller --onefile --name gitmastery main.py
 
       - name: Generate SHA256
