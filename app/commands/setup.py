@@ -51,14 +51,3 @@ def setup(ctx: click.Context) -> None:
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
     )
-    info("Next steps:")
-    info(
-        f"\t1. Download exercises using {click.style('gitmastery download <exercise>', bold=True, italic=True)}"
-    )
-    info(
-        f"\t2. Get the list of available exercises here: {click.style('https://git-mastery.github.io/exercises', bold=True, italic=True, underline=True)}"
-    )
-    info(
-        f"\t3. Setup remote progress tracking using {click.style('gitmastery progress sync on', bold=True, italic=True)}"
-    )
-    info("Enjoy, and all the best!")
