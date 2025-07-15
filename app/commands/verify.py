@@ -16,7 +16,6 @@ from git_autograder.output import GitAutograderOutput
 from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
-    STUDENT_PROGRESS_FORK_NAME,
 )
 from app.utils.click_utils import error, info, warn
 from app.utils.gh_cli_utils import get_prs, get_username, pull_request
@@ -45,7 +44,6 @@ def print_output(output: GitAutograderOutput) -> None:
 
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     username = get_username(verbose)
-    progress_name = STUDENT_PROGRESS_FORK_NAME.format(username=username)
 
     gitmastery_root_path, _, gitmastery_config = require_gitmastery_root()
     progress_local = gitmastery_config.get("progress_local", False)
