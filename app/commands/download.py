@@ -11,15 +11,15 @@ import pytz
 
 from app.commands.check.git import git
 from app.exercise_config import ExerciseConfig
-from app.utils.click_utils import error, info, success, warn
-from app.utils.gh_cli_utils import (
+from app.utils.click import error, info, success, warn
+from app.utils.gh_cli import (
     clone_with_custom_name,
     fork,
     get_username,
     has_fork,
 )
-from app.utils.git_cli_utils import add_all, commit, empty_commit, init
-from app.utils.gitmastery_utils import (
+from app.utils.git_cli import add_all, commit, empty_commit, init
+from app.utils.gitmastery import (
     download_file,
     execute_py_file_function_from_url,
     generate_cds_string,
@@ -129,6 +129,10 @@ def download(ctx: click.Context, exercise: str) -> None:
     )
     if not os.path.isdir(exercise):
         os.makedirs(exercise)
+    else:
+        warn(f"You already have {exercise}, removing it to download again")
+        shutil.rmtree(exercise)
+        os.makedirs(exercise)
 
     os.chdir(exercise)
     info("Downloading base files...")
@@ -189,9 +193,9 @@ def download(ctx: click.Context, exercise: str) -> None:
         )
     )
 
-    info("Opening instructions in your browser in a moment...")
-    # We add a temporary delay so people can read the message
-    time.sleep(2)
-    url = f"https://git-mastery.github.io/exercises/{formatted_exercise}"
-
-    webbrowser.open(url, new=0, autoraise=True)
+    # info("Opening instructions in your browser in a moment...")
+    # # We add a temporary delay so people can read the message
+    # time.sleep(2)
+    # url = f"https://git-mastery.github.io/exercises/{formatted_exercise}"
+    #
+    # webbrowser.open(url, new=0, autoraise=True)
