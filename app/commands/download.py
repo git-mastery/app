@@ -192,10 +192,3 @@ def download(ctx: click.Context, exercise: str) -> None:
             f"cd {exercise}/{config.exercise_repo.repo_name}", bold=True, italic=True
         )
     )
-
-    # info("Opening instructions in your browser in a moment...")
-    # # We add a temporary delay so people can read the message
-    # time.sleep(2)
-    # url = f"https://git-mastery.github.io/exercises/{formatted_exercise}"
-    #
-    # webbrowser.open(url, new=0, autoraise=True)
