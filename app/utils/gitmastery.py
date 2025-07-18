@@ -2,15 +2,14 @@ import importlib.util
 import json
 import sys
 import urllib.parse
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 
 import click
 import requests
 
 from app.exercise_config import ExerciseConfig
-from app.utils.click_utils import error
+from app.utils.click import error
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"

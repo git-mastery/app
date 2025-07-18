@@ -1,11 +1,7 @@
-import os
 import re
-import subprocess
-from typing import Dict, List, Literal, Optional
+from typing import List, Optional
 
-from app.utils.cli_utils import get_stdout_stderr
-from app.utils.click_utils import error, info
-from app.utils.command_utils import run
+from app.utils.command import run
 
 
 def is_github_cli_installed(verbose: bool) -> bool:
