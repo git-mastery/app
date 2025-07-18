@@ -1,7 +1,5 @@
 import os
 import shutil
-import time
-import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -22,6 +20,7 @@ from app.utils.git_cli import add_all, commit, empty_commit, init
 from app.utils.gitmastery import (
     download_file,
     execute_py_file_function_from_url,
+    exercise_exists,
     generate_cds_string,
     get_gitmastery_file_path,
     get_variable_from_url,
@@ -122,19 +121,21 @@ def download(ctx: click.Context, exercise: str) -> None:
             f"Use {click.style('cd ' + generate_cds_string(steps_to_cd), bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
         )
 
-    info(f"Downloading {exercise}...")
+    info(f"Checking if {exercise} is available")
+    if not exercise_exists(exercise):
+        error(f"Missing exercise {exercise}. Make sure you typed the name correctly.")
 
     info(
-        f"Downloaded {exercise} to {click.style(exercise + '/', bold=True, italic=True)}, setting it up now..."
+        f"Downloading {exercise} to {click.style(exercise + '/', bold=True, italic=True)}"
     )
-    if not os.path.isdir(exercise):
-        os.makedirs(exercise)
-    else:
+
+    if os.path.isdir(exercise):
         warn(f"You already have {exercise}, removing it to download again")
         shutil.rmtree(exercise)
-        os.makedirs(exercise)
 
+    os.makedirs(exercise)
     os.chdir(exercise)
+
     info("Downloading base files...")
     base_files = [".gitmastery-exercise.json", "README.md"]
     for file in base_files:

@@ -162,6 +162,18 @@ def get_variable_from_url(
     return variable
 
 
+def exercise_exists(exercise: str, timeout: int = 5) -> bool:
+    try:
+        response = requests.head(
+            get_gitmastery_file_path(f"{exercise}/.gitmastery-exercise.json"),
+            allow_redirects=True,
+            timeout=timeout,
+        )
+        return response.status_code < 400
+    except requests.RequestException:
+        return False
+
+
 def execute_py_file_function_from_url(
     exercise: str, file_path: str, function_name: str, params: Dict[str, Any]
 ) -> Optional[Any]:
