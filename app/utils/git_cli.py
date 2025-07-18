@@ -4,7 +4,7 @@ from app.utils.command import run
 
 
 def init(verbose: bool) -> None:
-    run(["git", "init"], verbose)
+    run(["git", "init", "--initial-branch=main"], verbose)
 
 
 def add_all(verbose: bool) -> None:
