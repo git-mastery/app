@@ -40,18 +40,4 @@ def git(ctx: click.Context) -> None:
             f"You have set {click.style('user.email', bold=True)} as {click.style(config_user_email, bold=True, italic=True)}"
         )
 
-    config_default_branch_name = get_git_config("init.defaultBranch", verbose)
-    if not config_default_branch_name:
-        error(
-            f"You do not have {click.style('init.defaultBranch', bold=True)} yet. Run {click.style('git config --global init.defaultBranch main', bold=True, italic=True)}."
-        )
-    elif config_default_branch_name != "main":
-        error(
-            f"{click.style('init.defaultBranch', bold=True)} needs to be 'main'. Run {click.style('git config --global init.defaultBranch main', bold=True, italic=True)}."
-        )
-    else:
-        info(
-            f"You have set {click.style('init.defaultBranch', bold=True)} as {click.style(config_default_branch_name, bold=True, italic=True)}"
-        )
-
     success("Git is installed and configured")
