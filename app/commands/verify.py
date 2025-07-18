@@ -17,10 +17,10 @@ from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
-from app.utils.click_utils import error, info, warn
-from app.utils.gh_cli_utils import get_prs, get_username, pull_request
-from app.utils.git_cli_utils import add_all, commit, push
-from app.utils.gitmastery_utils import (
+from app.utils.click import error, info, warn
+from app.utils.gh_cli import get_prs, get_username, pull_request
+from app.utils.git_cli import add_all, commit, push
+from app.utils.gitmastery import (
     execute_py_file_function_from_url,
     require_gitmastery_exercise_root,
     require_gitmastery_root,

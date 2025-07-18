@@ -5,9 +5,9 @@ import click
 
 from app.commands.check.git import git
 from app.commands.progress.constants import PROGRESS_REPOSITORY_NAME
-from app.utils.click_utils import error, info, prompt
-from app.utils.gh_cli_utils import clone
-from app.utils.git_cli_utils import remove_remote
+from app.utils.click import error, info, prompt
+from app.utils.gh_cli import clone
+from app.utils.git_cli import remove_remote
 
 
 @click.command()

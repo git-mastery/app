@@ -1,14 +1,24 @@
+import logging
+import sys
+
 import click
 import requests
 
 from app.commands import check, download, progress, setup, verify
 from app.commands.version import version
-from app.utils.click_utils import warn
-from app.utils.version_utils import Version
+from app.utils.click import warn
+from app.utils.version import Version
 from app.version import __version__
 
 
-@click.group()
+class LoggingGroup(click.Group):
+    def invoke(self, ctx: click.Context) -> None:
+        logger = logging.getLogger(__name__)
+        logger.info("Running command %s with arguments %s", ctx.command_path, sys.argv)
+        return super().invoke(ctx)
+
+
+@click.group(cls=LoggingGroup)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def cli(ctx, verbose) -> None:

@@ -1,7 +1,7 @@
 import click
 
-from app.utils.click_utils import info
-from app.utils.version_utils import Version
+from app.utils.click import info
+from app.utils.version import Version
 from app.version import __version__
 
 

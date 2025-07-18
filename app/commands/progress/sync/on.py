@@ -11,8 +11,8 @@ from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
-from app.utils.click_utils import error, info, success, warn
-from app.utils.gh_cli_utils import (
+from app.utils.click import error, info, success, warn
+from app.utils.gh_cli import (
     clone_with_custom_name,
     fork,
     get_prs,
@@ -20,8 +20,8 @@ from app.utils.gh_cli_utils import (
     has_fork,
     pull_request,
 )
-from app.utils.git_cli_utils import add_all, add_remote, commit, push
-from app.utils.gitmastery_utils import (
+from app.utils.git_cli import add_all, add_remote, commit, push
+from app.utils.gitmastery import (
     GITMASTERY_CONFIG_NAME,
     generate_cds_string,
     require_gitmastery_root,

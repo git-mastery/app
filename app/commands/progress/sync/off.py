@@ -6,9 +6,9 @@ import click
 from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.progress.constants import STUDENT_PROGRESS_FORK_NAME
-from app.utils.click_utils import confirm, error, info
-from app.utils.gh_cli_utils import delete_repo, get_username
-from app.utils.gitmastery_utils import generate_cds_string, require_gitmastery_root
+from app.utils.click import confirm, error, info
+from app.utils.gh_cli import delete_repo, get_username
+from app.utils.gitmastery import generate_cds_string, require_gitmastery_root
 
 
 @click.command()

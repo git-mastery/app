@@ -1,10 +1,14 @@
+import logging
 from sys import exit
 from typing import Any, Optional
 
 import click
 
+logger = logging.getLogger(__name__)
+
 
 def error(message: str) -> None:
+    logger.error(message)
     click.echo(
         f"{click.style(' ERROR ', fg='black', bg='bright_red', bold=True)} {message}"
     )
@@ -12,22 +16,26 @@ def error(message: str) -> None:
 
 
 def info(message: str) -> None:
+    logger.info(message)
     click.echo(
         f"{click.style(' INFO ', fg='black', bg='bright_blue', bold=True)} {message}"
     )
 
 
 def debug(message: str) -> None:
+    logger.debug(message)
     click.echo(f"{click.style(' DEBUG ', fg='white', bg='black', bold=True)} {message}")
 
 
 def warn(message: str) -> None:
+    logger.warn(message)
     click.echo(
         f"{click.style(' WARN ', fg='black', bg='bright_yellow', bold=True)} {message}"
     )
 
 
 def success(message: str) -> None:
+    logger.info(message)
     click.echo(
         f"{click.style(' SUCCESS ', fg='black', bg='bright_green', bold=True)} {message}"
     )

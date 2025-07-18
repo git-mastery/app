@@ -11,9 +11,9 @@ from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
 from app.commands.progress.constants import STUDENT_PROGRESS_FORK_NAME
-from app.utils.click_utils import error, info, success, warn
-from app.utils.gh_cli_utils import delete_repo, get_username
-from app.utils.gitmastery_utils import (
+from app.utils.click import error, info, success, warn
+from app.utils.gh_cli import delete_repo, get_username
+from app.utils.gitmastery import (
     generate_cds_string,
     require_gitmastery_exercise_root,
     require_gitmastery_root,
