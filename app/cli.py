@@ -22,7 +22,7 @@ class LoggingGroup(click.Group):
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def cli(ctx, verbose) -> None:
-    """Git-Mastery CLI"""
+    """Git-Mastery app"""
     ctx.ensure_object(dict)
     ctx.obj["VERBOSE"] = verbose
     current_version = Version.parse_version_string(__version__)
@@ -30,7 +30,7 @@ def cli(ctx, verbose) -> None:
     latest_version = Version.parse_version_string(tags[0]["name"])
     if current_version.is_behind(latest_version):
         warn(
-            f"Your version of Git-Mastery CLI {click.style(current_version, bold=True)} is behind the latest version {click.style(latest_version, bold=True, italic=True)}. Please update the CLI."
+            f"Your version of Git-Mastery app {click.style(current_version, bold=True)} is behind the latest version {click.style(latest_version, bold=True, italic=True)}. Please update the CLI."
         )
 
 

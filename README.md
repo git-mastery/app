@@ -37,7 +37,7 @@ If you wish to contribute to the packaging support, file a PR!
 
 ## Local development
 
-To develop the CLI locally, create a virtualenv and download the requirements to start.
+To develop the app locally, create a virtualenv and download the requirements to start.
 
 ```bash
 python -m venv venv

@@ -9,4 +9,4 @@ from app.version import __version__
 @click.pass_context
 def version(_: click.Context) -> None:
     current_version = Version.parse_version_string(__version__)
-    info(f"Git-Mastery CLI is {click.style(current_version, bold=True, italic=True)}")
+    info(f"Git-Mastery app is {click.style(current_version, bold=True, italic=True)}")
