@@ -3,11 +3,9 @@ import os
 import subprocess
 from dataclasses import dataclass
 from subprocess import CompletedProcess
-from typing import Dict, TypeVar
+from typing import Dict
 
 from typing_extensions import List
-
-T = TypeVar("T")
 
 
 @dataclass
