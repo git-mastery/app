@@ -10,7 +10,10 @@ import pytz
 from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
-from app.commands.progress.constants import STUDENT_PROGRESS_FORK_NAME
+from app.commands.progress.constants import (
+    LOCAL_FOLDER_NAME,
+    STUDENT_PROGRESS_FORK_NAME,
+)
 from app.utils.click import error, info, success, warn
 from app.utils.gh_cli import delete_repo, get_username
 from app.utils.gitmastery import (
@@ -53,8 +56,8 @@ def reset(ctx: click.Context) -> None:
     if gitmastery_exercise_config.exercise_repo.create_fork:
         # Remove the fork first
         username = get_username(verbose)
-        fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
-        delete_repo(fork_name, verbose)
+        exercise_fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
+        delete_repo(exercise_fork_name, verbose)
     shutil.rmtree(
         gitmastery_exercise_path / gitmastery_exercise_config.exercise_repo.repo_name
     )
@@ -67,18 +70,13 @@ def reset(ctx: click.Context) -> None:
         )
     )
 
-    if not gitmastery_config.get("progress_setup", False):
-        error(
-            f"You have not setup progress tracking Git-Mastery yet. Do so with {click.style('gitmastery progress setup', bold=True, italic=True)}"
-        )
-
-    if not os.path.isdir(gitmastery_path / fork_name):
+    if not os.path.isdir(gitmastery_path / LOCAL_FOLDER_NAME):
         warn(
             f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
         sys.exit(0)
 
-    os.chdir(gitmastery_path / fork_name)
+    os.chdir(gitmastery_path / LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet. No progress to reset.")
         return
@@ -95,7 +93,7 @@ def reset(ctx: click.Context) -> None:
             clean_progress.append(entry)
 
     with open("progress.json", "w") as progress_file:
-        progress_file.write(json.dumps(clean_progress))
+        progress_file.write(json.dumps(clean_progress, indent=2))
 
     success(
         f"Reset your progress for {click.style(exercise_name, bold=True, italic=True)}"
