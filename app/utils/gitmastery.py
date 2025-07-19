@@ -165,7 +165,9 @@ def get_variable_from_url(
 def exercise_exists(exercise: str, timeout: int = 5) -> bool:
     try:
         response = requests.head(
-            get_gitmastery_file_path(f"{exercise}/.gitmastery-exercise.json"),
+            get_gitmastery_file_path(
+                f"{exercise.replace('-', '_')}/.gitmastery-exercise.json"
+            ),
             allow_redirects=True,
             timeout=timeout,
         )
