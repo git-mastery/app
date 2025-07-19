@@ -98,7 +98,6 @@ def on(ctx: click.Context) -> None:
     had_update = len(seen) > len(remote_progress)
     if had_update:
         os.chdir(LOCAL_FOLDER_NAME)
-        print("Had update")
         add_all(verbose)
         commit("Sync progress with local machine", verbose)
         push("origin", "main", verbose)
