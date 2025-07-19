@@ -19,11 +19,9 @@ def off(ctx: click.Context) -> None:
     """
     verbose = ctx.obj["VERBOSE"]
 
-    gitmastery_root_path, cds, gitmastery_config = require_gitmastery_root()
-    if cds != 0:
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder to sync your progress."
-        )
+    gitmastery_root_path, gitmastery_config = require_gitmastery_root(
+        requires_root=True
+    )
 
     if not gitmastery_config.get("progress_remote", False):
         error("You have not enabled sync for Git-Mastery yet.")
