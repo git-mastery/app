@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, SupportsComplex
 
 import click
 import pytz
@@ -27,6 +27,17 @@ from app.utils.gitmastery import (
 )
 
 
+def get_output_status_text(output: GitAutograderOutput) -> str:
+    status = (
+        "Completed"
+        if output.status == GitAutograderStatus.SUCCESSFUL
+        else "Incomplete"
+        if output.status == GitAutograderStatus.UNSUCCESSFUL
+        else "Error"
+    )
+    return status
+
+
 def print_output(output: GitAutograderOutput) -> None:
     color = (
         "bright_green"
@@ -37,7 +48,8 @@ def print_output(output: GitAutograderOutput) -> None:
     )
     info("Verification completed.")
     info("")
-    info(f"{click.style('Status:', bold=True)} {click.style(output.status, fg=color)}")
+    status = get_output_status_text(output)
+    info(f"{click.style('Status:', bold=True)} {click.style(status, fg=color)}")
     info(click.style("Comments:", bold=True))
     print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
 
@@ -73,7 +85,7 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
         if output.completed_at
         else None,
         "comments": output.comments,
-        "status": output.status,
+        "status": get_output_status_text(output),
     }
     current_progress = []
     with open("progress.json", "r") as progress_file:
@@ -89,7 +101,7 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
 
     current_progress.append(entry)
     with open("progress.json", "w") as progress_file:
-        progress_file.write(json.dumps(current_progress))
+        progress_file.write(json.dumps(current_progress, indent=2))
 
     progress_remote = gitmastery_config.get("progress_remote", False)
     if progress_remote:
