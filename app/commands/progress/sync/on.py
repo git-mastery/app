@@ -120,4 +120,4 @@ def on(ctx: click.Context) -> None:
     with open(
         gitmastery_root_path / GITMASTERY_CONFIG_NAME, "w"
     ) as gitmastery_config_file:
-        gitmastery_config_file.write(json.dumps(gitmastery_config))
+        gitmastery_config_file.write(json.dumps(gitmastery_config, indent=2))
