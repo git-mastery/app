@@ -38,18 +38,24 @@ def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
     return find_root(GITMASTERY_CONFIG_NAME)
 
 
-def require_gitmastery_root() -> Tuple[Path, int, Dict]:
+def require_gitmastery_root(requires_root: bool = False) -> Tuple[Path, Dict]:
     root = find_gitmastery_root()
     if root is None:
         error(
-            f"You are not in a Git-Mastery exercises folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+            f"You are not in a Git-Mastery exercise folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     # Just asserting since mypy doesn't recognize that error will exit the program
     assert root is not None
     root_path, cds = root
+
+    if requires_root and cds != 0:
+        error(
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercise folder."
+        )
+
     config = read_gitmastery_config(root_path)
-    return root_path, cds, config
+    return root_path, config
 
 
 def read_gitmastery_config(gitmastery_config_path: Path) -> Dict:
@@ -84,15 +90,23 @@ def read_gitmastery_exercise_config(
     )
 
 
-def require_gitmastery_exercise_root() -> Tuple[Path, int, ExerciseConfig]:
+def require_gitmastery_exercise_root(
+    requires_root: bool = False,
+) -> Tuple[Path, ExerciseConfig]:
     root = find_gitmastery_exercise_root()
     if root is None:
         error("You are not inside a Git-Mastery exercise folder.")
 
     assert root is not None
     root_path, cds = root
+
+    if requires_root and cds != 0:
+        error(
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder."
+        )
+
     config = read_gitmastery_exercise_config(root_path)
-    return root_path, cds, config
+    return root_path, config
 
 
 def generate_cds_string(cds: int) -> str:

@@ -1,6 +1,7 @@
 import click
 
 from app.commands.progress.reset import reset
+from app.commands.progress.show import show
 from app.commands.progress.sync.sync import sync
 
 
@@ -14,3 +15,4 @@ def progress() -> None:
 
 progress.add_command(sync)
 progress.add_command(reset)
+progress.add_command(show)

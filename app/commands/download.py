@@ -115,11 +115,7 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     formatted_exercise = exercise.replace("-", "_")
 
-    _, steps_to_cd, _ = require_gitmastery_root()
-    if steps_to_cd != 0:
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(steps_to_cd), bold=True, italic=True)} the root of the Git-Mastery exercises folder to download a new exercise."
-        )
+    require_gitmastery_root(requires_root=True)
 
     info(f"Checking if {exercise} is available")
     if not exercise_exists(exercise):

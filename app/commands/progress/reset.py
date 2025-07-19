@@ -12,12 +12,10 @@ from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
 from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
-    STUDENT_PROGRESS_FORK_NAME,
 )
 from app.utils.click import error, info, success, warn
 from app.utils.gh_cli import delete_repo, get_username
 from app.utils.gitmastery import (
-    generate_cds_string,
     require_gitmastery_exercise_root,
     require_gitmastery_root,
 )
@@ -34,20 +32,14 @@ def reset(ctx: click.Context) -> None:
     download_time = datetime.now(tz=pytz.UTC)
 
     username = get_username(verbose)
-    fork_name = STUDENT_PROGRESS_FORK_NAME.format(username=username)
 
     ctx.invoke(git)
     ctx.invoke(github)
 
-    gitmastery_path, _, gitmastery_config = require_gitmastery_root()
-    gitmastery_exercise_path, cds, gitmastery_exercise_config = (
-        require_gitmastery_exercise_root()
+    gitmastery_path, _ = require_gitmastery_root(requires_root=False)
+    gitmastery_exercise_path, gitmastery_exercise_config = (
+        require_gitmastery_exercise_root(requires_root=True)
     )
-
-    if cds > 0:
-        error(
-            f"Go back to the root of the exercise to reset the exercise. Use {click.style(f'cd {generate_cds_string(cds)}', bold=True, italic=True)}"
-        )
 
     exercise_name = gitmastery_exercise_config.exercise_name
 

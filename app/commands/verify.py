@@ -57,7 +57,7 @@ def print_output(output: GitAutograderOutput) -> None:
 def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     username = get_username(verbose)
 
-    gitmastery_root_path, _, gitmastery_config = require_gitmastery_root()
+    gitmastery_root_path, gitmastery_config = require_gitmastery_root()
     progress_local = gitmastery_config.get("progress_local", False)
 
     if not progress_local:
@@ -135,7 +135,7 @@ def verify(ctx: click.Context) -> None:
 
     started_at = datetime.now(tz=pytz.UTC)
 
-    exercise_path, _, config = require_gitmastery_exercise_root()
+    exercise_path, config = require_gitmastery_exercise_root()
     exercise_name = config.exercise_name
     formatted_exercise_name = config.formatted_exercise_name
 

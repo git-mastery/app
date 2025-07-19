@@ -36,11 +36,9 @@ def on(ctx: click.Context) -> None:
     """
     verbose = ctx.obj["VERBOSE"]
 
-    gitmastery_root_path, cds, gitmastery_config = require_gitmastery_root()
-    if cds != 0:
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder to sync your progress."
-        )
+    gitmastery_root_path, gitmastery_config = require_gitmastery_root(
+        requires_root=True
+    )
 
     ctx.invoke(git)
     ctx.invoke(github)

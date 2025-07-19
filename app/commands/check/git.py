@@ -1,8 +1,6 @@
 import click
 
-from app.commands.check.github import github
 from app.utils.click import error, info, success
-from app.utils.gh_cli import is_authenticated, is_github_cli_installed
 from app.utils.git_cli import get_git_config, is_git_installed
 
 
