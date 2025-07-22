@@ -48,7 +48,7 @@ def show(ctx: click.Context) -> None:
             continue
         seen.add(all_progress[i]["exercise_name"])
         results.append(
-            f"{all_progress[i]['exercise_name']}: {all_progress[i]['status']}"
+            f"{click.style(all_progress[i]['exercise_name'], bold=True)}: {all_progress[i]['status']}"
         )
 
     if gitmastery_config.get("progress_remote", False):
@@ -62,4 +62,5 @@ def show(ctx: click.Context) -> None:
             f"Check out your progress on the dashboard: {click.style(dashboard_url, bold=True, italic=True)}"
         )
 
-    click.echo_via_pager("\n".join(results))
+    info("Your Git-Mastery progress:")
+    click.echo("\n".join(results))
