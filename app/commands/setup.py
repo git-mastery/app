@@ -42,7 +42,7 @@ def setup(ctx: click.Context) -> None:
         )
 
     with open("progress/progress.json", "a") as progress_file:
-        progress_file.write(json.dumps({}, indent=2))
+        progress_file.write(json.dumps([], indent=2))
 
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
