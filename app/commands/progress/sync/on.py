@@ -91,7 +91,7 @@ def on(ctx: click.Context) -> None:
     )
 
     with open(local_progress_filepath, "w") as file:
-        file.write(json.dumps(synced_progress))
+        file.write(json.dumps(synced_progress, indent=2))
 
     # If we have seen more unique entries than what was stored remotely, we need to
     # push the changes
