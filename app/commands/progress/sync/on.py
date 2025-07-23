@@ -57,6 +57,8 @@ def on(ctx: click.Context) -> None:
         warn("You don't have a fork yet, creating one")
         fork(PROGRESS_REPOSITORY_NAME, fork_name, verbose)
 
+    os.chdir(gitmastery_root_path)
+
     # To avoid sync issues, we save the local progress and delete the local repository
     # before cloning again. This should automatically setup the origin and upstream
     # remotes as well
