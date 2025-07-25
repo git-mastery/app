@@ -61,6 +61,25 @@ git config --global init.defaultBranch main
 
 Create a [new GitHub account](https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github) if you don't have one.
 
+### HTTPS Setup
+
+By default, Github will use HTTPS, which will prompt for your Github username and Personal Access Token (PAT) every time.
+
+> [!INFO]
+> If you intend to use HTTPS, you can skip the "SSH Setup" section.
+
+#### 1. Setup PAT
+
+Github no longer supports account passwords for HTTPS, you will need to setup a PAT.
+
+1. Go to Github → Settings -> Developer settings -> Personal Access Tokens -> Tokens (classic)
+2. Click "Generate new token", and set the expiration and scopes (minimum scope is `repo`)
+3. Copy the token and store it safely
+
+#### 2. Using the PAT
+
+When you are prompted to enter your Github credentials, use your Github username and PAT as the password.
+
 ### SSH Setup
 
 #### 1. Check for Existing SSH Keys
