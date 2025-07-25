@@ -23,7 +23,8 @@ This is the overview of the commands available for Git-Mastery:
 |`gitmastery check github`|Verify that you have setup Github and Github CLI for Git-Mastery|
 |`gitmastery download <exercise name>`|Downloads the specified exercise to your local machine. For the list of exercises, refer [here](https://git-mastery.github.io/exercises)|
 |`gitmastery verify`|Verify your exercise attempt. Saves the progress made.|
+|`gitmastery version`|Get the current version of the Git-Mastery app on your machine.|
 |`gitmastery progress sync on`|Enable remote progress tracking.|
 |`gitmastery progress sync off`|Disable remote progress tracking.|
-|`gitmastery progress show`|Disables your progress made so far and a link to the progress dashboard if you have already enabled sync|
-|`gitmastery progress reset`|Resets the progress for one of your exercises|
+|`gitmastery progress show`|Disables your progress made so far and a link to the progress dashboard if you have already enabled sync.|
+|`gitmastery progress reset`|Resets the progress for one of your exercises.|
