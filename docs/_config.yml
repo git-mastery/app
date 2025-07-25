@@ -1,4 +1,4 @@
-title: Git-Mastery App
+title: Git-Mastery
 email: woojiahao1234@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   Git-Mastery app installation and usage guide
@@ -9,3 +9,11 @@ github_username: git-mastery
 theme: minima
 plugins:
   - jekyll-feed
+
+header_pages:
+  [
+    "linux.markdown",
+    "macos.markdown",
+    "windows-git-bash.markdown",
+    "windows-wsl.markdown",
+  ]
