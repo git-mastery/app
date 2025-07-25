@@ -11,6 +11,8 @@ Check out the installation instructions below:
 - [Windows Preferred (WSL)](/app/windows-wsl)
 - [Windows (Git Bash)](/app/windows-git-bash)
 
+Refer to [this guide](/app/update) to update the Git-Mastery app across different OSes.
+
 This is the overview of the commands available for Git-Mastery:
 
 |Command|Description|
