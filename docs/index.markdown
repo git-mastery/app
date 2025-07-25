@@ -15,6 +15,7 @@ This is the overview of the commands available for Git-Mastery:
 
 |Command|Description|
 |-------|-----------|
+|`gitmastery [command] help`|Prints the help documentation for each command. Omitting the `[command]` prints the documentation for the app|
 |`gitmastery setup`|Setup Git-Mastery for your local machine.|
 |`gitmastery check git`|Verify that you have setup Git for Git-Mastery|
 |`gitmastery check github`|Verify that you have setup Github and Github CLI for Git-Mastery|
@@ -22,3 +23,5 @@ This is the overview of the commands available for Git-Mastery:
 |`gitmastery verify`|Verify your exercise attempt. Saves the progress made.|
 |`gitmastery progress sync on`|Enable remote progress tracking.|
 |`gitmastery progress sync off`|Disable remote progress tracking.|
+|`gitmastery progress show`|Disables your progress made so far and a link to the progress dashboard if you have already enabled sync|
+|`gitmastery progress reset`|Resets the progress for one of your exercises|
