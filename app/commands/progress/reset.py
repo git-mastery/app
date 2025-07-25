@@ -12,9 +12,11 @@ from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
 from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
+    PROGRESS_REPOSITORY_NAME,
 )
 from app.utils.click import error, info, success, warn
-from app.utils.gh_cli import delete_repo, get_username
+from app.utils.gh_cli import delete_repo, get_prs, get_username, pull_request
+from app.utils.git_cli import add_all, commit, push
 from app.utils.gitmastery import (
     require_gitmastery_exercise_root,
     require_gitmastery_root,
@@ -36,7 +38,7 @@ def reset(ctx: click.Context) -> None:
     ctx.invoke(git)
     ctx.invoke(github)
 
-    gitmastery_path, _ = require_gitmastery_root(requires_root=False)
+    gitmastery_path, gitmastery_config = require_gitmastery_root(requires_root=False)
     gitmastery_exercise_path, gitmastery_exercise_config = (
         require_gitmastery_exercise_root(requires_root=True)
     )
@@ -86,6 +88,25 @@ def reset(ctx: click.Context) -> None:
 
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(clean_progress, indent=2))
+
+    progress_remote = gitmastery_config.get("progress_remote", False)
+    if progress_remote:
+        info("Updating your remote progress as well")
+        add_all(verbose)
+        commit(f"Reset progress for {exercise_name}", verbose)
+        push("origin", "main", verbose)
+
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        if len(prs) == 0:
+            warn("No pull request created for progress. Creating one now")
+            pull_request(
+                "git-mastery/progress",
+                "main",
+                f"{username}:main",
+                f"[{username}] Progress",
+                "Automated",
+                verbose,
+            )
 
     success(
         f"Reset your progress for {click.style(exercise_name, bold=True, italic=True)}"
