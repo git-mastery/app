@@ -30,7 +30,10 @@ def cli(ctx, verbose) -> None:
     latest_version = Version.parse_version_string(tags[0]["name"])
     if current_version.is_behind(latest_version):
         warn(
-            f"Your version of Git-Mastery app {click.style(current_version, bold=True)} is behind the latest version {click.style(latest_version, bold=True, italic=True)}. Please update the CLI."
+            f"Your version of Git-Mastery app {click.style(current_version, bold=True)} is behind the latest version {click.style(latest_version, bold=True, italic=True)}."
+        )
+        warn(
+            f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
         )
 
 
