@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 import click
 
@@ -11,7 +10,8 @@ from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
-from app.utils.click import error, info, success, warn
+from app.utils.cli import rmtree
+from app.utils.click import info, success, warn
 from app.utils.gh_cli import (
     clone_with_custom_name,
     fork,
@@ -20,10 +20,9 @@ from app.utils.gh_cli import (
     has_fork,
     pull_request,
 )
-from app.utils.git_cli import add_all, add_remote, commit, push
+from app.utils.git_cli import add_all, commit, push
 from app.utils.gitmastery import (
     GITMASTERY_CONFIG_NAME,
-    generate_cds_string,
     require_gitmastery_root,
 )
 
@@ -67,7 +66,7 @@ def on(ctx: click.Context) -> None:
     if os.path.isfile(local_progress_filepath):
         with open(local_progress_filepath, "r") as file:
             local_progress = json.load(file)
-    shutil.rmtree(LOCAL_FOLDER_NAME)
+    rmtree(LOCAL_FOLDER_NAME)
 
     clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME, verbose)
 

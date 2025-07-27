@@ -1,5 +1,4 @@
 import os
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -9,6 +8,7 @@ import pytz
 
 from app.commands.check.git import git
 from app.exercise_config import ExerciseConfig
+from app.utils.cli import rmtree
 from app.utils.click import error, info, success, warn
 from app.utils.gh_cli import (
     clone_with_custom_name,
@@ -21,7 +21,6 @@ from app.utils.gitmastery import (
     download_file,
     execute_py_file_function_from_url,
     exercise_exists,
-    generate_cds_string,
     get_gitmastery_file_path,
     get_variable_from_url,
     read_gitmastery_exercise_config,
@@ -127,7 +126,7 @@ def download(ctx: click.Context, exercise: str) -> None:
 
     if os.path.isdir(exercise):
         warn(f"You already have {exercise}, removing it to download again")
-        shutil.rmtree(exercise)
+        rmtree(exercise)
 
     os.makedirs(exercise)
     os.chdir(exercise)
@@ -151,7 +150,7 @@ def download(ctx: click.Context, exercise: str) -> None:
                 # Rollback the download and remove the folder
                 warn("Git is not setup. Rolling back the download")
                 os.chdir("..")
-                shutil.rmtree(formatted_exercise)
+                rmtree(formatted_exercise)
                 warn("Setup Git before downloading this exercise")
                 exit(1)
 
@@ -166,7 +165,7 @@ def download(ctx: click.Context, exercise: str) -> None:
                 # Rollback the download and remove the folder
                 warn("Github is not setup. Rolling back the download")
                 os.chdir("..")
-                shutil.rmtree(formatted_exercise)
+                rmtree(formatted_exercise)
                 warn("Setup Github and Github CLI before downloading this exercise")
                 exit(1)
 

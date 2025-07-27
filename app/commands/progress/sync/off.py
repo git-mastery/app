@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import sys
 
 import click
@@ -11,6 +10,7 @@ from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
+from app.utils.cli import rmtree
 from app.utils.click import confirm, error, info
 from app.utils.gh_cli import delete_repo, get_username
 from app.utils.gitmastery import require_gitmastery_root
@@ -53,7 +53,7 @@ def off(ctx: click.Context) -> None:
     with open(local_progress_filepath, "r") as file:
         local_progress = json.load(file)
 
-    shutil.rmtree(LOCAL_FOLDER_NAME)
+    rmtree(LOCAL_FOLDER_NAME)
 
     # Re-create just the progress folder
     with open(local_progress_filepath, "a") as progress_file:

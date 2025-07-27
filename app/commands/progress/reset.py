@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import sys
 from datetime import datetime
 
@@ -14,7 +13,8 @@ from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
-from app.utils.click import error, info, success, warn
+from app.utils.cli import rmtree
+from app.utils.click import info, success, warn
 from app.utils.gh_cli import delete_repo, get_prs, get_username, pull_request
 from app.utils.git_cli import add_all, commit, push
 from app.utils.gitmastery import (
@@ -52,7 +52,7 @@ def reset(ctx: click.Context) -> None:
         username = get_username(verbose)
         exercise_fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
         delete_repo(exercise_fork_name, verbose)
-    shutil.rmtree(
+    rmtree(
         gitmastery_exercise_path / gitmastery_exercise_config.exercise_repo.repo_name
     )
     setup_exercise_folder(download_time, gitmastery_exercise_config, verbose)
