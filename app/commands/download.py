@@ -7,6 +7,7 @@ import click
 import pytz
 
 from app.commands.check.git import git
+from app.commands.check.github import github
 from app.exercise_config import ExerciseConfig
 from app.utils.cli import rmtree
 from app.utils.click import error, info, success, warn
@@ -158,7 +159,7 @@ def download(ctx: click.Context, exercise: str) -> None:
     if config.requires_github:
         try:
             info("Exercise requires Github, checking if you have it setup")
-            ctx.invoke(git)
+            ctx.invoke(github)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
