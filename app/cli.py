@@ -30,7 +30,10 @@ def cli(ctx, verbose) -> None:
     latest_version = Version.parse_version_string(tags[0]["name"])
     if current_version.is_behind(latest_version):
         warn(
-            f"Your version of Git-Mastery app {click.style(current_version, bold=True)} is {click.style('behind the latest version', fg='bright_red')} {click.style(latest_version, bold=True, italic=True)}."
+            click.style(
+                f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
+                fg="bright_red",
+            )
         )
         warn("We strongly recommend upgrading your app.")
         warn(
