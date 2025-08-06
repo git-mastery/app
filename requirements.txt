@@ -4,6 +4,6 @@ pyinstaller
 requests
 types-requests
 pytermgui
-git-autograder==5.*
+git-autograder==6.*
 pytz
 PyYAML

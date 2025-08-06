@@ -183,9 +183,17 @@ def download(ctx: click.Context, exercise: str) -> None:
             is_binary,
         )
 
-    setup_exercise_folder(download_time, config, verbose)
-    info(
-        click.style(
-            f"cd {exercise}/{config.exercise_repo.repo_name}", bold=True, italic=True
+    if config.exercise_repo.repo_type != "ignore":
+        setup_exercise_folder(download_time, config, verbose)
+        info(
+            click.style(
+                f"cd {exercise}/{config.exercise_repo.repo_name}",
+                bold=True,
+                italic=True,
+            )
         )
-    )
+    else:
+        config.downloaded_at = download_time.timestamp()
+        info(click.style(f"cd {exercise}", bold=True, italic=True))
+        with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
+            gitmastery_exercise_file.write(config.to_json())
