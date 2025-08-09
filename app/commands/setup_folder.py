@@ -8,7 +8,7 @@ from app.commands.progress.constants import LOCAL_FOLDER_NAME
 from app.utils.click import error, info, prompt
 
 
-@click.command()
+@click.command("setup")
 @click.pass_context
 def setup(ctx: click.Context) -> None:
     """
