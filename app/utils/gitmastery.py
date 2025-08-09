@@ -51,7 +51,7 @@ def require_gitmastery_root(requires_root: bool = False) -> Tuple[Path, Dict]:
 
     if requires_root and cds != 0:
         error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercise folder."
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the Git-Mastery exercises folder."
         )
 
     config = read_gitmastery_config(root_path)
@@ -100,12 +100,14 @@ def require_gitmastery_exercise_root(
     assert root is not None
     root_path, cds = root
 
+    config = read_gitmastery_exercise_config(root_path)
+
     if requires_root and cds != 0:
+        exercise_name = config.exercise_name
         error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} the root of the Git-Mastery exercises folder."
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the {click.style(exercise_name, bold=True, italic=True)} exercise folder."
         )
 
-    config = read_gitmastery_exercise_config(root_path)
     return root_path, config
 
 
