@@ -35,13 +35,13 @@ def reset(ctx: click.Context) -> None:
 
     username = get_username(verbose)
 
-    ctx.invoke(git)
-    ctx.invoke(github)
-
     gitmastery_path, gitmastery_config = require_gitmastery_root(requires_root=False)
     gitmastery_exercise_path, gitmastery_exercise_config = (
         require_gitmastery_exercise_root(requires_root=True)
     )
+
+    ctx.invoke(git)
+    ctx.invoke(github)
 
     exercise_name = gitmastery_exercise_config.exercise_name
 
