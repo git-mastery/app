@@ -52,17 +52,27 @@ def reset(ctx: click.Context) -> None:
         username = get_username(verbose)
         exercise_fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
         delete_repo(exercise_fork_name, verbose)
-    rmtree(
+
+    if os.path.isdir(
         gitmastery_exercise_path / gitmastery_exercise_config.exercise_repo.repo_name
-    )
-    setup_exercise_folder(download_time, gitmastery_exercise_config, verbose)
-    info(
-        click.style(
-            f"cd {gitmastery_exercise_config.exercise_repo.repo_name}",
-            bold=True,
-            italic=True,
+    ):
+        # Only delete if the sub-folder present
+        # Sub-folder may not be present if repo_type is "ignore" or if "ignore" but the
+        # student has already created the sub-folder needed
+        rmtree(
+            gitmastery_exercise_path
+            / gitmastery_exercise_config.exercise_repo.repo_name
         )
-    )
+
+    if gitmastery_exercise_config.exercise_repo.repo_type != "ignore":
+        setup_exercise_folder(download_time, gitmastery_exercise_config, verbose)
+        info(
+            click.style(
+                f"cd {gitmastery_exercise_config.exercise_repo.repo_name}",
+                bold=True,
+                italic=True,
+            )
+        )
 
     if not os.path.isdir(gitmastery_path / LOCAL_FOLDER_NAME):
         warn(
