@@ -90,9 +90,9 @@ def setup_exercise_folder(
         init(verbose)
         if download_resources:
             add_all(verbose)
-            commit("Initial commit", verbose)
+            commit("Initialize exercise", verbose)
         else:
-            empty_commit("Initial commit", verbose)
+            empty_commit("Initialize exercise", verbose)
 
     info("Executing download setup")
     execute_py_file_function_from_url(
