@@ -88,11 +88,12 @@ def setup_exercise_folder(
 
     if config.exercise_repo.init:
         init(verbose)
+        initial_commit_message = "Set initial state"
         if download_resources:
             add_all(verbose)
-            commit("Initialize exercise", verbose)
+            commit(initial_commit_message, verbose)
         else:
-            empty_commit("Initialize exercise", verbose)
+            empty_commit(initial_commit_message, verbose)
 
     info("Executing download setup")
     execute_py_file_function_from_url(
