@@ -13,6 +13,7 @@ from app.utils.cli import rmtree
 from app.utils.click import error, info, success, warn
 from app.utils.gh_cli import (
     clone_with_custom_name,
+    delete_repo,
     fork,
     get_username,
     has_fork,
@@ -53,10 +54,10 @@ def setup_exercise_folder(
             info("Checking if you already have a fork")
             fork_name = config.exercise_fork_name(username)
             if has_fork(fork_name, verbose):
-                info("You already have a fork")
-            else:
-                warn("You don't have a fork yet, creating one")
-                fork(exercise_repo, fork_name, verbose)
+                info("You already have a fork, deleting it")
+                delete_repo(fork_name, verbose)
+            info("Creating fork of exercise repository")
+            fork(exercise_repo, fork_name, verbose)
             info("Creating clone of your fork")
             clone_with_custom_name(
                 f"{username}/{fork_name}", config.exercise_repo.repo_name, verbose
