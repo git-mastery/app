@@ -329,8 +329,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  macos:
-    runs-on: macos-latest
+  macos-build:
+    # We use macos-13 since it's the latest image that currently supports AMD64
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            arch: amd64
+          - os: macos-latest
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    outputs:
+      sha256-${{ matrix.arch }}: ${{ steps.checksum.outputs.sha256 }}
 
     steps:
       - name: Checkout source
@@ -353,18 +363,26 @@ jobs:
 
       - name: Generate SHA256
         id: checksum
+        env:
+          ARCHITECTURE: ${{ matrix.arch }}
         run: |
-          FILENAME=gitmastery
+          FILENAME="gitmastery-$ARCHITECTURE"
           SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/gitmastery
+          files: dist/gitmastery-${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  macos-publish:
+    runs-on: ubuntu-latest
+
+    needs: macos-build
+
+    steps:
       - name: Update Homebrew Tap
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
@@ -374,19 +392,31 @@ jobs:
 
           git clone https://x-access-token:${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           cd homebrew-gitmastery
-          ls
 
           cat <<EOF > gitmastery.rb
           class Gitmastery < Formula
             desc "CLI tool for Git-Mastery"
             homepage "https://github.com/git-mastery/cli"
-            url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery"
-            sha256 "${{ steps.checksum.outputs.sha256 }}"
             version "${GITHUB_REF_NAME#v}"
 
+            on_arm do
+              url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-arm64"
+              sha256 "${{ needs.build.outputs.sha256-arm64 }}"
+            end
+
+            on_intel do
+              url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-amd64"
+              sha256 "${{ needs.build.outputs.sha256-amd64 }}"
+            end
+
             def install
-              chmod 0755, "gitmastery"
-              bin.install "gitmastery"
+              if Hardware::CPU.arm?
+                chmod 0755, "gitmastery-arm64"
+                bin.install "gitmastery-arm64" => "gitmastery"
+              else
+                chmod 0755, "gitmastery-amd64"
+                bin.install "gitmastery-amd64" => "gitmastery"
+              end
             end
 
             test do
