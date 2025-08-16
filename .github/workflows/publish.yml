@@ -264,7 +264,7 @@ jobs:
           sha256sums=('SKIP')
 
           package() {
-            install -D -m 0755 \"\$srdir/$BINARY_NAME\" \"\$pkgdir/usr/bin/gitmastery\"
+            install -D -m 0755 \"\$srcdir/$BINARY_NAME\" \"\$pkgdir/usr/bin/gitmastery\"
             chmod 755 \"\$pkgdir/usr/bin/gitmastery\"
           }
           """ >> PKGBUILD
