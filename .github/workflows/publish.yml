@@ -440,3 +440,19 @@ jobs:
           git add gitmastery.rb
           git commit -m "Update to ${GITHUB_REF_NAME}"
           git push origin main
+
+  macos-test:
+    strategy:
+      matrix:
+        os: [macos-13, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    needs: macos-publish
+
+    steps:
+      - run: |
+          brew tap git-mastery/gitmastery
+          brew install gitmastery
+          file "$(brew --prefix)/bin/gitmastery"
+          gitmastery --help
