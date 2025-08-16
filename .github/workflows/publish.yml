@@ -409,12 +409,12 @@ jobs:
 
             on_arm do
               url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-arm64"
-              sha256 "${{ needs.build.outputs.sha256-arm64 }}"
+              sha256 "${{ needs.macos-build.outputs.sha256-arm64 }}"
             end
 
             on_intel do
               url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-amd64"
-              sha256 "${{ needs.build.outputs.sha256-amd64 }}"
+              sha256 "${{ needs.macos-build.outputs.sha256-amd64 }}"
             end
 
             def install
