@@ -358,9 +358,11 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build binary
+        env:
+          ARCHITECTURE: ${{ matrix.arch }}
         run: |
           echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
-          pyinstaller --onefile --name gitmastery main.py
+          pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
 
       - name: Generate SHA256 (amd64)
         if: matrix.arch == 'amd64'
