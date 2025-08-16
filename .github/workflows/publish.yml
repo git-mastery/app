@@ -362,12 +362,19 @@ jobs:
           echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
           pyinstaller --onefile --name gitmastery main.py
 
-      - name: Generate SHA256
-        id: checksum-${{ matrix.arch }}
-        env:
-          ARCHITECTURE: ${{ matrix.arch }}
+      - name: Generate SHA256 (amd64)
+        if: matrix.arch == 'amd64'
+        id: checksum-amd64
         run: |
-          FILENAME="gitmastery-$ARCHITECTURE"
+          FILENAME=gitmastery-amd64
+          SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Generate SHA256 (arm64)
+        if: matrix.arch == 'arm64'
+        id: checksum-arm64
+        run: |
+          FILENAME=gitmastery-arm64
           SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
