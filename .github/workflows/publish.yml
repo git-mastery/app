@@ -340,7 +340,8 @@ jobs:
             arch: arm64
     runs-on: ${{ matrix.os }}
     outputs:
-      sha256-${{ matrix.arch }}: ${{ steps.checksum.outputs.sha256 }}
+      sha256-arm64: ${{ steps.checksum-arm64.outputs.sha256 }}
+      sha256-amd64: ${{ steps.checksum-amd64.outputs.sha256 }}
 
     steps:
       - name: Checkout source
@@ -362,7 +363,7 @@ jobs:
           pyinstaller --onefile --name gitmastery main.py
 
       - name: Generate SHA256
-        id: checksum
+        id: checksum-${{ matrix.arch }}
         env:
           ARCHITECTURE: ${{ matrix.arch }}
         run: |
