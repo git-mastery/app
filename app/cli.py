@@ -26,19 +26,23 @@ def cli(ctx, verbose) -> None:
     ctx.ensure_object(dict)
     ctx.obj["VERBOSE"] = verbose
     current_version = Version.parse_version_string(__version__)
-    tags = requests.get("https://api.github.com/repos/git-mastery/app/tags").json()
-    latest_version = Version.parse_version_string(tags[0]["name"])
-    if current_version.is_behind(latest_version):
-        warn(
-            click.style(
-                f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
-                fg="bright_red",
+    req = requests.get("https://api.github.com/repos/git-mastery/app/tags")
+    if req.ok:
+        # Only continue with checks if request succeeds
+        # Request could fail due to Github API rate limits or other errors
+        tags = req.json()
+        latest_version = Version.parse_version_string(tags[0]["name"])
+        if current_version.is_behind(latest_version):
+            warn(
+                click.style(
+                    f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
+                    fg="bright_red",
+                )
             )
-        )
-        warn("We strongly recommend upgrading your app.")
-        warn(
-            f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
-        )
+            warn("We strongly recommend upgrading your app.")
+            warn(
+                f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
+            )
 
 
 def start() -> None:
