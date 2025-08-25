@@ -25,6 +25,8 @@ from app.utils.gitmastery import (
     exercise_exists,
     get_gitmastery_file_path,
     get_variable_from_url,
+    hands_on_exists,
+    load_file_namespace,
     read_gitmastery_exercise_config,
     require_gitmastery_root,
 )
@@ -104,21 +106,13 @@ def setup_exercise_folder(
     info("Start working on it:")
 
 
-# TODO: Think about streamlining the config location
-# TODO: Maybe store the random "keys" in config
-@click.command()
-@click.argument("exercise")
-@click.pass_context
-def download(ctx: click.Context, exercise: str) -> None:
-    """Download an exercise"""
-    download_time = datetime.now(tz=pytz.UTC)
-
-    verbose = ctx.obj["VERBOSE"]
-
-    formatted_exercise = exercise.replace("-", "_")
-
-    require_gitmastery_root(requires_root=True)
-
+def download_exercise(
+    ctx: click.Context,
+    exercise: str,
+    formatted_exercise: str,
+    download_time: datetime,
+    verbose: bool,
+) -> None:
     info(f"Checking if {exercise} is available")
     if not exercise_exists(exercise):
         error(f"Missing exercise {exercise}. Make sure you typed the name correctly.")
@@ -199,3 +193,90 @@ def download(ctx: click.Context, exercise: str) -> None:
         info(click.style(f"cd {exercise}", bold=True, italic=True))
         with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
             gitmastery_exercise_file.write(config.to_json())
+
+
+def download_hands_on(
+    ctx: click.Context,
+    hands_on: str,
+    formatted_hands_on: str,
+    verbose: bool,
+) -> None:
+    info(f"Checking if {hands_on} is available")
+
+    hands_on_without_prefix = (
+        formatted_hands_on[3:]
+        if formatted_hands_on.startswith("hp_")
+        else formatted_hands_on
+    )
+
+    if not hands_on_exists(hands_on):
+        error(f"Missing hands-on {hands_on}. Make sure you typed the name correctly.")
+
+    info(
+        f"Downloading {hands_on} to {click.style(hands_on + '/', bold=True, italic=True)}"
+    )
+
+    if os.path.isdir(hands_on):
+        warn(f"You already have {hands_on}, removing it to download again")
+        rmtree(hands_on)
+
+    os.makedirs(hands_on)
+    os.chdir(hands_on)
+
+    hands_on_namespace = load_file_namespace(f"hands_on/{hands_on_without_prefix}.py")
+    requires_git = hands_on_namespace.get("__requires_git__", False)
+    requires_github = hands_on_namespace.get("__requires_github__", False)
+
+    if requires_git:
+        try:
+            info("Hands-on requires Git, checking if you have it setup")
+            ctx.invoke(git)
+        except SystemExit as e:
+            if e.code == 1:
+                # Exited because of missing Github configuration
+                # Rollback the download and remove the folder
+                warn("Git is not setup. Rolling back the download")
+                os.chdir("..")
+                rmtree(formatted_hands_on)
+                warn("Setup Git before downloading this hands-on")
+                exit(1)
+
+    if requires_github:
+        try:
+            info("Hands-on requires Github, checking if you have it setup")
+            ctx.invoke(github)
+        except SystemExit as e:
+            if e.code == 1:
+                # Exited because of missing Github configuration
+                # Rollback the download and remove the folder
+                warn("Github is not setup. Rolling back the download")
+                os.chdir("..")
+                rmtree(formatted_hands_on)
+                warn("Setup Github and Github CLI before downloading this hands-on")
+                exit(1)
+
+    execute_py_file_function_from_url(
+        "hands_on", f"{hands_on_without_prefix}.py", "download", {"verbose": verbose}
+    )
+    success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
+
+
+# TODO: Think about streamlining the config location
+# TODO: Maybe store the random "keys" in config
+@click.command()
+@click.argument("exercise")
+@click.pass_context
+def download(ctx: click.Context, exercise: str) -> None:
+    """Download an exercise"""
+    download_time = datetime.now(tz=pytz.UTC)
+
+    verbose = ctx.obj["VERBOSE"]
+
+    formatted_exercise = exercise.replace("-", "_")
+    is_hands_on = exercise.startswith("hp-")
+
+    require_gitmastery_root(requires_root=True)
+    if is_hands_on:
+        download_hands_on(ctx, exercise, formatted_exercise, verbose)
+    else:
+        download_exercise(ctx, exercise, formatted_exercise, download_time, verbose)

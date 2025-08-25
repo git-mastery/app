@@ -161,6 +161,15 @@ def download_file(url: str, path: str, is_binary: bool) -> None:
 T = TypeVar("T")
 
 
+def load_file_namespace(file_path: str) -> dict[str, Any]:
+    sys.dont_write_bytecode = True
+    py_file = fetch_file_contents(get_gitmastery_file_path(file_path), False)
+    namespace: Dict[str, Any] = {}
+    exec(py_file, namespace)
+    sys.dont_write_bytecode = False
+    return namespace
+
+
 def get_variable_from_url(
     exercise: str,
     file_path: str,
@@ -184,6 +193,21 @@ def exercise_exists(exercise: str, timeout: int = 5) -> bool:
             get_gitmastery_file_path(
                 f"{exercise.replace('-', '_')}/.gitmastery-exercise.json"
             ),
+            allow_redirects=True,
+            timeout=timeout,
+        )
+        return response.status_code < 400
+    except requests.RequestException:
+        return False
+
+
+def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
+    if hands_on.startswith("hp-"):
+        hands_on = hands_on[3:]
+
+    try:
+        response = requests.head(
+            get_gitmastery_file_path(f"hands_on/{hands_on.replace('-', '_')}.py"),
             allow_redirects=True,
             timeout=timeout,
         )
