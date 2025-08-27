@@ -26,7 +26,11 @@ def run(command: List[str], verbose: bool, env: Dict[str, str] = {}) -> CommandR
 
     try:
         result = subprocess.run(
-            command, capture_output=True, text=True, env=dict(os.environ, **env)
+            command,
+            capture_output=True,
+            text=True,
+            env=dict(os.environ, **env),
+            encoding="utf-8",
         )
     except FileNotFoundError:
         error_msg = f"Command not found: {command[0]}"
