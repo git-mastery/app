@@ -1,8 +1,12 @@
 import importlib.util
 import json
+import os
 import sys
+import tempfile
 import urllib.parse
+from os import execlp
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 
 import click
@@ -10,6 +14,7 @@ import requests
 
 from app.exercise_config import ExerciseConfig
 from app.utils.click import error
+from app.utils.general import ensure_str
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
@@ -161,29 +166,14 @@ def download_file(url: str, path: str, is_binary: bool) -> None:
 T = TypeVar("T")
 
 
-def load_file_namespace(file_path: str) -> dict[str, Any]:
-    sys.dont_write_bytecode = True
-    py_file = fetch_file_contents(get_gitmastery_file_path(file_path), False)
-    namespace: Dict[str, Any] = {}
-    exec(py_file, namespace)
-    sys.dont_write_bytecode = False
-    return namespace
-
-
 def get_variable_from_url(
     exercise: str,
     file_path: str,
     variable_name: str,
     default_value: Optional[T] = None,
 ) -> Optional[T]:
-    sys.dont_write_bytecode = True
-    py_file = fetch_file_contents(
-        get_gitmastery_file_path(f"{exercise}/{file_path}"), False
-    )
-    namespace: Dict[str, Any] = {}
-    exec(py_file, namespace)
+    namespace = load_namespace_with_exercise_utils(f"{exercise}/{file_path}")
     variable = namespace.get(variable_name, default_value)
-    sys.dont_write_bytecode = False
     return variable
 
 
@@ -216,6 +206,12 @@ def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
         return False
 
 
+# We hardcode this list because to fetch it dynamically requires a Github API call
+# which we only have 60/hour so it's unwise to do it
+# TODO(woojiahao): Find a better way around this
+EXERCISE_UTILS_FILES = ["__init__", "cli", "git", "file", "gitmastery"]
+
+
 def execute_py_file_function_from_url(
     exercise: str, file_path: str, function_name: str, params: Dict[str, Any]
 ) -> Optional[Any]:
@@ -224,27 +220,55 @@ def execute_py_file_function_from_url(
         get_gitmastery_file_path(f"{exercise}/{file_path}"), False
     )
     namespace: Dict[str, Any] = {}
-    exec(py_file, namespace)
-    if function_name not in namespace:
-        return None
-    result = namespace[function_name](**params)
-    sys.dont_write_bytecode = False
-    return result
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        package_root = os.path.join(tmpdir, "exercise_utils")
+        os.makedirs(package_root, exist_ok=True)
+
+        for filename in EXERCISE_UTILS_FILES:
+            exercise_utils_path = get_gitmastery_file_path(
+                f"exercise_utils/{filename}.py"
+            )
+            exercise_utils_src = fetch_file_contents(exercise_utils_path, False)
+            with open(f"{package_root}/{filename}.py", "w", encoding="utf-8") as f:
+                f.write(ensure_str(exercise_utils_src))
+
+        sys.path.insert(0, tmpdir)
+        try:
+            exec(py_file, namespace)
+            if function_name not in namespace:
+                sys.dont_write_bytecode = False
+                return None
+
+            result = namespace[function_name](**params)
+            sys.dont_write_bytecode = False
+            return result
+        finally:
+            sys.path.remove(tmpdir)
 
 
-def execute_py_file_function_from_file(
-    file_path: str, function_name: str, **params: Dict[Any, Any]
-) -> Optional[Any]:
-    path = Path(file_path)
+def load_namespace_with_exercise_utils(file_path: str) -> Dict[str, Any]:
     sys.dont_write_bytecode = True
-    spec = importlib.util.spec_from_file_location(function_name, path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    func = getattr(module, function_name, None)
-    if callable(func):
-        result = func(**params)
-        sys.dont_write_bytecode = False
-        return result
+    py_file = fetch_file_contents(get_gitmastery_file_path(file_path), False)
+    namespace: Dict[str, Any] = {}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        package_root = os.path.join(tmpdir, "exercise_utils")
+        os.makedirs(package_root, exist_ok=True)
+
+        for filename in EXERCISE_UTILS_FILES:
+            exercise_utils_path = get_gitmastery_file_path(
+                f"exercise_utils/{filename}.py"
+            )
+            exercise_utils_src = fetch_file_contents(exercise_utils_path, False)
+            with open(f"{package_root}/{filename}.py", "w", encoding="utf-8") as f:
+                f.write(ensure_str(exercise_utils_src))
+
+        sys.path.insert(0, tmpdir)
+        try:
+            exec(py_file, namespace)
+        finally:
+            sys.path.remove(tmpdir)
+
     sys.dont_write_bytecode = False
-    return None
+    return namespace

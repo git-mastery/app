@@ -26,7 +26,7 @@ from app.utils.gitmastery import (
     get_gitmastery_file_path,
     get_variable_from_url,
     hands_on_exists,
-    load_file_namespace,
+    load_namespace_with_exercise_utils,
     read_gitmastery_exercise_config,
     require_gitmastery_root,
 )
@@ -223,7 +223,9 @@ def download_hands_on(
     os.makedirs(hands_on)
     os.chdir(hands_on)
 
-    hands_on_namespace = load_file_namespace(f"hands_on/{hands_on_without_prefix}.py")
+    hands_on_namespace = load_namespace_with_exercise_utils(
+        f"hands_on/{hands_on_without_prefix}.py"
+    )
     requires_git = hands_on_namespace.get("__requires_git__", False)
     requires_github = hands_on_namespace.get("__requires_github__", False)
 
