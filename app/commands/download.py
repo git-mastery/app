@@ -147,7 +147,7 @@ def download_exercise(
                 # Rollback the download and remove the folder
                 warn("Git is not setup. Rolling back the download")
                 os.chdir("..")
-                rmtree(formatted_exercise)
+                rmtree(exercise)
                 warn("Setup Git before downloading this exercise")
                 exit(1)
 
@@ -162,7 +162,7 @@ def download_exercise(
                 # Rollback the download and remove the folder
                 warn("Github is not setup. Rolling back the download")
                 os.chdir("..")
-                rmtree(formatted_exercise)
+                rmtree(exercise)
                 warn("Setup Github and Github CLI before downloading this exercise")
                 exit(1)
 
@@ -239,7 +239,7 @@ def download_hands_on(
                 # Rollback the download and remove the folder
                 warn("Git is not setup. Rolling back the download")
                 os.chdir("..")
-                rmtree(formatted_hands_on)
+                rmtree(hands_on)
                 warn("Setup Git before downloading this hands-on")
                 exit(1)
 
@@ -253,7 +253,7 @@ def download_hands_on(
                 # Rollback the download and remove the folder
                 warn("Github is not setup. Rolling back the download")
                 os.chdir("..")
-                rmtree(formatted_hands_on)
+                rmtree(hands_on)
                 warn("Setup Github and Github CLI before downloading this hands-on")
                 exit(1)
 

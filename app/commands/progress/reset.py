@@ -26,6 +26,7 @@ from app.utils.gitmastery import (
 @click.command()
 @click.pass_context
 def reset(ctx: click.Context) -> None:
+    # TODO: This command should work even if the user does not have syncing on - only check if Github is set up when it is necessary
     """
     Resets the progress of the current exercise.
     """

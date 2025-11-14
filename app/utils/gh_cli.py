@@ -22,6 +22,23 @@ def get_https_or_ssh(verbose: bool) -> Optional[str]:
     return None
 
 
+def get_token_scopes(verbose: bool) -> List[str]:
+    result = run(["gh", "auth", "status"], verbose, {"GH_PAGER": "cat"})
+    if result.is_success():
+        regex = re.compile(r"Scopes:\s*(.+)", re.IGNORECASE)
+        match = regex.search(result.stdout)
+        if match:
+            scopes_str = match.group(1).strip()
+            scopes = re.findall(r"'([^']+)'", scopes_str)
+            scopes = [s.strip().lower() for s in scopes]
+            return scopes
+    return []
+
+
+def has_delete_repo_scope(verbose: bool) -> bool:
+    return "delete_repo" in get_token_scopes(verbose)
+
+
 def is_authenticated(verbose: bool) -> bool:
     return run(["gh", "auth", "status"], verbose).is_success()
 
