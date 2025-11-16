@@ -85,3 +85,8 @@ def confirm(message: str, abort: bool = False) -> bool:
 
 def get_verbose_from_click_context() -> bool:
     return click.get_current_context().obj["VERBOSE"]
+
+
+def invoke_command(command: click.Command) -> None:
+    ctx = click.get_current_context()
+    ctx.invoke(command)
