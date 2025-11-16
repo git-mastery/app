@@ -42,10 +42,7 @@ def cli(ctx, verbose) -> None:
 
 
 def start() -> None:
-    cli.add_command(check)
-    cli.add_command(download)
-    cli.add_command(progress)
-    cli.add_command(setup)
-    cli.add_command(verify)
-    cli.add_command(version)
+    commands = [check, download, progress, setup, verify, version]
+    for command in commands:
+        cli.add_command(command)
     cli(obj={})
