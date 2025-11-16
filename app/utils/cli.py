@@ -1,15 +1,8 @@
 import os
 import shutil
 import stat
-import subprocess
 from pathlib import Path
-from typing import Optional, Tuple, Union
-
-
-def get_stdout_stderr(verbose: bool) -> Tuple[Optional[int], Optional[int]]:
-    stdout = None if verbose else subprocess.DEVNULL
-    stderr = None if verbose else subprocess.DEVNULL
-    return stdout, stderr
+from typing import Union
 
 
 def rmtree(folder_name: Union[str, Path]) -> None:

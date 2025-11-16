@@ -14,74 +14,68 @@ from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
 )
 from app.utils.cli import rmtree
-from app.utils.click import info, success, warn
-from app.utils.gh_cli import delete_repo, get_prs, get_username, pull_request
-from app.utils.git_cli import add_all, commit, push
+from app.utils.click import info, invoke_command, success, warn
+from app.utils.git import add_all, commit, push
+from app.utils.github_cli import delete_repo, get_prs, get_username, pull_request
 from app.utils.gitmastery import (
-    require_gitmastery_exercise_root,
-    require_gitmastery_root,
+    is_in_gitmastery_root,
+    must_be_in_exercise_root,
 )
 
 
 @click.command()
-@click.pass_context
-def reset(ctx: click.Context) -> None:
-    # TODO: This command should work even if the user does not have syncing on - only check if Github is set up when it is necessary
+def reset() -> None:
     """
     Resets the progress of the current exercise.
     """
-    verbose = ctx.obj["VERBOSE"]
-
     download_time = datetime.now(tz=pytz.UTC)
 
-    username = get_username(verbose)
+    username = get_username()
 
-    gitmastery_path, gitmastery_config = require_gitmastery_root(requires_root=False)
-    gitmastery_exercise_path, gitmastery_exercise_config = (
-        require_gitmastery_exercise_root(requires_root=True)
-    )
+    gitmastery_config = is_in_gitmastery_root()
+    exercise_config = must_be_in_exercise_root()
 
-    ctx.invoke(git)
-    ctx.invoke(github)
+    is_remote_type = exercise_config.exercise_repo.repo_type == "remote"
+    has_remote_progress = gitmastery_config.progress_remote
 
-    exercise_name = gitmastery_exercise_config.exercise_name
+    invoke_command(git)
+    if has_remote_progress or is_remote_type:
+        invoke_command(github)
 
-    os.chdir(gitmastery_exercise_path)
+    exercise_name = exercise_config.exercise_name
+
+    os.chdir(exercise_config.path)
     info("Resetting the exercise folder")
-    if gitmastery_exercise_config.exercise_repo.create_fork:
+    if is_remote_type and exercise_config.exercise_repo.create_fork:
         # Remove the fork first
-        username = get_username(verbose)
-        exercise_fork_name = f"{username}-gitmastery-{gitmastery_exercise_config.exercise_repo.repo_title}"
-        delete_repo(exercise_fork_name, verbose)
+        exercise_fork_name = (
+            f"{username}-gitmastery-{exercise_config.exercise_repo.repo_title}"
+        )
+        delete_repo(exercise_fork_name)
 
-    if os.path.isdir(
-        gitmastery_exercise_path / gitmastery_exercise_config.exercise_repo.repo_name
-    ):
+    if os.path.isdir(exercise_config.path / exercise_config.exercise_repo.repo_name):
         # Only delete if the sub-folder present
         # Sub-folder may not be present if repo_type is "ignore" or if "ignore" but the
         # student has already created the sub-folder needed
-        rmtree(
-            gitmastery_exercise_path
-            / gitmastery_exercise_config.exercise_repo.repo_name
-        )
+        rmtree(exercise_config.path / exercise_config.exercise_repo.repo_name)
 
-    if gitmastery_exercise_config.exercise_repo.repo_type != "ignore":
-        setup_exercise_folder(download_time, gitmastery_exercise_config, verbose)
+    if exercise_config.exercise_repo.repo_type != "ignore":
+        setup_exercise_folder(download_time, exercise_config)
         info(
             click.style(
-                f"cd {gitmastery_exercise_config.exercise_repo.repo_name}",
+                f"cd {exercise_config.exercise_repo.repo_name}",
                 bold=True,
                 italic=True,
             )
         )
 
-    if not os.path.isdir(gitmastery_path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(gitmastery_config.path / LOCAL_FOLDER_NAME):
         warn(
             f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
         sys.exit(0)
 
-    os.chdir(gitmastery_path / LOCAL_FOLDER_NAME)
+    os.chdir(gitmastery_config.path / LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet. No progress to reset.")
         return
@@ -100,14 +94,13 @@ def reset(ctx: click.Context) -> None:
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(clean_progress, indent=2))
 
-    progress_remote = gitmastery_config.get("progress_remote", False)
-    if progress_remote:
+    if has_remote_progress:
         info("Updating your remote progress as well")
-        add_all(verbose)
-        commit(f"Reset progress for {exercise_name}", verbose)
-        push("origin", "main", verbose)
+        add_all()
+        commit(f"Reset progress for {exercise_name}")
+        push("origin", "main")
 
-        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username)
         if len(prs) == 0:
             warn("No pull request created for progress. Creating one now")
             pull_request(
@@ -116,7 +109,6 @@ def reset(ctx: click.Context) -> None:
                 f"{username}:main",
                 f"[{username}] Progress",
                 "Automated",
-                verbose,
             )
 
     success(

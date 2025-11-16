@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 
@@ -22,6 +23,9 @@ class ExerciseConfig:
 
     downloaded_at: Optional[float]
 
+    path: Path
+    cds: int
+
     @property
     def formatted_exercise_name(self) -> str:
         # Used primarily to match the name of the folders of the exercises repository
@@ -32,4 +36,10 @@ class ExerciseConfig:
         return f"{username}-gitmastery-{self.exercise_repo.repo_title}"
 
     def to_json(self) -> str:
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=2)
+        return json.dumps(
+            self,
+            default=lambda o: {
+                k: v for k, v in o.__dict__.items() if k not in ("path", "cds")
+            },
+            indent=2,
+        )

@@ -1,7 +1,8 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional, SupportsComplex
+from pathlib import Path
+from typing import Optional
 
 import click
 import pytz
@@ -17,17 +18,17 @@ from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
-from app.utils.click import error, info, warn
-from app.utils.gh_cli import get_prs, get_username, pull_request
-from app.utils.git_cli import add_all, commit, push
+from app.utils.click import ClickColor, error, info, warn
+from app.utils.git import add_all, commit, push
+from app.utils.github_cli import get_prs, get_username, pull_request
 from app.utils.gitmastery import (
     execute_py_file_function_from_url,
-    require_gitmastery_exercise_root,
-    require_gitmastery_root,
+    is_in_exercise_root,
+    is_in_gitmastery_root,
 )
 
 
-def get_output_status_text(output: GitAutograderOutput) -> str:
+def _get_output_status_text(output: GitAutograderOutput) -> str:
     status = (
         "Completed"
         if output.status == GitAutograderStatus.SUCCESSFUL
@@ -38,27 +39,37 @@ def get_output_status_text(output: GitAutograderOutput) -> str:
     return status
 
 
-def print_output(output: GitAutograderOutput) -> None:
+def _get_output_status_color(output: GitAutograderOutput) -> str:
     color = (
-        "bright_green"
+        ClickColor.BRIGHT_GREEN
         if output.status == GitAutograderStatus.SUCCESSFUL
-        else "bright_red"
+        else ClickColor.BRIGHT_RED
         if output.status == GitAutograderStatus.UNSUCCESSFUL
-        else "bright_yellow"
+        else ClickColor.BRIGHT_YELLOW
     )
+    return color
+
+
+def _print_output(output: GitAutograderOutput) -> None:
+    color = _get_output_status_color(output)
+    status = _get_output_status_text(output)
+
     info("Verification completed.")
     info("")
-    status = get_output_status_text(output)
     info(f"{click.style('Status:', bold=True)} {click.style(status, fg=color)}")
     info(click.style("Comments:", bold=True))
-    print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
+    click.echo(
+        "\n".join(
+            [f"\t- {comment}" for comment in (output.comments or ["No comments"])]
+        )
+    )
 
 
-def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
-    username = get_username(verbose)
+def _submit_progress(output: GitAutograderOutput) -> None:
+    username = get_username()
 
-    gitmastery_root_path, gitmastery_config = require_gitmastery_root()
-    progress_local = gitmastery_config.get("progress_local", False)
+    config = is_in_gitmastery_root()
+    progress_local = config.progress_local
 
     if not progress_local:
         warn(
@@ -66,13 +77,13 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
         )
         return
 
-    if not os.path.isdir(gitmastery_root_path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(config.path / LOCAL_FOLDER_NAME):
         error(
             f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     info("Saving progress of attempt")
-    os.chdir(gitmastery_root_path / LOCAL_FOLDER_NAME)
+    os.chdir(config.path / LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet, doing that now")
         with open("progress.json", "w") as progress_file:
@@ -85,7 +96,7 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
         if output.completed_at
         else None,
         "comments": output.comments,
-        "status": get_output_status_text(output),
+        "status": _get_output_status_text(output),
     }
     current_progress = []
     with open("progress.json", "r") as progress_file:
@@ -103,14 +114,14 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(current_progress, indent=2))
 
-    progress_remote = gitmastery_config.get("progress_remote", False)
+    progress_remote = config.progress_remote
     if progress_remote:
         info("Updating your remote progress as well")
-        add_all(verbose)
-        commit("Update progress", verbose)
-        push("origin", "main", verbose)
+        add_all()
+        commit("Update progress")
+        push("origin", "main")
 
-        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username)
         if len(prs) == 0:
             warn("No pull request created for progress. Creating one now")
             pull_request(
@@ -119,35 +130,21 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
                 f"{username}:main",
                 f"[{username}] Progress",
                 "Automated",
-                verbose,
             )
 
     info("Updated your progress")
 
 
-@click.command()
-@click.pass_context
-def verify(ctx: click.Context) -> None:
-    """
-    Verifies the state of the exercise attempt.
-    """
-    verbose = ctx.obj["VERBOSE"]
-
-    started_at = datetime.now(tz=pytz.UTC)
-
-    exercise_path, config = require_gitmastery_exercise_root()
-    exercise_name = config.exercise_name
-    formatted_exercise_name = config.formatted_exercise_name
-
-    info(
-        f"Starting verification of {click.style(exercise_name, bold=True, italic=True)}"
-    )
-
-    output: Optional[GitAutograderOutput]
+def _execute_verify(
+    exercise_path: Path,
+    exercise_name: str,
+    formatted_exercise_name: str,
+    started_at: datetime,
+) -> GitAutograderOutput:
     try:
         os.chdir(exercise_path)
         exercise = GitAutograderExercise(exercise_path)
-        output = execute_py_file_function_from_url(
+        return execute_py_file_function_from_url(
             formatted_exercise_name,
             "verify.py",
             "verify",
@@ -157,7 +154,7 @@ def verify(ctx: click.Context) -> None:
         GitAutograderInvalidStateException,
         GitAutograderWrongAnswerException,
     ) as e:
-        output = GitAutograderOutput(
+        return GitAutograderOutput(
             exercise_name=exercise_name,
             started_at=started_at,
             completed_at=datetime.now(tz=pytz.UTC),
@@ -170,7 +167,7 @@ def verify(ctx: click.Context) -> None:
         )
     except Exception as e:
         # Unexpected exception
-        output = GitAutograderOutput(
+        return GitAutograderOutput(
             exercise_name=exercise_name,
             started_at=started_at,
             completed_at=datetime.now(tz=pytz.UTC),
@@ -178,6 +175,26 @@ def verify(ctx: click.Context) -> None:
             status=GitAutograderStatus.ERROR,
         )
 
-    assert output is not None
-    print_output(output)
-    submit_progress(output, verbose)
+
+@click.command()
+def verify() -> None:
+    """
+    Verifies the state of the exercise attempt.
+    """
+    started_at = datetime.now(tz=pytz.UTC)
+
+    config = is_in_exercise_root()
+
+    exercise_path = config.path
+    exercise_name = config.exercise_name
+    formatted_exercise_name = config.formatted_exercise_name
+
+    info(
+        f"Starting verification of {click.style(exercise_name, bold=True, italic=True)}"
+    )
+
+    output = _execute_verify(
+        exercise_path, exercise_name, formatted_exercise_name, started_at
+    )
+    _print_output(output)
+    _submit_progress(output)
