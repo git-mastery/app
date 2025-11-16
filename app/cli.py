@@ -33,7 +33,7 @@ def cli(ctx, verbose) -> None:
         .headers["Location"]
         .rsplit("/", 1)[-1]
     )
-    if current_version.is_behind(latest_version):
+    if current_version.is_behind(Version.parse_version_string(latest_version)):
         warn(
             click.style(
                 f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
