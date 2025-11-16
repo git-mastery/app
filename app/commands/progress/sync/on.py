@@ -6,7 +6,7 @@ import click
 from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.progress.constants import (
-    LOCAL_FOLDER_NAME,
+    PROGRESS_LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
@@ -57,13 +57,13 @@ def on() -> None:
     # before cloning again. This should automatically setup the origin and upstream
     # remotes as well
     local_progress = []
-    local_progress_filepath = os.path.join(LOCAL_FOLDER_NAME, "progress.json")
+    local_progress_filepath = os.path.join(PROGRESS_LOCAL_FOLDER_NAME, "progress.json")
     if os.path.isfile(local_progress_filepath):
         with open(local_progress_filepath, "r") as file:
             local_progress = json.load(file)
-    rmtree(LOCAL_FOLDER_NAME)
+    rmtree(PROGRESS_LOCAL_FOLDER_NAME)
 
-    clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME)
+    clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
 
     # To reconcile the difference between local and remote progress, we merge by
     # (exercise_name, start_time) which should be unique
@@ -93,7 +93,7 @@ def on() -> None:
     # push the changes
     had_update = len(seen) > len(remote_progress)
     if had_update:
-        os.chdir(LOCAL_FOLDER_NAME)
+        os.chdir(PROGRESS_LOCAL_FOLDER_NAME)
         add_all()
         commit("Sync progress with local machine")
         push("origin", "main")

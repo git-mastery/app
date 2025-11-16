@@ -15,7 +15,7 @@ from git_autograder import (
 from git_autograder.output import GitAutograderOutput
 
 from app.commands.progress.constants import (
-    LOCAL_FOLDER_NAME,
+    PROGRESS_LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
 from app.utils.click import ClickColor, error, info, warn
@@ -77,13 +77,13 @@ def _submit_progress(output: GitAutograderOutput) -> None:
         )
         return
 
-    if not os.path.isdir(config.path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(config.path / PROGRESS_LOCAL_FOLDER_NAME):
         error(
             f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     info("Saving progress of attempt")
-    os.chdir(config.path / LOCAL_FOLDER_NAME)
+    os.chdir(config.path / PROGRESS_LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet, doing that now")
         with open("progress.json", "w") as progress_file:

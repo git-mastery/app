@@ -10,7 +10,7 @@ from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.download import setup_exercise_folder
 from app.commands.progress.constants import (
-    LOCAL_FOLDER_NAME,
+    PROGRESS_LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
 from app.utils.cli import rmtree
@@ -69,13 +69,13 @@ def reset() -> None:
             )
         )
 
-    if not os.path.isdir(gitmastery_config.path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(gitmastery_config.path / PROGRESS_LOCAL_FOLDER_NAME):
         warn(
             f"Progress directory is missing. Set it up again using {click.style('gitmastery progress setup', bold=True, italic=True)}"
         )
         sys.exit(0)
 
-    os.chdir(gitmastery_config.path / LOCAL_FOLDER_NAME)
+    os.chdir(gitmastery_config.path / PROGRESS_LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet. No progress to reset.")
         return
