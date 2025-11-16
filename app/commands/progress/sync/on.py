@@ -12,7 +12,8 @@ from app.commands.progress.constants import (
 )
 from app.utils.cli import rmtree
 from app.utils.click import info, success, warn
-from app.utils.gh_cli import (
+from app.utils.git import add_all, commit, push
+from app.utils.github_cli import (
     clone_with_custom_name,
     fork,
     get_prs,
@@ -20,7 +21,6 @@ from app.utils.gh_cli import (
     has_fork,
     pull_request,
 )
-from app.utils.git_cli import add_all, commit, push
 from app.utils.gitmastery import (
     GITMASTERY_CONFIG_NAME,
     require_gitmastery_root,
@@ -33,8 +33,6 @@ def on(ctx: click.Context) -> None:
     """
     Enables sync between your local progress and remote progress.
     """
-    verbose = ctx.obj["VERBOSE"]
-
     gitmastery_root_path, gitmastery_config = require_gitmastery_root(
         requires_root=True
     )
@@ -47,14 +45,14 @@ def on(ctx: click.Context) -> None:
         f"Checking if you have fork of {click.style(PROGRESS_REPOSITORY_NAME, bold=True, italic=True)}"
     )
 
-    username = get_username(verbose)
+    username = get_username()
     fork_name = STUDENT_PROGRESS_FORK_NAME.format(username=username)
 
-    if has_fork(fork_name, verbose):
+    if has_fork(fork_name):
         info("You already have a fork")
     else:
         warn("You don't have a fork yet, creating one")
-        fork(PROGRESS_REPOSITORY_NAME, fork_name, verbose)
+        fork(PROGRESS_REPOSITORY_NAME, fork_name)
 
     os.chdir(gitmastery_root_path)
 
@@ -68,7 +66,7 @@ def on(ctx: click.Context) -> None:
             local_progress = json.load(file)
     rmtree(LOCAL_FOLDER_NAME)
 
-    clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME, verbose)
+    clone_with_custom_name(f"{username}/{fork_name}", LOCAL_FOLDER_NAME)
 
     # To reconcile the difference between local and remote progress, we merge by
     # (exercise_name, start_time) which should be unique
@@ -99,11 +97,11 @@ def on(ctx: click.Context) -> None:
     had_update = len(seen) > len(remote_progress)
     if had_update:
         os.chdir(LOCAL_FOLDER_NAME)
-        add_all(verbose)
-        commit("Sync progress with local machine", verbose)
-        push("origin", "main", verbose)
+        add_all()
+        commit("Sync progress with local machine")
+        push("origin", "main")
 
-    prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+    prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username)
     if len(prs) == 0:
         warn("No pull request created for progress. Creating one now")
         pull_request(
@@ -112,7 +110,6 @@ def on(ctx: click.Context) -> None:
             f"{username}:main",
             f"[{username}] Progress",
             "Automated",
-            verbose,
         )
 
     success("You have setup the progress tracker for Git-Mastery!")

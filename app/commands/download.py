@@ -10,15 +10,15 @@ from app.commands.check.git import git
 from app.commands.check.github import github
 from app.exercise_config import ExerciseConfig
 from app.utils.cli import rmtree
-from app.utils.click import error, info, success, warn
-from app.utils.gh_cli import (
+from app.utils.click import error, get_verbose_from_click_context, info, success, warn
+from app.utils.git import add_all, commit, empty_commit, init
+from app.utils.github_cli import (
     clone_with_custom_name,
     delete_repo,
     fork,
     get_username,
     has_fork,
 )
-from app.utils.git_cli import add_all, commit, empty_commit, init
 from app.utils.gitmastery import (
     download_file,
     execute_py_file_function_from_url,
@@ -32,9 +32,7 @@ from app.utils.gitmastery import (
 )
 
 
-def setup_exercise_folder(
-    download_time: datetime, config: ExerciseConfig, verbose: bool
-) -> None:
+def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> None:
     exercise = config.exercise_name
     formatted_exercise = config.formatted_exercise_name
 
@@ -50,25 +48,23 @@ def setup_exercise_folder(
         # We have to assume that Github is checked
         info("Retrieving exercise from Github")
 
-        username = get_username(verbose)
+        username = get_username()
         exercise_repo = f"git-mastery/{config.exercise_repo.repo_title}"
         if config.exercise_repo.create_fork:
             info("Checking if you already have a fork")
             fork_name = config.exercise_fork_name(username)
-            if has_fork(fork_name, verbose):
+            if has_fork(fork_name):
                 info("You already have a fork, deleting it")
-                delete_repo(fork_name, verbose)
+                delete_repo(fork_name)
             info("Creating fork of exercise repository")
-            fork(exercise_repo, fork_name, verbose)
+            fork(exercise_repo, fork_name)
             info("Creating clone of your fork")
             clone_with_custom_name(
-                f"{username}/{fork_name}", config.exercise_repo.repo_name, verbose
+                f"{username}/{fork_name}", config.exercise_repo.repo_name
             )
         else:
             info("Creating clone of repository")
-            clone_with_custom_name(
-                exercise_repo, config.exercise_repo.repo_name, verbose
-            )
+            clone_with_custom_name(exercise_repo, config.exercise_repo.repo_name)
 
     os.chdir(config.exercise_repo.repo_name)
     download_resources: Optional[Dict[str, str]] = get_variable_from_url(
@@ -89,17 +85,20 @@ def setup_exercise_folder(
             )
 
     if config.exercise_repo.init:
-        init(verbose)
+        init()
         initial_commit_message = "Set initial state"
         if download_resources:
-            add_all(verbose)
-            commit(initial_commit_message, verbose)
+            add_all()
+            commit(initial_commit_message)
         else:
-            empty_commit(initial_commit_message, verbose)
+            empty_commit(initial_commit_message)
 
     info("Executing download setup")
     execute_py_file_function_from_url(
-        formatted_exercise, "download.py", "setup", {"verbose": verbose}
+        formatted_exercise,
+        "download.py",
+        "setup",
+        {"verbose": get_verbose_from_click_context()},
     )
 
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
@@ -107,12 +106,9 @@ def setup_exercise_folder(
 
 
 def download_exercise(
-    ctx: click.Context,
-    exercise: str,
-    formatted_exercise: str,
-    download_time: datetime,
-    verbose: bool,
+    exercise: str, formatted_exercise: str, download_time: datetime
 ) -> None:
+    ctx = click.get_current_context()
     info(f"Checking if {exercise} is available")
     if not exercise_exists(exercise):
         error(f"Missing exercise {exercise}. Make sure you typed the name correctly.")
@@ -180,7 +176,7 @@ def download_exercise(
         )
 
     if config.exercise_repo.repo_type != "ignore":
-        setup_exercise_folder(download_time, config, verbose)
+        setup_exercise_folder(download_time, config)
         info(
             click.style(
                 f"cd {exercise}/{config.exercise_repo.repo_name}",
@@ -195,12 +191,8 @@ def download_exercise(
             gitmastery_exercise_file.write(config.to_json())
 
 
-def download_hands_on(
-    ctx: click.Context,
-    hands_on: str,
-    formatted_hands_on: str,
-    verbose: bool,
-) -> None:
+def download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
+    ctx = click.get_current_context()
     info(f"Checking if {hands_on} is available")
 
     hands_on_without_prefix = (
@@ -258,7 +250,10 @@ def download_hands_on(
                 exit(1)
 
     execute_py_file_function_from_url(
-        "hands_on", f"{hands_on_without_prefix}.py", "download", {"verbose": verbose}
+        "hands_on",
+        f"{hands_on_without_prefix}.py",
+        "download",
+        {"verbose": get_verbose_from_click_context()},
     )
     success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
 
@@ -267,18 +262,15 @@ def download_hands_on(
 # TODO: Maybe store the random "keys" in config
 @click.command()
 @click.argument("exercise")
-@click.pass_context
-def download(ctx: click.Context, exercise: str) -> None:
+def download(exercise: str) -> None:
     """Download an exercise"""
     download_time = datetime.now(tz=pytz.UTC)
-
-    verbose = ctx.obj["VERBOSE"]
 
     formatted_exercise = exercise.replace("-", "_")
     is_hands_on = exercise.startswith("hp-")
 
     require_gitmastery_root(requires_root=True)
     if is_hands_on:
-        download_hands_on(ctx, exercise, formatted_exercise, verbose)
+        download_hands_on(exercise, formatted_exercise)
     else:
-        download_exercise(ctx, exercise, formatted_exercise, download_time, verbose)
+        download_exercise(exercise, formatted_exercise, download_time)

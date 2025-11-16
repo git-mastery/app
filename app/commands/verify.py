@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional, SupportsComplex
+from typing import Optional
 
 import click
 import pytz
@@ -17,9 +17,9 @@ from app.commands.progress.constants import (
     LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
-from app.utils.click import error, info, warn
-from app.utils.gh_cli import get_prs, get_username, pull_request
-from app.utils.git_cli import add_all, commit, push
+from app.utils.click import ClickColor, error, info, warn
+from app.utils.git import add_all, commit, push
+from app.utils.github_cli import get_prs, get_username, pull_request
 from app.utils.gitmastery import (
     execute_py_file_function_from_url,
     require_gitmastery_exercise_root,
@@ -40,11 +40,11 @@ def get_output_status_text(output: GitAutograderOutput) -> str:
 
 def print_output(output: GitAutograderOutput) -> None:
     color = (
-        "bright_green"
+        ClickColor.BRIGHT_GREEN
         if output.status == GitAutograderStatus.SUCCESSFUL
-        else "bright_red"
+        else ClickColor.BRIGHT_RED
         if output.status == GitAutograderStatus.UNSUCCESSFUL
-        else "bright_yellow"
+        else ClickColor.BRIGHT_YELLOW
     )
     info("Verification completed.")
     info("")
@@ -54,8 +54,8 @@ def print_output(output: GitAutograderOutput) -> None:
     print("\n".join([f"\t- {comment}" for comment in (output.comments or [])]))
 
 
-def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
-    username = get_username(verbose)
+def submit_progress(output: GitAutograderOutput) -> None:
+    username = get_username()
 
     gitmastery_root_path, gitmastery_config = require_gitmastery_root()
     progress_local = gitmastery_config.get("progress_local", False)
@@ -106,11 +106,11 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
     progress_remote = gitmastery_config.get("progress_remote", False)
     if progress_remote:
         info("Updating your remote progress as well")
-        add_all(verbose)
-        commit("Update progress", verbose)
-        push("origin", "main", verbose)
+        add_all()
+        commit("Update progress")
+        push("origin", "main")
 
-        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username, verbose)
+        prs = get_prs(PROGRESS_REPOSITORY_NAME, "main", username)
         if len(prs) == 0:
             warn("No pull request created for progress. Creating one now")
             pull_request(
@@ -119,20 +119,16 @@ def submit_progress(output: GitAutograderOutput, verbose: bool) -> None:
                 f"{username}:main",
                 f"[{username}] Progress",
                 "Automated",
-                verbose,
             )
 
     info("Updated your progress")
 
 
 @click.command()
-@click.pass_context
-def verify(ctx: click.Context) -> None:
+def verify() -> None:
     """
     Verifies the state of the exercise attempt.
     """
-    verbose = ctx.obj["VERBOSE"]
-
     started_at = datetime.now(tz=pytz.UTC)
 
     exercise_path, config = require_gitmastery_exercise_root()
@@ -180,4 +176,4 @@ def verify(ctx: click.Context) -> None:
 
     assert output is not None
     print_output(output)
-    submit_progress(output, verbose)
+    submit_progress(output)

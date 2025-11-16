@@ -1,12 +1,9 @@
-import importlib.util
 import json
 import os
 import sys
 import tempfile
 import urllib.parse
-from os import execlp
 from pathlib import Path
-from types import ModuleType
 from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 
 import click

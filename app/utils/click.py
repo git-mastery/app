@@ -83,5 +83,5 @@ def confirm(message: str, abort: bool = False) -> bool:
     return response
 
 
-def is_verbose() -> bool:
+def get_verbose_from_click_context() -> bool:
     return click.get_current_context().obj["VERBOSE"]

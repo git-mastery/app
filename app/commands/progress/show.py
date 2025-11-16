@@ -6,7 +6,7 @@ import click
 from app.commands.check.github import github
 from app.commands.progress.constants import LOCAL_FOLDER_NAME
 from app.utils.click import error, info
-from app.utils.gh_cli import get_username
+from app.utils.github_cli import get_username
 from app.utils.gitmastery import (
     require_gitmastery_root,
 )
@@ -18,8 +18,6 @@ def show(ctx: click.Context) -> None:
     """
     View your progress made.
     """
-    verbose = ctx.obj["VERBOSE"]
-
     gitmastery_root_path, gitmastery_config = require_gitmastery_root()
     if not gitmastery_config.get("progress_local", False):
         error("You do not have progress tracking supported.")
@@ -53,7 +51,7 @@ def show(ctx: click.Context) -> None:
 
     if gitmastery_config.get("progress_remote", False):
         ctx.invoke(github)
-        username = get_username(verbose)
+        username = get_username()
         dashboard_url = (
             f"https://git-mastery.github.io/progress-dashboard/#/dashboard/{username}"
         )
