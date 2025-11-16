@@ -241,9 +241,6 @@ def execute_py_file_function_from_url(
             result = namespace[function_name](**params)
             sys.dont_write_bytecode = False
             return result
-        except Exception as e:
-            error(str(e))
-            return None
         finally:
             sys.path.remove(tmpdir)
 
