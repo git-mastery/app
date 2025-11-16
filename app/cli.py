@@ -26,8 +26,13 @@ def cli(ctx, verbose) -> None:
     ctx.ensure_object(dict)
     ctx.obj["VERBOSE"] = verbose
     current_version = Version.parse_version_string(__version__)
-    tags = requests.get("https://api.github.com/repos/git-mastery/app/tags").json()
-    latest_version = Version.parse_version_string(tags[0]["name"])
+    latest_version = (
+        requests.get(
+            "https://github.com/git-mastery/app/releases/latest", allow_redirects=False
+        )
+        .headers["Location"]
+        .rsplit("/", 1)[-1]
+    )
     if current_version.is_behind(latest_version):
         warn(
             click.style(
