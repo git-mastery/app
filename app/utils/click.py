@@ -81,3 +81,7 @@ def confirm(message: str, abort: bool = False) -> bool:
     )
     logger.info(f"Response to confirmation: {response}")
     return response
+
+
+def is_verbose() -> bool:
+    return click.get_current_context().obj["VERBOSE"]
