@@ -7,7 +7,7 @@ import click
 from app.commands.check.git import git
 from app.commands.check.github import github
 from app.commands.progress.constants import (
-    LOCAL_FOLDER_NAME,
+    PROGRESS_LOCAL_FOLDER_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
 from app.utils.cli import rmtree
@@ -42,11 +42,11 @@ def off() -> None:
         config_file.write(json.dumps(config))
 
     local_progress = []
-    local_progress_filepath = os.path.join(LOCAL_FOLDER_NAME, "progress.json")
+    local_progress_filepath = os.path.join(PROGRESS_LOCAL_FOLDER_NAME, "progress.json")
     with open(local_progress_filepath, "r") as file:
         local_progress = json.load(file)
 
-    rmtree(LOCAL_FOLDER_NAME)
+    rmtree(PROGRESS_LOCAL_FOLDER_NAME)
 
     # Re-create just the progress folder
     with open(local_progress_filepath, "a") as progress_file:

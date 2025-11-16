@@ -49,7 +49,6 @@ def show() -> None:
         )
 
     if config.progress_remote:
-        invoke_command(github)
         username = get_username()
         dashboard_url = (
             f"https://git-mastery.github.io/progress-dashboard/#/dashboard/{username}"

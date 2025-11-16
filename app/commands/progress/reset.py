@@ -25,7 +25,6 @@ from app.utils.gitmastery import (
 
 @click.command()
 def reset() -> None:
-    # TODO: This command should work even if the user does not have syncing on - only check if Github is set up when it is necessary
     """
     Resets the progress of the current exercise.
     """
@@ -36,14 +35,18 @@ def reset() -> None:
     gitmastery_config = is_in_gitmastery_root()
     exercise_config = must_be_in_exercise_root()
 
+    is_remote_type = exercise_config.exercise_repo.repo_type == "remote"
+    has_remote_progress = gitmastery_config.progress_remote
+
     invoke_command(git)
-    invoke_command(github)
+    if has_remote_progress or is_remote_type:
+        invoke_command(github)
 
     exercise_name = exercise_config.exercise_name
 
     os.chdir(exercise_config.path)
     info("Resetting the exercise folder")
-    if exercise_config.exercise_repo.create_fork:
+    if is_remote_type and exercise_config.exercise_repo.create_fork:
         # Remove the fork first
         exercise_fork_name = (
             f"{username}-gitmastery-{exercise_config.exercise_repo.repo_title}"
@@ -91,8 +94,7 @@ def reset() -> None:
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(clean_progress, indent=2))
 
-    progress_remote = gitmastery_config.progress_remote
-    if progress_remote:
+    if has_remote_progress:
         info("Updating your remote progress as well")
         add_all()
         commit(f"Reset progress for {exercise_name}")
