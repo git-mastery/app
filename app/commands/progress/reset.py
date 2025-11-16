@@ -14,7 +14,7 @@ from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
 )
 from app.utils.cli import rmtree
-from app.utils.click import info, success, warn
+from app.utils.click import info, invoke_command, success, warn
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import delete_repo, get_prs, get_username, pull_request
 from app.utils.gitmastery import (
@@ -24,8 +24,7 @@ from app.utils.gitmastery import (
 
 
 @click.command()
-@click.pass_context
-def reset(ctx: click.Context) -> None:
+def reset() -> None:
     # TODO: This command should work even if the user does not have syncing on - only check if Github is set up when it is necessary
     """
     Resets the progress of the current exercise.
@@ -39,8 +38,8 @@ def reset(ctx: click.Context) -> None:
         require_gitmastery_exercise_root(requires_root=True)
     )
 
-    ctx.invoke(git)
-    ctx.invoke(github)
+    invoke_command(git)
+    invoke_command(github)
 
     exercise_name = gitmastery_exercise_config.exercise_name
 

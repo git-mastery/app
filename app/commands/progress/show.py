@@ -5,7 +5,7 @@ import click
 
 from app.commands.check.github import github
 from app.commands.progress.constants import LOCAL_FOLDER_NAME
-from app.utils.click import error, info
+from app.utils.click import error, info, invoke_command
 from app.utils.github_cli import get_username
 from app.utils.gitmastery import (
     require_gitmastery_root,
@@ -13,8 +13,7 @@ from app.utils.gitmastery import (
 
 
 @click.command()
-@click.pass_context
-def show(ctx: click.Context) -> None:
+def show() -> None:
     """
     View your progress made.
     """
@@ -28,7 +27,7 @@ def show(ctx: click.Context) -> None:
         )
 
     if gitmastery_config.get("progress_remote", False):
-        ctx.invoke(github)
+        invoke_command(github)
 
     progress_file_path = gitmastery_root_path / LOCAL_FOLDER_NAME / "progress.json"
     all_progress = []
@@ -50,7 +49,7 @@ def show(ctx: click.Context) -> None:
         )
 
     if gitmastery_config.get("progress_remote", False):
-        ctx.invoke(github)
+        invoke_command(github)
         username = get_username()
         dashboard_url = (
             f"https://git-mastery.github.io/progress-dashboard/#/dashboard/{username}"

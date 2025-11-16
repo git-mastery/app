@@ -6,7 +6,7 @@ import requests
 
 from app.commands import check, download, progress, setup, verify
 from app.commands.version import version
-from app.utils.click import warn
+from app.utils.click import ClickColor, warn
 from app.utils.version import Version
 from app.version import __version__
 
@@ -37,7 +37,7 @@ def cli(ctx, verbose) -> None:
         warn(
             click.style(
                 f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
-                fg="bright_red",
+                fg=ClickColor.BRIGHT_RED,
             )
         )
         warn("We strongly recommend upgrading your app.")

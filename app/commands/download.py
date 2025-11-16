@@ -10,7 +10,14 @@ from app.commands.check.git import git
 from app.commands.check.github import github
 from app.exercise_config import ExerciseConfig
 from app.utils.cli import rmtree
-from app.utils.click import error, get_verbose_from_click_context, info, success, warn
+from app.utils.click import (
+    error,
+    get_verbose_from_click_context,
+    info,
+    invoke_command,
+    success,
+    warn,
+)
 from app.utils.git import add_all, commit, empty_commit, init
 from app.utils.github_cli import (
     clone_with_custom_name,
@@ -108,7 +115,6 @@ def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> No
 def download_exercise(
     exercise: str, formatted_exercise: str, download_time: datetime
 ) -> None:
-    ctx = click.get_current_context()
     info(f"Checking if {exercise} is available")
     if not exercise_exists(exercise):
         error(f"Missing exercise {exercise}. Make sure you typed the name correctly.")
@@ -136,7 +142,7 @@ def download_exercise(
     if config.requires_git:
         try:
             info("Exercise requires Git, checking if you have it setup")
-            ctx.invoke(git)
+            invoke_command(git)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
@@ -151,7 +157,7 @@ def download_exercise(
     if config.requires_github:
         try:
             info("Exercise requires Github, checking if you have it setup")
-            ctx.invoke(github)
+            invoke_command(github)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
@@ -192,7 +198,6 @@ def download_exercise(
 
 
 def download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
-    ctx = click.get_current_context()
     info(f"Checking if {hands_on} is available")
 
     hands_on_without_prefix = (
@@ -224,7 +229,7 @@ def download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
     if requires_git:
         try:
             info("Hands-on requires Git, checking if you have it setup")
-            ctx.invoke(git)
+            invoke_command(git)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration
@@ -238,7 +243,7 @@ def download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
     if requires_github:
         try:
             info("Hands-on requires Github, checking if you have it setup")
-            ctx.invoke(github)
+            invoke_command(github)
         except SystemExit as e:
             if e.code == 1:
                 # Exited because of missing Github configuration

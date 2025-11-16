@@ -11,7 +11,7 @@ from app.commands.progress.constants import (
     STUDENT_PROGRESS_FORK_NAME,
 )
 from app.utils.cli import rmtree
-from app.utils.click import info, success, warn
+from app.utils.click import info, invoke_command, success, warn
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import (
     clone_with_custom_name,
@@ -28,8 +28,7 @@ from app.utils.gitmastery import (
 
 
 @click.command()
-@click.pass_context
-def on(ctx: click.Context) -> None:
+def on() -> None:
     """
     Enables sync between your local progress and remote progress.
     """
@@ -37,8 +36,8 @@ def on(ctx: click.Context) -> None:
         requires_root=True
     )
 
-    ctx.invoke(git)
-    ctx.invoke(github)
+    invoke_command(git)
+    invoke_command(github)
 
     info("Syncing progress tracker")
     info(

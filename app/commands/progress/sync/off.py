@@ -11,14 +11,13 @@ from app.commands.progress.constants import (
     STUDENT_PROGRESS_FORK_NAME,
 )
 from app.utils.cli import rmtree
-from app.utils.click import confirm, error, info
+from app.utils.click import confirm, error, info, invoke_command
 from app.utils.github_cli import delete_repo, get_username
 from app.utils.gitmastery import require_gitmastery_root
 
 
 @click.command()
-@click.pass_context
-def off(ctx: click.Context) -> None:
+def off() -> None:
     """
     Removes the remote progress sync for Git-Mastery.
     """
@@ -34,8 +33,8 @@ def off(ctx: click.Context) -> None:
         info("Cancelling command")
         sys.exit(0)
 
-    ctx.invoke(git)
-    ctx.invoke(github)
+    invoke_command(git)
+    invoke_command(github)
 
     info("Removing fork")
     username = get_username()

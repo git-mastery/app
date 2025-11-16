@@ -5,19 +5,19 @@ import click
 
 from app.commands.check.git import git
 from app.commands.progress.constants import LOCAL_FOLDER_NAME
-from app.utils.click import error, info, prompt
+from app.utils.click import error, info, invoke_command, prompt
 
 
 @click.command("setup")
-@click.pass_context
-def setup(ctx: click.Context) -> None:
+def setup() -> None:
     """
     Sets up Git-Mastery for your local machine.
     """
     info(
         "Welcome to Git-Mastery! We will be setting up Git-Mastery for your local machine."
     )
-    ctx.invoke(git)
+
+    invoke_command(git)
     directory_name = prompt(
         "What do you want to name your exercises directory?",
         default="gitmastery-exercises",
