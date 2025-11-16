@@ -8,7 +8,7 @@ from app.commands.progress.constants import LOCAL_FOLDER_NAME
 from app.utils.click import error, info, invoke_command
 from app.utils.github_cli import get_username
 from app.utils.gitmastery import (
-    require_gitmastery_root,
+    is_in_gitmastery_root,
 )
 
 
@@ -17,19 +17,19 @@ def show() -> None:
     """
     View your progress made.
     """
-    gitmastery_root_path, gitmastery_config = require_gitmastery_root()
-    if not gitmastery_config.get("progress_local", False):
+    config = is_in_gitmastery_root()
+    if not config.progress_local:
         error("You do not have progress tracking supported.")
 
-    if not os.path.isdir(gitmastery_root_path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(config.path / LOCAL_FOLDER_NAME):
         error(
             f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
-    if gitmastery_config.get("progress_remote", False):
+    if config.progress_remote:
         invoke_command(github)
 
-    progress_file_path = gitmastery_root_path / LOCAL_FOLDER_NAME / "progress.json"
+    progress_file_path = config.path / LOCAL_FOLDER_NAME / "progress.json"
     all_progress = []
     if os.path.isfile(progress_file_path):
         with open(progress_file_path, "r") as file:
@@ -48,7 +48,7 @@ def show() -> None:
             f"{click.style(all_progress[i]['exercise_name'], bold=True)}: {all_progress[i]['status']}"
         )
 
-    if gitmastery_config.get("progress_remote", False):
+    if config.progress_remote:
         invoke_command(github)
         username = get_username()
         dashboard_url = (

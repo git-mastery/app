@@ -7,7 +7,7 @@ from typing import Dict
 
 from typing_extensions import List
 
-from app.utils.click import get_verbose_from_click_context
+from app.utils.click import get_verbose
 
 
 @dataclass
@@ -23,7 +23,7 @@ class CommandResult:
 
 
 def run(command: List[str], env: Dict[str, str] = {}) -> CommandResult:
-    verbose = get_verbose_from_click_context()
+    verbose = get_verbose()
     logger = logging.getLogger(__name__)
     logger.info("Running command: %s", command)
 

@@ -23,7 +23,7 @@ from app.utils.github_cli import (
 )
 from app.utils.gitmastery import (
     GITMASTERY_CONFIG_NAME,
-    require_gitmastery_root,
+    must_be_in_gitmastery_root,
 )
 
 
@@ -32,9 +32,7 @@ def on() -> None:
     """
     Enables sync between your local progress and remote progress.
     """
-    gitmastery_root_path, gitmastery_config = require_gitmastery_root(
-        requires_root=True
-    )
+    config = must_be_in_gitmastery_root()
 
     invoke_command(git)
     invoke_command(github)
@@ -53,7 +51,7 @@ def on() -> None:
         warn("You don't have a fork yet, creating one")
         fork(PROGRESS_REPOSITORY_NAME, fork_name)
 
-    os.chdir(gitmastery_root_path)
+    os.chdir(config.path)
 
     # To avoid sync issues, we save the local progress and delete the local repository
     # before cloning again. This should automatically setup the origin and upstream
@@ -113,8 +111,6 @@ def on() -> None:
 
     success("You have setup the progress tracker for Git-Mastery!")
 
-    gitmastery_config["progress_remote"] = True
-    with open(
-        gitmastery_root_path / GITMASTERY_CONFIG_NAME, "w"
-    ) as gitmastery_config_file:
-        gitmastery_config_file.write(json.dumps(gitmastery_config, indent=2))
+    config.progress_remote = True
+    with open(config.path / GITMASTERY_CONFIG_NAME, "w") as gitmastery_config_file:
+        gitmastery_config_file.write(json.dumps(config, indent=2))

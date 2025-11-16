@@ -13,7 +13,7 @@ from app.commands.progress.constants import (
 from app.utils.cli import rmtree
 from app.utils.click import confirm, error, info, invoke_command
 from app.utils.github_cli import delete_repo, get_username
-from app.utils.gitmastery import require_gitmastery_root
+from app.utils.gitmastery import must_be_in_gitmastery_root
 
 
 @click.command()
@@ -21,11 +21,9 @@ def off() -> None:
     """
     Removes the remote progress sync for Git-Mastery.
     """
-    gitmastery_root_path, gitmastery_config = require_gitmastery_root(
-        requires_root=True
-    )
+    config = must_be_in_gitmastery_root()
 
-    if not gitmastery_config.get("progress_remote", False):
+    if not config.progress_remote:
         error("You have not enabled sync for Git-Mastery yet.")
 
     result = confirm("Are you sure you want to turn off syncing?")
@@ -39,9 +37,9 @@ def off() -> None:
     info("Removing fork")
     username = get_username()
     delete_repo(f"{username}/{STUDENT_PROGRESS_FORK_NAME.format(username=username)}")
-    gitmastery_config["progress_remote"] = False
-    with open(gitmastery_root_path / ".gitmastery.json", "w") as config_file:
-        config_file.write(json.dumps(gitmastery_config))
+    config.progress_remote = False
+    with open(config.path / ".gitmastery.json", "w") as config_file:
+        config_file.write(json.dumps(config))
 
     local_progress = []
     local_progress_filepath = os.path.join(LOCAL_FOLDER_NAME, "progress.json")

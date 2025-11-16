@@ -1,11 +1,21 @@
 import logging
+import sys
 from enum import StrEnum
-from sys import exit
-from typing import Any, Optional
+from typing import Any, Dict, NoReturn, Optional
 
 import click
 
+from app.exercise_config import ExerciseConfig
+from app.gitmastery_config import GitMasteryConfig
+
 logger = logging.getLogger(__name__)
+
+
+class CliContextKey(StrEnum):
+    GITMASTERY_ROOT_CONFIG = "GITMASTERY_ROOT_CONFIG"
+    GITMASTERY_EXERCISE_CONFIG = "GITMASTERY_EXERCISE_CONFIG"
+    VERBOSE = "VERBOSE"
+    VERSION = "VERSION"
 
 
 class ClickColor(StrEnum):
@@ -27,12 +37,12 @@ class ClickColor(StrEnum):
     BRIGHT_WHITE = "bright_white"
 
 
-def error(message: str) -> None:
+def error(message: str) -> NoReturn:
     logger.error(message)
     click.echo(
         f"{click.style(' ERROR ', fg=ClickColor.BLACK, bg=ClickColor.BRIGHT_RED, bold=True)} {message}"
     )
-    exit(1)
+    sys.exit(1)
 
 
 def info(message: str) -> None:
@@ -83,8 +93,20 @@ def confirm(message: str, abort: bool = False) -> bool:
     return response
 
 
-def get_verbose_from_click_context() -> bool:
-    return click.get_current_context().obj["VERBOSE"]
+def get_verbose() -> bool:
+    return click.get_current_context().obj.get(CliContextKey.VERBOSE, False)
+
+
+def get_gitmastery_root_config() -> Optional[GitMasteryConfig]:
+    return click.get_current_context().obj.get(
+        CliContextKey.GITMASTERY_ROOT_CONFIG, None
+    )
+
+
+def get_exercise_root_config() -> Optional[ExerciseConfig]:
+    return click.get_current_context().obj.get(
+        CliContextKey.GITMASTERY_EXERCISE_CONFIG, None
+    )
 
 
 def invoke_command(command: click.Command) -> None:

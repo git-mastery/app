@@ -22,8 +22,8 @@ from app.utils.git import add_all, commit, push
 from app.utils.github_cli import get_prs, get_username, pull_request
 from app.utils.gitmastery import (
     execute_py_file_function_from_url,
-    require_gitmastery_exercise_root,
-    require_gitmastery_root,
+    is_in_exercise_root,
+    is_in_gitmastery_root,
 )
 
 
@@ -57,8 +57,8 @@ def print_output(output: GitAutograderOutput) -> None:
 def submit_progress(output: GitAutograderOutput) -> None:
     username = get_username()
 
-    gitmastery_root_path, gitmastery_config = require_gitmastery_root()
-    progress_local = gitmastery_config.get("progress_local", False)
+    config = is_in_gitmastery_root()
+    progress_local = config.progress_local
 
     if not progress_local:
         warn(
@@ -66,13 +66,13 @@ def submit_progress(output: GitAutograderOutput) -> None:
         )
         return
 
-    if not os.path.isdir(gitmastery_root_path / LOCAL_FOLDER_NAME):
+    if not os.path.isdir(config.path / LOCAL_FOLDER_NAME):
         error(
             f"Something strange has occurred, try to recreate the Git-Mastery exercise directory using {click.style('gitmastery setup', bold=True, italic=True)}"
         )
 
     info("Saving progress of attempt")
-    os.chdir(gitmastery_root_path / LOCAL_FOLDER_NAME)
+    os.chdir(config.path / LOCAL_FOLDER_NAME)
     if not os.path.isfile("progress.json"):
         warn("Progress tracking file not created yet, doing that now")
         with open("progress.json", "w") as progress_file:
@@ -103,7 +103,7 @@ def submit_progress(output: GitAutograderOutput) -> None:
     with open("progress.json", "w") as progress_file:
         progress_file.write(json.dumps(current_progress, indent=2))
 
-    progress_remote = gitmastery_config.get("progress_remote", False)
+    progress_remote = config.progress_remote
     if progress_remote:
         info("Updating your remote progress as well")
         add_all()
@@ -131,7 +131,9 @@ def verify() -> None:
     """
     started_at = datetime.now(tz=pytz.UTC)
 
-    exercise_path, config = require_gitmastery_exercise_root()
+    config = is_in_exercise_root()
+
+    exercise_path = config.path
     exercise_name = config.exercise_name
     formatted_exercise_name = config.formatted_exercise_name
 

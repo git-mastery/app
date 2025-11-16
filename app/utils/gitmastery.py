@@ -10,7 +10,8 @@ import click
 import requests
 
 from app.exercise_config import ExerciseConfig
-from app.utils.click import error
+from app.gitmastery_config import GitMasteryConfig
+from app.utils.click import error, get_exercise_root_config, get_gitmastery_root_config
 from app.utils.general import ensure_str
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
@@ -20,7 +21,7 @@ GITMASTERY_EXERCISES_BASE_URL = (
 )
 
 
-def find_root(filename: str) -> Optional[Tuple[Path, int]]:
+def _find_root(filename: str) -> Optional[Tuple[Path, int]]:
     current = Path.cwd()
     steps = 0
     for parent in [current] + list(current.parents):
@@ -31,51 +32,72 @@ def find_root(filename: str) -> Optional[Tuple[Path, int]]:
     return None
 
 
-def read_config(path: Path, filename: str) -> Dict:
+def _read_config(path: Path, filename: str) -> Dict:
     with open(path / filename, "r") as f:
         return json.loads(f.read())
 
 
 def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
-    return find_root(GITMASTERY_CONFIG_NAME)
+    return _find_root(GITMASTERY_CONFIG_NAME)
 
 
-def require_gitmastery_root(requires_root: bool = False) -> Tuple[Path, Dict]:
-    root = find_gitmastery_root()
-    if root is None:
+def is_in_gitmastery_root() -> GitMasteryConfig:
+    config = get_gitmastery_root_config()
+    if config is None:
         error(
-            f"You are not in a Git-Mastery exercise folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
+            f"You are not in a Git-Mastery root folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
         )
+    return config
 
-    # Just asserting since mypy doesn't recognize that error will exit the program
-    assert root is not None
-    root_path, cds = root
 
-    if requires_root and cds != 0:
+def must_be_in_gitmastery_root() -> GitMasteryConfig:
+    config = is_in_gitmastery_root()
+    cds = config.cds
+    if cds != 0:
         error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the Git-Mastery exercises folder."
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the Git-Mastery root folder."
         )
-
-    config = read_gitmastery_config(root_path)
-    return root_path, config
+    return config
 
 
-def read_gitmastery_config(gitmastery_config_path: Path) -> Dict:
-    return read_config(gitmastery_config_path, GITMASTERY_CONFIG_NAME)
-
-
-def find_gitmastery_exercise_root() -> Optional[Tuple[Path, int]]:
-    return find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
-
-
-def read_gitmastery_exercise_config(
-    gitmastery_exercise_config_path: Path,
-) -> ExerciseConfig:
-    raw_config = read_config(
-        gitmastery_exercise_config_path, GITMASTERY_EXERCISE_CONFIG_NAME
+def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMasteryConfig:
+    raw_config = _read_config(gitmastery_config_path, GITMASTERY_CONFIG_NAME)
+    return GitMasteryConfig(
+        path=gitmastery_config_path,
+        cds=cds,
+        progress_local=raw_config.get("progress_local", False),
+        progress_remote=raw_config.get("progress_remote", False),
     )
+
+
+def find_exercise_root() -> Optional[Tuple[Path, int]]:
+    return _find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
+
+
+def is_in_exercise_root() -> ExerciseConfig:
+    config = get_exercise_root_config()
+    if config is None:
+        error("You are not inside a Git-Mastery exercise folder.")
+    return config
+
+
+def must_be_in_exercise_root() -> ExerciseConfig:
+    config = is_in_exercise_root()
+    cds = config.cds
+    if cds != 0:
+        exercise_name = config.exercise_name
+        error(
+            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the {click.style(exercise_name, bold=True, italic=True)} exercise folder."
+        )
+    return config
+
+
+def read_exercise_config(exercise_config_path: Path, cds: int) -> ExerciseConfig:
+    raw_config = _read_config(exercise_config_path, GITMASTERY_EXERCISE_CONFIG_NAME)
     exercise_repo = raw_config["exercise_repo"]
     return ExerciseConfig(
+        path=exercise_config_path,
+        cds=cds,
         exercise_name=raw_config["exercise_name"],
         tags=raw_config["tags"],
         requires_git=raw_config["requires_git"],
@@ -90,27 +112,6 @@ def read_gitmastery_exercise_config(
         ),
         downloaded_at=None,
     )
-
-
-def require_gitmastery_exercise_root(
-    requires_root: bool = False,
-) -> Tuple[Path, ExerciseConfig]:
-    root = find_gitmastery_exercise_root()
-    if root is None:
-        error("You are not inside a Git-Mastery exercise folder.")
-
-    assert root is not None
-    root_path, cds = root
-
-    config = read_gitmastery_exercise_config(root_path)
-
-    if requires_root and cds != 0:
-        exercise_name = config.exercise_name
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the {click.style(exercise_name, bold=True, italic=True)} exercise folder."
-        )
-
-    return root_path, config
 
 
 def generate_cds_string(cds: int) -> str:

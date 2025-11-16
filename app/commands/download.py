@@ -12,7 +12,7 @@ from app.exercise_config import ExerciseConfig
 from app.utils.cli import rmtree
 from app.utils.click import (
     error,
-    get_verbose_from_click_context,
+    get_verbose,
     info,
     invoke_command,
     success,
@@ -34,8 +34,8 @@ from app.utils.gitmastery import (
     get_variable_from_url,
     hands_on_exists,
     load_namespace_with_exercise_utils,
-    read_gitmastery_exercise_config,
-    require_gitmastery_root,
+    must_be_in_gitmastery_root,
+    read_exercise_config,
 )
 
 
@@ -105,7 +105,7 @@ def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> No
         formatted_exercise,
         "download.py",
         "setup",
-        {"verbose": get_verbose_from_click_context()},
+        {"verbose": get_verbose()},
     )
 
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
@@ -136,7 +136,7 @@ def download_exercise(
         download_file(
             get_gitmastery_file_path(f"{formatted_exercise}/{file}"), f"./{file}", False
         )
-    config = read_gitmastery_exercise_config(Path("./"))
+    config = read_exercise_config(Path("./"), 0)
 
     # Check if the exercise requires Git to operate, if so, error if not present
     if config.requires_git:
@@ -258,7 +258,7 @@ def download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
         "hands_on",
         f"{hands_on_without_prefix}.py",
         "download",
-        {"verbose": get_verbose_from_click_context()},
+        {"verbose": get_verbose()},
     )
     success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
 
@@ -274,7 +274,7 @@ def download(exercise: str) -> None:
     formatted_exercise = exercise.replace("-", "_")
     is_hands_on = exercise.startswith("hp-")
 
-    require_gitmastery_root(requires_root=True)
+    must_be_in_gitmastery_root()
     if is_hands_on:
         download_hands_on(exercise, formatted_exercise)
     else:
