@@ -7,7 +7,7 @@ import requests
 from app.commands.check.git import git
 from app.commands.progress.constants import PROGRESS_LOCAL_FOLDER_NAME
 from app.utils.click import error, info, invoke_command, prompt
-from app.utils.version import Version
+from app.utils.version import Version, get_latest_exercise_version_tag
 
 
 @click.command("setup")
@@ -39,7 +39,7 @@ def setup() -> None:
     info("Setting up your local progress tracker...")
     os.makedirs(PROGRESS_LOCAL_FOLDER_NAME, exist_ok=True)
     with open(".gitmastery.json", "w") as gitmastery_file:
-        version_to_pin = get_latest_semver_tag()
+        version_to_pin = get_latest_exercise_version_tag()
         version_to_pin.pinned = True
         info(f"Pinning your exercises to {version_to_pin}")
         gitmastery_file.write(
@@ -58,10 +58,3 @@ def setup() -> None:
     info(
         f"Setup complete. Your directory is: {click.style(directory_name, bold=True, italic=True)}"
     )
-
-
-def get_latest_semver_tag():
-    url = "https://api.github.com/repos/git-mastery/exercises/tags"
-    tags = requests.get(url, timeout=10).json()
-    names = [t["name"].lstrip("v") for t in tags]
-    return max(map(Version.parse_version_string, names))

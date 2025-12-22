@@ -13,6 +13,7 @@ from app.exercise_config import ExerciseConfig
 from app.gitmastery_config import GitMasteryConfig
 from app.utils.click import error, get_exercise_root_config, get_gitmastery_root_config
 from app.utils.general import ensure_str
+from app.utils.version import Version, get_latest_exercise_version_tag
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
@@ -67,6 +68,9 @@ def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMastery
         cds=cds,
         progress_local=raw_config.get("progress_local", False),
         progress_remote=raw_config.get("progress_remote", False),
+        exercises_version=raw_config.get(
+            "exercises_version", Version.parse_version_string("latest")
+        ),
     )
 
 
