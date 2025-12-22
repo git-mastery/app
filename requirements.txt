@@ -7,3 +7,4 @@ pytermgui
 git-autograder==6.*
 pytz
 PyYAML
+semver
