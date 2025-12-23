@@ -2,12 +2,11 @@ import json
 import os
 
 import click
-import requests
 
 from app.commands.check.git import git
 from app.commands.progress.constants import PROGRESS_LOCAL_FOLDER_NAME
 from app.utils.click import error, info, invoke_command, prompt
-from app.utils.version import Version, get_latest_exercise_version_tag
+from app.utils.version import get_latest_exercise_version
 
 
 @click.command("setup")
@@ -39,7 +38,12 @@ def setup() -> None:
     info("Setting up your local progress tracker...")
     os.makedirs(PROGRESS_LOCAL_FOLDER_NAME, exist_ok=True)
     with open(".gitmastery.json", "w") as gitmastery_file:
-        version_to_pin = get_latest_exercise_version_tag()
+        version_to_pin = get_latest_exercise_version()
+        if version_to_pin is None:
+            # For now, we just error out because we should never be in this bad state.
+            raise ValueError(
+                "Unexpected error occurred when fetching exercises due to missing exercises tag. Contact the Git-Mastery team."
+            )
         version_to_pin.pinned = True
         info(f"Pinning your exercises to {version_to_pin}")
         gitmastery_file.write(
