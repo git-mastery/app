@@ -173,7 +173,7 @@ def get_all_exercise_tags() -> List[Version]:
     )
 
 
-def get_latest_exercise_version() -> Optional[Version]:
+def get_latest_release_exercise_version() -> Optional[Version]:
     all_tags = get_all_exercise_tags()
     if len(all_tags) == 0:
         # Although this should not be happening, we will let the callsite handle this
@@ -185,6 +185,18 @@ def get_latest_exercise_version() -> Optional[Version]:
         if tag.prerelease is None:
             return tag
 
+    return None
+
+
+def get_latest_development_exercise_version() -> Optional[Version]:
+    all_tags = get_all_exercise_tags()
+    if len(all_tags) == 0:
+        # Although this should not be happening, we will let the callsite handle this
+        return None
+
+    for tag in all_tags:
+        if tag.build is None:
+            return tag
     return None
 
 

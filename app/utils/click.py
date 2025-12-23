@@ -1,7 +1,7 @@
 import logging
 import sys
 from enum import StrEnum
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, NoReturn, Optional
 
 import click
 

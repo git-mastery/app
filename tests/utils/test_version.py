@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 from app.utils.version import (
     Version,
-    get_latest_exercise_version,
+    get_latest_release_exercise_version,
     get_latest_exercise_version_within_pin,
 )
 
@@ -154,7 +154,7 @@ def test_within_pin_with_prerelease(version, expected):
     assert version_v.within_pin(pin_version) == expected
 
 
-def test_get_latest_exercise_version():
+def test_get_latest_release_exercise_version():
     exercises = [
         "0.0.1-beta.0",
         "0.9.9",
@@ -166,7 +166,7 @@ def test_get_latest_exercise_version():
     with mock.patch(
         "app.utils.version.get_all_exercise_tags", return_value=_get_versions(exercises)
     ):
-        assert get_latest_exercise_version() == Version(
+        assert get_latest_release_exercise_version() == Version(
             0, 9, 9, None, None, False, False, False
         )
 

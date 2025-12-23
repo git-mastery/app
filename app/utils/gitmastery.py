@@ -2,7 +2,6 @@ import json
 import os
 import sys
 import tempfile
-import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 
@@ -13,13 +12,37 @@ from app.exercise_config import ExerciseConfig
 from app.gitmastery_config import GitMasteryConfig
 from app.utils.click import error, get_exercise_root_config, get_gitmastery_root_config
 from app.utils.general import ensure_str
-from app.utils.version import Version, get_latest_exercise_version_tag
+from app.utils.version import (
+    Version,
+    get_latest_exercise_version_within_pin,
+)
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
 GITMASTERY_EXERCISES_BASE_URL = (
     "https://raw.githubusercontent.com/git-mastery/exercises/refs/heads/main/"
 )
+
+
+def _construct_gitmastery_exercises_url(filepath: str, version: Version) -> str:
+    if version.release:
+        ref = "heads/main"
+    elif version.development:
+        latest_development = get_latest_exercise_version_within_pin(version)
+        ref = f"tags/{latest_development}"
+    elif not version.pinned:
+        ref = f"tags/{version.to_version_string()}"
+    else:
+        # If pinned, we need to basically search for all the available tags within the
+        # range
+        latest_within_pin = get_latest_exercise_version_within_pin(version)
+        ref = f"tags/{latest_within_pin}"
+
+    url = (
+        f"https://raw.githubusercontent.com/git-mastery/exercises/refs/{ref}/{filepath}"
+    )
+    print(url)
+    return url
 
 
 def _find_root(filename: str) -> Optional[Tuple[Path, int]]:
@@ -68,8 +91,8 @@ def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMastery
         cds=cds,
         progress_local=raw_config.get("progress_local", False),
         progress_remote=raw_config.get("progress_remote", False),
-        exercises_version=raw_config.get(
-            "exercises_version", Version.parse_version_string("latest")
+        exercises_version=Version.parse_version_string(
+            raw_config.get("exercises_version", "release")
         ),
     )
 
@@ -124,7 +147,12 @@ def generate_cds_string(cds: int) -> str:
 
 
 def get_gitmastery_file_path(path: str):
-    return urllib.parse.urljoin(GITMASTERY_EXERCISES_BASE_URL, path)
+    config = get_gitmastery_root_config()
+    if config is None:
+        version = Version.RELEASE
+    else:
+        version = config.exercises_version
+    return _construct_gitmastery_exercises_url(path, version)
 
 
 def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
@@ -138,7 +166,6 @@ def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
         error(
             f"Failed to fetch resource {click.style(url, bold=True, italic=True)}. Inform the Git-Mastery team."
         )
-    return ""
 
 
 def fetch_file_contents_or_none(
