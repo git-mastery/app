@@ -6,7 +6,7 @@ import click
 from app.commands.check.git import git
 from app.commands.progress.constants import PROGRESS_LOCAL_FOLDER_NAME
 from app.utils.click import error, info, invoke_command, prompt
-from app.utils.version import get_latest_release_exercise_version
+from app.utils.exercises import get_latest_release_exercise_version
 
 
 @click.command("setup")

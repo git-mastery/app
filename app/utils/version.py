@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import ClassVar, List, Optional, Self, Type
+from typing import ClassVar, Optional, Self, Type
 
-import requests
-import semver  # type: ignore
+import semver
 
 
 @dataclass
@@ -160,49 +159,3 @@ Version.DEVELOPMENT = Version(
     release=False,
     development=True,
 )
-
-
-def get_all_exercise_tags() -> List[Version]:
-    url = "https://api.github.com/repos/git-mastery/exercises/tags"
-    tags = requests.get(url, timeout=10).json()
-    return list(
-        sorted(
-            [Version.parse_version_string(t["name"].lstrip("v")) for t in tags],
-            reverse=True,
-        )
-    )
-
-
-def get_latest_release_exercise_version() -> Optional[Version]:
-    all_tags = get_all_exercise_tags()
-    if len(all_tags) == 0:
-        # Although this should not be happening, we will let the callsite handle this
-        return None
-
-    # These should always ignore the development versions, just focus on the release
-    # versions
-    for tag in all_tags:
-        if tag.prerelease is None:
-            return tag
-
-    return None
-
-
-def get_latest_development_exercise_version() -> Optional[Version]:
-    all_tags = get_all_exercise_tags()
-    if len(all_tags) == 0:
-        # Although this should not be happening, we will let the callsite handle this
-        return None
-
-    for tag in all_tags:
-        if tag.build is None:
-            return tag
-    return None
-
-
-def get_latest_exercise_version_within_pin(pin_version: Version) -> Optional[Version]:
-    all_tags = get_all_exercise_tags()
-    for tag in all_tags:
-        if tag.within_pin(pin_version):
-            return tag
-    return None

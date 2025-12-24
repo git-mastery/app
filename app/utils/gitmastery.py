@@ -10,12 +10,20 @@ import requests
 
 from app.exercise_config import ExerciseConfig
 from app.gitmastery_config import GitMasteryConfig
-from app.utils.click import error, get_exercise_root_config, get_gitmastery_root_config
-from app.utils.general import ensure_str
-from app.utils.version import (
-    Version,
-    get_latest_exercise_version_within_pin,
+from app.utils.click import (
+    error,
+    get_exercise_root_config,
+    get_gitmastery_root_config,
+    get_verbose,
+    get_web_cache,
 )
+from app.utils.exercises import (
+    get_latest_development_exercise_version,
+    get_latest_exercise_version_within_pin,
+    get_latest_release_exercise_version,
+)
+from app.utils.general import ensure_str
+from app.utils.version import Version
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
@@ -26,22 +34,26 @@ GITMASTERY_EXERCISES_BASE_URL = (
 
 def _construct_gitmastery_exercises_url(filepath: str, version: Version) -> str:
     if version.release:
-        ref = "heads/main"
+        latest_release = get_latest_release_exercise_version()
+        if latest_release is None:
+            raise ValueError("This should not happen. Contact the Git-Mastery team.")
+        ref = f"tags/v{latest_release.to_version_string()}"
     elif version.development:
-        latest_development = get_latest_exercise_version_within_pin(version)
-        ref = f"tags/{latest_development}"
+        latest_development = get_latest_development_exercise_version()
+        if latest_development is None:
+            raise ValueError("This should not happen. Contact the Git-Mastery team.")
+        ref = f"tags/v{latest_development.to_version_string()}"
     elif not version.pinned:
-        ref = f"tags/{version.to_version_string()}"
+        ref = f"tags/v{version.to_version_string()}"
     else:
         # If pinned, we need to basically search for all the available tags within the
         # range
         latest_within_pin = get_latest_exercise_version_within_pin(version)
-        ref = f"tags/{latest_within_pin}"
+        ref = f"tags/v{latest_within_pin}"
 
     url = (
         f"https://raw.githubusercontent.com/git-mastery/exercises/refs/{ref}/{filepath}"
     )
-    print(url)
     return url
 
 
@@ -156,12 +168,22 @@ def get_gitmastery_file_path(path: str):
 
 
 def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
+    web_cache = get_web_cache()
+    if url in web_cache:
+        if get_verbose():
+            print(f"Fetching {url} contents from WEB_CACHE")
+        return web_cache[url]
     response = requests.get(url)
+
+    if get_verbose():
+        print(f"Querying {url} for contents")
 
     if response.status_code == 200:
         if is_binary:
-            return response.content
-        return response.text
+            web_cache[url] = response.content
+        else:
+            web_cache[url] = response.text
+        return web_cache[url]
     else:
         error(
             f"Failed to fetch resource {click.style(url, bold=True, italic=True)}. Inform the Git-Mastery team."
@@ -171,12 +193,22 @@ def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
 def fetch_file_contents_or_none(
     url: str, is_binary: bool
 ) -> Optional[Union[str, bytes]]:
+    web_cache = get_web_cache()
+    if url in web_cache:
+        if get_verbose():
+            print(f"Fetching {url} contents from WEB_CACHE")
+        return web_cache[url]
     response = requests.get(url)
+
+    if get_verbose():
+        print(f"Querying {url} for contents")
 
     if response.status_code == 200:
         if is_binary:
-            return response.content
-        return response.text
+            web_cache[url] = response.content
+        else:
+            web_cache[url] = response.text
+        return web_cache[url]
     return None
 
 
@@ -208,10 +240,14 @@ def get_variable_from_url(
 
 def exercise_exists(exercise: str, timeout: int = 5) -> bool:
     try:
+        exercise_url = get_gitmastery_file_path(
+            f"{exercise.replace('-', '_')}/.gitmastery-exercise.json"
+        )
+        if get_verbose():
+            print(exercise_url)
+
         response = requests.head(
-            get_gitmastery_file_path(
-                f"{exercise.replace('-', '_')}/.gitmastery-exercise.json"
-            ),
+            exercise_url,
             allow_redirects=True,
             timeout=timeout,
         )
