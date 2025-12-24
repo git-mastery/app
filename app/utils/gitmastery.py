@@ -49,7 +49,9 @@ def _construct_gitmastery_exercises_url(filepath: str, version: Version) -> str:
         # If pinned, we need to basically search for all the available tags within the
         # range
         latest_within_pin = get_latest_exercise_version_within_pin(version)
-        ref = f"tags/v{latest_within_pin}"
+        if latest_within_pin is None:
+            raise ValueError("This should not happen. Contact the Git-Mastery team.")
+        ref = f"tags/v{latest_within_pin.to_version_string()}"
 
     url = (
         f"https://raw.githubusercontent.com/git-mastery/exercises/refs/{ref}/{filepath}"
@@ -261,8 +263,12 @@ def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
         hands_on = hands_on[3:]
 
     try:
+        hands_on_url = get_gitmastery_file_path(
+            f"hands_on/{hands_on.replace('-', '_')}.py"
+        )
+        print(hands_on_url)
         response = requests.head(
-            get_gitmastery_file_path(f"hands_on/{hands_on.replace('-', '_')}.py"),
+            hands_on_url,
             allow_redirects=True,
             timeout=timeout,
         )
