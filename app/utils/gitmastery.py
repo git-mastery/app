@@ -266,7 +266,9 @@ def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
         hands_on_url = get_gitmastery_file_path(
             f"hands_on/{hands_on.replace('-', '_')}.py"
         )
-        print(hands_on_url)
+        if get_verbose():
+            print(hands_on_url)
+
         response = requests.head(
             hands_on_url,
             allow_redirects=True,
