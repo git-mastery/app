@@ -2,12 +2,20 @@ import json
 import os
 import sys
 import tempfile
-import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Self,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import click
-import requests
+from git import Repo
 
 from app.exercise_config import ExerciseConfig
 from app.gitmastery_config import GitMasteryConfig
@@ -16,9 +24,6 @@ from app.utils.general import ensure_str
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
-GITMASTERY_EXERCISES_BASE_URL = (
-    "https://raw.githubusercontent.com/git-mastery/exercises/refs/heads/main/"
-)
 
 
 def _find_root(filename: str) -> Optional[Tuple[Path, int]]:
@@ -119,89 +124,7 @@ def generate_cds_string(cds: int) -> str:
     return "/".join([".."] * cds)
 
 
-def get_gitmastery_file_path(path: str):
-    return urllib.parse.urljoin(GITMASTERY_EXERCISES_BASE_URL, path)
-
-
-def fetch_file_contents(url: str, is_binary: bool) -> str | bytes:
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        if is_binary:
-            return response.content
-        return response.text
-    else:
-        error(
-            f"Failed to fetch resource {click.style(url, bold=True, italic=True)}. Inform the Git-Mastery team."
-        )
-    return ""
-
-
-def fetch_file_contents_or_none(
-    url: str, is_binary: bool
-) -> Optional[Union[str, bytes]]:
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        if is_binary:
-            return response.content
-        return response.text
-    return None
-
-
-def download_file(url: str, path: str, is_binary: bool) -> None:
-    contents = fetch_file_contents(url, is_binary)
-    if is_binary:
-        assert isinstance(contents, bytes)
-        with open(path, "wb") as file:
-            file.write(contents)
-    else:
-        assert isinstance(contents, str)
-        with open(path, "w+") as file:
-            file.write(contents)
-
-
 T = TypeVar("T")
-
-
-def get_variable_from_url(
-    exercise: str,
-    file_path: str,
-    variable_name: str,
-    default_value: Optional[T] = None,
-) -> Optional[T]:
-    namespace = load_namespace_with_exercise_utils(f"{exercise}/{file_path}")
-    variable = namespace.get(variable_name, default_value)
-    return variable
-
-
-def exercise_exists(exercise: str, timeout: int = 5) -> bool:
-    try:
-        response = requests.head(
-            get_gitmastery_file_path(
-                f"{exercise.replace('-', '_')}/.gitmastery-exercise.json"
-            ),
-            allow_redirects=True,
-            timeout=timeout,
-        )
-        return response.status_code < 400
-    except requests.RequestException:
-        return False
-
-
-def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
-    if hands_on.startswith("hp-"):
-        hands_on = hands_on[3:]
-
-    try:
-        response = requests.head(
-            get_gitmastery_file_path(f"hands_on/{hands_on.replace('-', '_')}.py"),
-            allow_redirects=True,
-            timeout=timeout,
-        )
-        return response.status_code < 400
-    except requests.RequestException:
-        return False
 
 
 # We hardcode this list because to fetch it dynamically requires a Github API call
@@ -210,63 +133,114 @@ def hands_on_exists(hands_on: str, timeout: int = 5) -> bool:
 EXERCISE_UTILS_FILES = ["__init__", "cli", "git", "file", "gitmastery", "github_cli"]
 
 
-def execute_py_file_function_from_url(
-    exercise: str, file_path: str, function_name: str, params: Dict[str, Any]
-) -> Optional[Any]:
-    sys.dont_write_bytecode = True
-    py_file = fetch_file_contents(
-        get_gitmastery_file_path(f"{exercise}/{file_path}"), False
-    )
-    namespace: Dict[str, Any] = {}
+class ExercisesRepo:
+    def __init__(self) -> None:
+        self.__repo: Optional[Repo] = None
+        self.__temp_dir: Optional[tempfile.TemporaryDirectory] = None
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        package_root = os.path.join(tmpdir, "exercise_utils")
-        os.makedirs(package_root, exist_ok=True)
+    @property
+    def repo(self) -> Repo:
+        assert self.__repo is not None
+        return self.__repo
 
-        for filename in EXERCISE_UTILS_FILES:
-            exercise_utils_path = get_gitmastery_file_path(
-                f"exercise_utils/{filename}.py"
-            )
-            exercise_utils_src = fetch_file_contents(exercise_utils_path, False)
-            with open(f"{package_root}/{filename}.py", "w", encoding="utf-8") as f:
-                f.write(ensure_str(exercise_utils_src))
+    def checkout(self, file_path: Union[str, Path]) -> None:
+        self.repo.git.sparse_checkout("set", "--skip-checks", file_path)
 
-        sys.path.insert(0, tmpdir)
-        try:
-            exec(py_file, namespace)
-            if function_name not in namespace:
-                sys.dont_write_bytecode = False
-                return None
+    def has_file(self, file_path: Union[str, Path]) -> bool:
+        self.checkout(file_path)
+        return os.path.exists(Path(self.repo.working_dir) / file_path)
 
-            result = namespace[function_name](**params)
+    def fetch_file_contents(
+        self, file_path: Union[str, Path], is_binary: bool
+    ) -> str | bytes:
+        self.checkout(file_path)
+        read_mode = "rb" if is_binary else "rt"
+        with open(Path(self.repo.working_dir) / file_path, read_mode) as file:
+            return file.read()
+
+    def download_file(
+        self,
+        file_path: Union[str, Path],
+        download_to_path: Union[str, Path],
+        is_binary: bool,
+    ) -> None:
+        contents = self.fetch_file_contents(file_path, is_binary)
+        if is_binary:
+            assert isinstance(contents, bytes)
+            with open(download_to_path, "wb") as file:
+                file.write(contents)
+        else:
+            assert isinstance(contents, str)
+            with open(download_to_path, "w+") as file:
+                file.write(contents)
+
+    def __enter__(self) -> Self:
+        self.__temp_dir = tempfile.TemporaryDirectory()
+        self.__repo = Repo.clone_from(
+            "https://github.com/git-mastery/exercises.git",
+            self.__temp_dir.name,
+            depth=1,
+            multi_options=["--filter=blob:none", "--sparse"],
+        )
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type | None,
+        exc_val: BaseException | None,
+        exc_tb: object | None,
+    ) -> None:
+        if self.__temp_dir is not None:
+            self.__temp_dir.cleanup()
+
+
+class Namespace:
+    def __init__(self, namespace: Dict[str, Any]) -> None:
+        self.namespace = namespace
+
+    @classmethod
+    def load_file_as_namespace(
+        cls: Type[Self], exercises_repo: ExercisesRepo, file_path: Union[str, Path]
+    ) -> Self:
+        sys.dont_write_bytecode = True
+        py_file = exercises_repo.fetch_file_contents(file_path, False)
+        namespace: Dict[str, Any] = {}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            package_root = os.path.join(tmpdir, "exercise_utils")
+            os.makedirs(package_root, exist_ok=True)
+
+            for filename in EXERCISE_UTILS_FILES:
+                exercise_utils_src = exercises_repo.fetch_file_contents(
+                    f"exercise_utils/{filename}.py", False
+                )
+                with open(f"{package_root}/{filename}.py", "w", encoding="utf-8") as f:
+                    f.write(ensure_str(exercise_utils_src))
+
+            sys.path.insert(0, tmpdir)
+            try:
+                exec(py_file, namespace)
+            finally:
+                sys.path.remove(tmpdir)
+
+        sys.dont_write_bytecode = False
+        return cls(namespace)
+
+    def execute_function(
+        self, function_name: str, params: Dict[str, Any]
+    ) -> Optional[Any]:
+        if function_name not in self.namespace:
             sys.dont_write_bytecode = False
-            return result
-        finally:
-            sys.path.remove(tmpdir)
+            return None
 
+        result = self.namespace[function_name](**params)
+        sys.dont_write_bytecode = False
+        return result
 
-def load_namespace_with_exercise_utils(file_path: str) -> Dict[str, Any]:
-    sys.dont_write_bytecode = True
-    py_file = fetch_file_contents(get_gitmastery_file_path(file_path), False)
-    namespace: Dict[str, Any] = {}
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        package_root = os.path.join(tmpdir, "exercise_utils")
-        os.makedirs(package_root, exist_ok=True)
-
-        for filename in EXERCISE_UTILS_FILES:
-            exercise_utils_path = get_gitmastery_file_path(
-                f"exercise_utils/{filename}.py"
-            )
-            exercise_utils_src = fetch_file_contents(exercise_utils_path, False)
-            with open(f"{package_root}/{filename}.py", "w", encoding="utf-8") as f:
-                f.write(ensure_str(exercise_utils_src))
-
-        sys.path.insert(0, tmpdir)
-        try:
-            exec(py_file, namespace)
-        finally:
-            sys.path.remove(tmpdir)
-
-    sys.dont_write_bytecode = False
-    return namespace
+    def get_variable(
+        self,
+        variable_name: str,
+        default_value: Optional[T] = None,
+    ) -> Optional[T]:
+        variable = self.namespace.get(variable_name, default_value)
+        return variable

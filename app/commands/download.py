@@ -5,6 +5,7 @@ from typing import Dict, Optional
 
 import click
 import pytz
+from git import Repo, util
 
 from app.commands.check.git import git
 from app.commands.check.github import github
@@ -27,13 +28,8 @@ from app.utils.github_cli import (
     has_fork,
 )
 from app.utils.gitmastery import (
-    download_file,
-    execute_py_file_function_from_url,
-    exercise_exists,
-    get_gitmastery_file_path,
-    get_variable_from_url,
-    hands_on_exists,
-    load_namespace_with_exercise_utils,
+    ExercisesRepo,
+    Namespace,
     must_be_in_gitmastery_root,
     read_exercise_config,
 )
@@ -42,155 +38,160 @@ from app.utils.gitmastery import (
 def _download_exercise(
     exercise: str, formatted_exercise: str, download_time: datetime
 ) -> None:
-    info(f"Checking if {exercise} is available")
-    if not exercise_exists(exercise):
-        error(f"Missing exercise {exercise}. Make sure you typed the name correctly.")
+    with ExercisesRepo() as repo:
+        info(f"Checking if {exercise} is available")
 
-    info(
-        f"Downloading {exercise} to {click.style(exercise + '/', bold=True, italic=True)}"
-    )
-
-    if os.path.isdir(exercise):
-        warn(f"You already have {exercise}, removing it to download again")
-        rmtree(exercise)
-
-    os.makedirs(exercise)
-    os.chdir(exercise)
-
-    info("Downloading base files...")
-    base_files = [".gitmastery-exercise.json", "README.md"]
-    for file in base_files:
-        download_file(
-            get_gitmastery_file_path(f"{formatted_exercise}/{file}"), f"./{file}", False
-        )
-    config = read_exercise_config(Path("./"), 0)
-
-    # Check if the exercise requires Git to operate, if so, error if not present
-    if config.requires_git:
-        try:
-            info("Exercise requires Git, checking if you have it setup")
-            invoke_command(git)
-        except SystemExit as e:
-            if e.code == 1:
-                # Exited because of missing Github configuration
-                # Rollback the download and remove the folder
-                warn("Git is not setup. Rolling back the download")
-                os.chdir("..")
-                rmtree(exercise)
-                warn("Setup Git before downloading this exercise")
-                exit(1)
-
-    # Check if the exercise requires Github/Github CLI to operate, if so, error if not present
-    if config.requires_github:
-        try:
-            info("Exercise requires Github, checking if you have it setup")
-            invoke_command(github)
-        except SystemExit as e:
-            if e.code == 1:
-                # Exited because of missing Github configuration
-                # Rollback the download and remove the folder
-                warn("Github is not setup. Rolling back the download")
-                os.chdir("..")
-                rmtree(exercise)
-                warn("Setup Github and Github CLI before downloading this exercise")
-                exit(1)
-
-    if len(config.base_files) > 0:
-        info("Downloading base files...")
-
-    for resource, path in config.base_files.items():
-        os.makedirs(Path(path).parent, exist_ok=True)
-        is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
-        # Download and load all of these resources
-        download_file(
-            get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
-            path,
-            is_binary,
-        )
-
-    if config.exercise_repo.repo_type != "ignore":
-        setup_exercise_folder(download_time, config)
-        info(
-            click.style(
-                f"cd {exercise}/{config.exercise_repo.repo_name}",
-                bold=True,
-                italic=True,
+        if not repo.has_file(f"{formatted_exercise}/.gitmastery-exercise.json"):
+            error(
+                f"Missing exercise {exercise}. Make sure you typed the name correctly."
             )
+
+        info(
+            f"Downloading {exercise} to {click.style(exercise + '/', bold=True, italic=True)}"
         )
-    else:
-        config.downloaded_at = download_time.timestamp()
-        info(click.style(f"cd {exercise}", bold=True, italic=True))
-        with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
-            gitmastery_exercise_file.write(config.to_json())
+
+        if os.path.isdir(exercise):
+            warn(f"You already have {exercise}, removing it to download again")
+            rmtree(exercise)
+
+        os.makedirs(exercise)
+        os.chdir(exercise)
+
+        info("Downloading base files...")
+        base_files = [".gitmastery-exercise.json", "README.md"]
+        for file in base_files:
+            repo.download_file(
+                f"{formatted_exercise}/{file}",
+                f"./{file}",
+                False,
+            )
+        config = read_exercise_config(Path("./"), 0)
+
+        # Check if the exercise requires Git to operate, if so, error if not present
+        if config.requires_git:
+            try:
+                info("Exercise requires Git, checking if you have it setup")
+                invoke_command(git)
+            except SystemExit as e:
+                if e.code == 1:
+                    # Exited because of missing Github configuration
+                    # Rollback the download and remove the folder
+                    warn("Git is not setup. Rolling back the download")
+                    os.chdir("..")
+                    rmtree(exercise)
+                    warn("Setup Git before downloading this exercise")
+                    exit(1)
+
+        # Check if the exercise requires Github/Github CLI to operate, if so, error if not present
+        if config.requires_github:
+            try:
+                info("Exercise requires Github, checking if you have it setup")
+                invoke_command(github)
+            except SystemExit as e:
+                if e.code == 1:
+                    # Exited because of missing Github configuration
+                    # Rollback the download and remove the folder
+                    warn("Github is not setup. Rolling back the download")
+                    os.chdir("..")
+                    rmtree(exercise)
+                    warn("Setup Github and Github CLI before downloading this exercise")
+                    exit(1)
+
+        if len(config.base_files) > 0:
+            info("Downloading base files...")
+
+        for resource, path in config.base_files.items():
+            os.makedirs(Path(path).parent, exist_ok=True)
+            is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
+            # Download and load all of these resources
+            repo.download_file(
+                f"{formatted_exercise}/res/{resource}",
+                path,
+                is_binary,
+            )
+
+        if config.exercise_repo.repo_type != "ignore":
+            setup_exercise_folder(repo, download_time, config)
+            info(
+                click.style(
+                    f"cd {exercise}/{config.exercise_repo.repo_name}",
+                    bold=True,
+                    italic=True,
+                )
+            )
+        else:
+            config.downloaded_at = download_time.timestamp()
+            info(click.style(f"cd {exercise}", bold=True, italic=True))
+            with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
+                gitmastery_exercise_file.write(config.to_json())
 
 
 def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
-    info(f"Checking if {hands_on} is available")
+    with ExercisesRepo() as repo:
+        info(f"Checking if {hands_on} is available")
 
-    hands_on_without_prefix = (
-        formatted_hands_on[3:]
-        if formatted_hands_on.startswith("hp_")
-        else formatted_hands_on
-    )
+        hands_on_without_prefix = formatted_hands_on.lstrip("hp_")
 
-    if not hands_on_exists(hands_on):
-        error(f"Missing hands-on {hands_on}. Make sure you typed the name correctly.")
+        if not repo.has_file(f"hands_on/{hands_on_without_prefix}.py"):
+            error(
+                f"Missing hands-on {hands_on}. Make sure you typed the name correctly."
+            )
 
-    info(
-        f"Downloading {hands_on} to {click.style(hands_on + '/', bold=True, italic=True)}"
-    )
+        info(
+            f"Downloading {hands_on} to {click.style(hands_on + '/', bold=True, italic=True)}"
+        )
 
-    if os.path.isdir(hands_on):
-        warn(f"You already have {hands_on}, removing it to download again")
-        rmtree(hands_on)
+        if os.path.isdir(hands_on):
+            warn(f"You already have {hands_on}, removing it to download again")
+            rmtree(hands_on)
 
-    os.makedirs(hands_on)
-    os.chdir(hands_on)
+        os.makedirs(hands_on)
+        os.chdir(hands_on)
 
-    hands_on_namespace = load_namespace_with_exercise_utils(
-        f"hands_on/{hands_on_without_prefix}.py"
-    )
-    requires_git = hands_on_namespace.get("__requires_git__", False)
-    requires_github = hands_on_namespace.get("__requires_github__", False)
+        hands_on_namespace = Namespace.load_file_as_namespace(
+            repo, f"hands_on/{hands_on_without_prefix}.py"
+        )
+        requires_git = hands_on_namespace.get_variable("__requires_git__", False)
+        requires_github = hands_on_namespace.get_variable("__requires_github__", False)
 
-    if requires_git:
-        try:
-            info("Hands-on requires Git, checking if you have it setup")
-            invoke_command(git)
-        except SystemExit as e:
-            if e.code == 1:
-                # Exited because of missing Github configuration
-                # Rollback the download and remove the folder
-                warn("Git is not setup. Rolling back the download")
-                os.chdir("..")
-                rmtree(hands_on)
-                warn("Setup Git before downloading this hands-on")
-                exit(1)
+        if requires_git:
+            try:
+                info("Hands-on requires Git, checking if you have it setup")
+                invoke_command(git)
+            except SystemExit as e:
+                if e.code == 1:
+                    # Exited because of missing Github configuration
+                    # Rollback the download and remove the folder
+                    warn("Git is not setup. Rolling back the download")
+                    os.chdir("..")
+                    rmtree(hands_on)
+                    warn("Setup Git before downloading this hands-on")
+                    exit(1)
 
-    if requires_github:
-        try:
-            info("Hands-on requires Github, checking if you have it setup")
-            invoke_command(github)
-        except SystemExit as e:
-            if e.code == 1:
-                # Exited because of missing Github configuration
-                # Rollback the download and remove the folder
-                warn("Github is not setup. Rolling back the download")
-                os.chdir("..")
-                rmtree(hands_on)
-                warn("Setup Github and Github CLI before downloading this hands-on")
-                exit(1)
+        if requires_github:
+            try:
+                info("Hands-on requires Github, checking if you have it setup")
+                invoke_command(github)
+            except SystemExit as e:
+                if e.code == 1:
+                    # Exited because of missing Github configuration
+                    # Rollback the download and remove the folder
+                    warn("Github is not setup. Rolling back the download")
+                    os.chdir("..")
+                    rmtree(hands_on)
+                    warn("Setup Github and Github CLI before downloading this hands-on")
+                    exit(1)
 
-    execute_py_file_function_from_url(
-        "hands_on",
-        f"{hands_on_without_prefix}.py",
-        "download",
-        {"verbose": get_verbose()},
-    )
-    success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
+        hands_on_namespace.execute_function(
+            "download",
+            {"verbose": get_verbose()},
+        )
+        success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
 
 
-def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> None:
+def setup_exercise_folder(
+    repo: ExercisesRepo, download_time: datetime, config: ExerciseConfig
+) -> None:
     exercise = config.exercise_name
     formatted_exercise = config.formatted_exercise_name
 
@@ -225,8 +226,11 @@ def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> No
             clone_with_custom_name(exercise_repo, config.exercise_repo.repo_name)
 
     os.chdir(config.exercise_repo.repo_name)
-    download_resources: Optional[Dict[str, str]] = get_variable_from_url(
-        formatted_exercise, "download.py", "__resources__", {}
+    namespace = Namespace.load_file_as_namespace(
+        repo, f"{formatted_exercise}/download.py"
+    )
+    download_resources: Optional[Dict[str, str]] = namespace.get_variable(
+        "__resources__", {}
     )
     if download_resources and len(download_resources) > 0:
         info("Downloading resources for the exercise...")
@@ -236,8 +240,8 @@ def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> No
             os.makedirs(Path(path).parent, exist_ok=True)
             is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
             # Download and load all of these resources
-            download_file(
-                get_gitmastery_file_path(f"{formatted_exercise}/res/{resource}"),
+            repo.download_file(
+                f"{formatted_exercise}/res/{resource}",
                 path,
                 is_binary,
             )
@@ -252,9 +256,7 @@ def setup_exercise_folder(download_time: datetime, config: ExerciseConfig) -> No
             empty_commit(initial_commit_message)
 
     info("Executing download setup")
-    execute_py_file_function_from_url(
-        formatted_exercise,
-        "download.py",
+    namespace.execute_function(
         "setup",
         {"verbose": get_verbose()},
     )
@@ -275,6 +277,7 @@ def download(exercise: str) -> None:
     is_hands_on = exercise.startswith("hp-")
 
     must_be_in_gitmastery_root()
+
     if is_hands_on:
         _download_hands_on(exercise, formatted_exercise)
     else:
