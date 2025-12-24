@@ -1,7 +1,7 @@
 import logging
 import sys
 from enum import StrEnum
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, Dict, List, NoReturn, Optional
 
 import click
 
@@ -16,6 +16,8 @@ class CliContextKey(StrEnum):
     GITMASTERY_EXERCISE_CONFIG = "GITMASTERY_EXERCISE_CONFIG"
     VERBOSE = "VERBOSE"
     VERSION = "VERSION"
+    WEB_CACHE = "WEB_CACHE"
+    TAG_CACHE = "TAG_CACHE"
 
 
 class ClickColor(StrEnum):
@@ -107,6 +109,14 @@ def get_exercise_root_config() -> Optional[ExerciseConfig]:
     return click.get_current_context().obj.get(
         CliContextKey.GITMASTERY_EXERCISE_CONFIG, None
     )
+
+
+def get_web_cache() -> Dict[str, str | bytes | Any]:
+    return click.get_current_context().obj.get(CliContextKey.WEB_CACHE, {})
+
+
+def get_tag_cache() -> List[str]:
+    return click.get_current_context().obj.get(CliContextKey.TAG_CACHE, [])
 
 
 def invoke_command(command: click.Command) -> None:

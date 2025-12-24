@@ -10,8 +10,8 @@ from app.utils.click import ClickColor, CliContextKey, warn
 from app.utils.gitmastery import (
     find_exercise_root,
     find_gitmastery_root,
-    read_gitmastery_config,
     read_exercise_config,
+    read_gitmastery_config,
 )
 from app.utils.version import Version
 from app.version import __version__
@@ -45,6 +45,10 @@ def cli(ctx, verbose) -> None:
         ctx.obj[CliContextKey.GITMASTERY_EXERCISE_CONFIG] = exercise_root_config
 
     ctx.obj[CliContextKey.VERBOSE] = verbose
+    # We make the assumption that within a single command run, the "state of the world"
+    # is immutable, allowing us to cache things
+    ctx.obj[CliContextKey.WEB_CACHE] = {}
+    ctx.obj[CliContextKey.TAG_CACHE] = []
 
     current_version = Version.parse_version_string(__version__)
     ctx.obj[CliContextKey.VERSION] = current_version
