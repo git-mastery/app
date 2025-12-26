@@ -330,11 +330,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   macos-build:
-    # We use macos-13 since it's the latest image that currently supports AMD64
+    # We use macos-15-intel since it's the latest image that currently supports AMD64
     strategy:
       matrix:
         include:
-          - os: macos-13
+          - os: macos-15-intel
             arch: amd64
           - os: macos-latest
             arch: arm64
@@ -444,7 +444,7 @@ jobs:
   macos-test:
     strategy:
       matrix:
-        os: [macos-13, macos-latest]
+        os: [macos-15-intel, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
