@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import json
 import os
 import sys
@@ -18,7 +19,7 @@ import click
 from git import Repo
 
 from app.exercise_config import ExerciseConfig
-from app.gitmastery_config import GitMasteryConfig
+from app.gitmastery_config import GIT_MASTERY_EXERCISES_SOURCE, GitMasteryConfig
 from app.utils.click import error, get_exercise_root_config, get_gitmastery_root_config
 from app.utils.general import ensure_str
 
@@ -70,11 +71,20 @@ def must_be_in_gitmastery_root() -> GitMasteryConfig:
 
 def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMasteryConfig:
     raw_config = _read_config(gitmastery_config_path, GITMASTERY_CONFIG_NAME)
+
+    exercises_source_raw = raw_config.get(
+        "exercises_source", asdict(GIT_MASTERY_EXERCISES_SOURCE)
+    )
     return GitMasteryConfig(
         path=gitmastery_config_path,
         cds=cds,
         progress_local=raw_config.get("progress_local", True),
         progress_remote=raw_config.get("progress_remote", False),
+        exercises_source=GitMasteryConfig.ExercisesSource(
+            username=exercises_source_raw["username"],
+            repository=exercises_source_raw["repository"],
+            branch=exercises_source_raw["branch"],
+        ),
     )
 
 
@@ -187,10 +197,22 @@ class ExercisesRepo:
 
     def __enter__(self) -> Self:
         self.__temp_dir = tempfile.TemporaryDirectory()
+
+        gitmastery_config = get_gitmastery_root_config()
+        if gitmastery_config is not None:
+            exercises_source = gitmastery_config.exercises_source
+        else:
+            exercises_source = GIT_MASTERY_EXERCISES_SOURCE
+
+        print(gitmastery_config)
+        print(exercises_source)
+        print(type(exercises_source))
+
         self.__repo = Repo.clone_from(
-            "https://github.com/git-mastery/exercises.git",
+            f"https://github.com/{exercises_source.username}/{exercises_source.repository}.git",
             self.__temp_dir.name,
             depth=1,
+            branch=exercises_source.branch,
             multi_options=["--filter=blob:none", "--sparse"],
         )
         return self

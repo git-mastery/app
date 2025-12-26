@@ -5,8 +5,15 @@ from pathlib import Path
 
 @dataclass
 class GitMasteryConfig:
+    @dataclass
+    class ExercisesSource:
+        username: str
+        repository: str
+        branch: str
+
     progress_local: bool
     progress_remote: bool
+    exercises_source: ExercisesSource
 
     path: Path
     cds: int
@@ -19,3 +26,8 @@ class GitMasteryConfig:
             },
             indent=2,
         )
+
+
+GIT_MASTERY_EXERCISES_SOURCE = GitMasteryConfig.ExercisesSource(
+    username="git-mastery", repository="exercises", branch="main"
+)
