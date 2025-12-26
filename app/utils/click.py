@@ -1,12 +1,12 @@
 import logging
 import sys
 from enum import StrEnum
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, NoReturn, Optional
 
 import click
 
-from app.exercise_config import ExerciseConfig
-from app.gitmastery_config import GitMasteryConfig
+from app.configs.exercise_config import ExerciseConfig
+from app.configs.gitmastery_config import GitMasteryConfig
 
 logger = logging.getLogger(__name__)
 
@@ -103,10 +103,24 @@ def get_gitmastery_root_config() -> Optional[GitMasteryConfig]:
     )
 
 
+def must_get_gitmastery_root_config() -> GitMasteryConfig:
+    v = get_gitmastery_root_config()
+    if v is None:
+        raise ValueError("Git-Mastery root config expected.")
+    return v
+
+
 def get_exercise_root_config() -> Optional[ExerciseConfig]:
     return click.get_current_context().obj.get(
         CliContextKey.GITMASTERY_EXERCISE_CONFIG, None
     )
+
+
+def must_get_exercise_root_config() -> ExerciseConfig:
+    v = get_exercise_root_config()
+    if v is None:
+        raise ValueError("Git-Mastery exercise config expected.")
+    return v
 
 
 def invoke_command(command: click.Command) -> None:
