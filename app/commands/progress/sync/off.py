@@ -39,7 +39,7 @@ def off() -> None:
     delete_repo(f"{username}/{STUDENT_PROGRESS_FORK_NAME.format(username=username)}")
     config.progress_remote = False
     with open(config.path / ".gitmastery.json", "w") as config_file:
-        config_file.write(json.dumps(config))
+        config_file.write(config.to_json())
 
     local_progress = []
     local_progress_filepath = os.path.join(PROGRESS_LOCAL_FOLDER_NAME, "progress.json")
