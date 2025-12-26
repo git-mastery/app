@@ -34,7 +34,10 @@ def _find_root(filename: str) -> Optional[Tuple[Path, int]]:
 
 def _read_config(path: Path, filename: str) -> Dict:
     with open(path / filename, "r") as f:
-        return json.loads(f.read())
+        contents = f.read()
+        if contents.strip() == "":
+            return {}
+        return json.loads(contents)
 
 
 def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
@@ -65,7 +68,7 @@ def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMastery
     return GitMasteryConfig(
         path=gitmastery_config_path,
         cds=cds,
-        progress_local=raw_config.get("progress_local", False),
+        progress_local=raw_config.get("progress_local", True),
         progress_remote=raw_config.get("progress_remote", False),
     )
 

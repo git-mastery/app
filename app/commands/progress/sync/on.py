@@ -113,4 +113,4 @@ def on() -> None:
 
     config.progress_remote = True
     with open(config.path / GITMASTERY_CONFIG_NAME, "w") as gitmastery_config_file:
-        gitmastery_config_file.write(json.dumps(config, indent=2))
+        gitmastery_config_file.write(config.to_json())
