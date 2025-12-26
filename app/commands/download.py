@@ -8,7 +8,8 @@ import pytz
 
 from app.commands.check.git import git
 from app.commands.check.github import github
-from app.exercise_config import ExerciseConfig
+from app.configs.exercise_config import ExerciseConfig
+from app.hooks import in_gitmastery_root
 from app.utils.cli import rmtree
 from app.utils.click import (
     error,
@@ -26,12 +27,7 @@ from app.utils.github_cli import (
     get_username,
     has_fork,
 )
-from app.utils.gitmastery import (
-    ExercisesRepo,
-    Namespace,
-    must_be_in_gitmastery_root,
-    read_exercise_config,
-)
+from app.utils.gitmastery import ExercisesRepo, Namespace
 
 
 def _download_exercise(
@@ -64,7 +60,7 @@ def _download_exercise(
                 f"./{file}",
                 False,
             )
-        config = read_exercise_config(Path("./"), 0)
+        config = ExerciseConfig.read(Path("./"), 0)
 
         # Check if the exercise requires Git to operate, if so, error if not present
         if config.requires_git:
@@ -268,14 +264,13 @@ def setup_exercise_folder(
 # TODO: Maybe store the random "keys" in config
 @click.command()
 @click.argument("exercise")
+@in_gitmastery_root(must=True)
 def download(exercise: str) -> None:
     """Download an exercise"""
     download_time = datetime.now(tz=pytz.UTC)
 
     formatted_exercise = exercise.replace("-", "_")
     is_hands_on = exercise.startswith("hp-")
-
-    must_be_in_gitmastery_root()
 
     if is_hands_on:
         _download_hands_on(exercise, formatted_exercise)

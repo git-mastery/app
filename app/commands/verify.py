@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import click
 import pytz
@@ -18,15 +17,19 @@ from app.commands.progress.constants import (
     PROGRESS_LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
-from app.utils.click import ClickColor, error, info, warn
+from app.hooks import in_gitmastery_root
+from app.hooks.in_exercise_root import in_exercise_root
+from app.utils.click import (
+    ClickColor,
+    error,
+    info,
+    must_get_exercise_root_config,
+    must_get_gitmastery_root_config,
+    warn,
+)
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import get_prs, get_username, pull_request
-from app.utils.gitmastery import (
-    ExercisesRepo,
-    Namespace,
-    is_in_exercise_root,
-    is_in_gitmastery_root,
-)
+from app.utils.gitmastery import ExercisesRepo, Namespace
 
 
 def _get_output_status_text(output: GitAutograderOutput) -> str:
@@ -69,7 +72,7 @@ def _print_output(output: GitAutograderOutput) -> None:
 def _submit_progress(output: GitAutograderOutput) -> None:
     username = get_username()
 
-    config = is_in_gitmastery_root()
+    config = must_get_gitmastery_root_config()
     progress_local = config.progress_local
 
     if not progress_local:
@@ -180,13 +183,15 @@ def _execute_verify(
 
 
 @click.command()
+@in_exercise_root()
+@in_gitmastery_root()
 def verify() -> None:
     """
     Verifies the state of the exercise attempt.
     """
     started_at = datetime.now(tz=pytz.UTC)
 
-    config = is_in_exercise_root()
+    config = must_get_exercise_root_config()
 
     exercise_path = config.path
     exercise_name = config.exercise_name

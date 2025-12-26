@@ -13,17 +13,25 @@ from app.commands.progress.constants import (
     PROGRESS_LOCAL_FOLDER_NAME,
     PROGRESS_REPOSITORY_NAME,
 )
+from app.hooks.in_exercise_root import in_exercise_root
+from app.hooks.in_gitmastery_root import in_gitmastery_root
 from app.utils.cli import rmtree
-from app.utils.click import info, invoke_command, success, warn
+from app.utils.click import (
+    info,
+    invoke_command,
+    must_get_exercise_root_config,
+    must_get_gitmastery_root_config,
+    success,
+    warn,
+)
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import delete_repo, get_prs, get_username, pull_request
-from app.utils.gitmastery import (
-    is_in_gitmastery_root,
-    must_be_in_exercise_root,
-)
+from app.utils.gitmastery import ExercisesRepo
 
 
 @click.command()
+@in_gitmastery_root()
+@in_exercise_root(must=True)
 def reset() -> None:
     """
     Resets the progress of the current exercise.
@@ -32,8 +40,8 @@ def reset() -> None:
 
     username = get_username()
 
-    gitmastery_config = is_in_gitmastery_root()
-    exercise_config = must_be_in_exercise_root()
+    gitmastery_config = must_get_gitmastery_root_config()
+    exercise_config = must_get_exercise_root_config()
 
     is_remote_type = exercise_config.exercise_repo.repo_type == "remote"
     has_remote_progress = gitmastery_config.progress_remote
@@ -60,14 +68,15 @@ def reset() -> None:
         rmtree(exercise_config.path / exercise_config.exercise_repo.repo_name)
 
     if exercise_config.exercise_repo.repo_type != "ignore":
-        setup_exercise_folder(download_time, exercise_config)
-        info(
-            click.style(
-                f"cd {exercise_config.exercise_repo.repo_name}",
-                bold=True,
-                italic=True,
+        with ExercisesRepo() as repo:
+            setup_exercise_folder(repo, download_time, exercise_config)
+            info(
+                click.style(
+                    f"cd {exercise_config.exercise_repo.repo_name}",
+                    bold=True,
+                    italic=True,
+                )
             )
-        )
 
     if not os.path.isdir(gitmastery_config.path / PROGRESS_LOCAL_FOLDER_NAME):
         warn(

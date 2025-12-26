@@ -1,7 +1,8 @@
 import logging
 import re
 
-from app.utils.gitmastery import find_gitmastery_root
+from app.configs.configs import find_root
+from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME
 
 
 class GitMasteryFileHandler(logging.Handler):
@@ -9,7 +10,7 @@ class GitMasteryFileHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record: logging.LogRecord) -> None:
-        gitmastery_root = find_gitmastery_root()
+        gitmastery_root = find_root(GITMASTERY_CONFIG_NAME)
         if gitmastery_root is None:
             return
 
