@@ -135,6 +135,14 @@ EXERCISE_UTILS_FILES = ["__init__", "cli", "git", "file", "gitmastery", "github_
 
 class ExercisesRepo:
     def __init__(self) -> None:
+        """Creates a sparse clone of the exercises repository.
+
+        Used to minimize Github API calls to the raw. domain as sparse clones will use
+        the regular Git server calls which are not a part of the Github API calls.
+        These greatly reduce the rate in which the Git-Mastery app will hit the Github
+        API rate limit.
+        """
+
         self.__repo: Optional[Repo] = None
         self.__temp_dir: Optional[tempfile.TemporaryDirectory] = None
 

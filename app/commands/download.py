@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 import click
 import pytz
-from git import Repo, util
 
 from app.commands.check.git import git
 from app.commands.check.github import github
