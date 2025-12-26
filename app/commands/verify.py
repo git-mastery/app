@@ -22,7 +22,8 @@ from app.utils.click import ClickColor, error, info, warn
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import get_prs, get_username, pull_request
 from app.utils.gitmastery import (
-    execute_py_file_function_from_url,
+    ExercisesRepo,
+    Namespace,
     is_in_exercise_root,
     is_in_gitmastery_root,
 )
@@ -141,39 +142,41 @@ def _execute_verify(
     formatted_exercise_name: str,
     started_at: datetime,
 ) -> GitAutograderOutput:
-    try:
-        os.chdir(exercise_path)
-        exercise = GitAutograderExercise(exercise_path)
-        return execute_py_file_function_from_url(
-            formatted_exercise_name,
-            "verify.py",
-            "verify",
-            {"exercise": exercise},  # type: ignore
-        )
-    except (
-        GitAutograderInvalidStateException,
-        GitAutograderWrongAnswerException,
-    ) as e:
-        return GitAutograderOutput(
-            exercise_name=exercise_name,
-            started_at=started_at,
-            completed_at=datetime.now(tz=pytz.UTC),
-            comments=[e.message] if isinstance(e.message, str) else e.message,
-            status=(
-                GitAutograderStatus.ERROR
-                if isinstance(e, GitAutograderInvalidStateException)
-                else GitAutograderStatus.UNSUCCESSFUL
-            ),
-        )
-    except Exception as e:
-        # Unexpected exception
-        return GitAutograderOutput(
-            exercise_name=exercise_name,
-            started_at=started_at,
-            completed_at=datetime.now(tz=pytz.UTC),
-            comments=[str(e)],
-            status=GitAutograderStatus.ERROR,
-        )
+    with ExercisesRepo() as repo:
+        try:
+            os.chdir(exercise_path)
+            exercise = GitAutograderExercise(exercise_path)
+            namespace = Namespace.load_file_as_namespace(
+                repo, f"{formatted_exercise_name}/verify.py"
+            )
+            return namespace.execute_function(
+                "verify",
+                {"exercise": exercise},  # type: ignore
+            )
+        except (
+            GitAutograderInvalidStateException,
+            GitAutograderWrongAnswerException,
+        ) as e:
+            return GitAutograderOutput(
+                exercise_name=exercise_name,
+                started_at=started_at,
+                completed_at=datetime.now(tz=pytz.UTC),
+                comments=[e.message] if isinstance(e.message, str) else e.message,
+                status=(
+                    GitAutograderStatus.ERROR
+                    if isinstance(e, GitAutograderInvalidStateException)
+                    else GitAutograderStatus.UNSUCCESSFUL
+                ),
+            )
+        except Exception as e:
+            # Unexpected exception
+            return GitAutograderOutput(
+                exercise_name=exercise_name,
+                started_at=started_at,
+                completed_at=datetime.now(tz=pytz.UTC),
+                comments=[str(e)],
+                status=GitAutograderStatus.ERROR,
+            )
 
 
 @click.command()
