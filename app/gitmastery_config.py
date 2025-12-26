@@ -11,6 +11,9 @@ class GitMasteryConfig:
         repository: str
         branch: str
 
+        def to_url(self) -> str:
+            return f"https://github.com/{self.username}/{self.repository}.git"
+
     progress_local: bool
     progress_remote: bool
     exercises_source: ExercisesSource
