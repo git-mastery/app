@@ -70,5 +70,4 @@ jobs:
 
           git tag "$TAG"
 
-          git push https://x-access-token:${PAT}@github.com/${{ github.repository }}.git \
-            "$TAG"
+          git push https://x-access-token:${PAT}@github.com/${{ github.repository }}.git refs/tags/$TAG
