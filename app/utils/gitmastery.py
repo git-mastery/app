@@ -1,3 +1,4 @@
+import inspect
 import os
 import sys
 import tempfile
@@ -155,7 +156,10 @@ class Namespace:
             sys.dont_write_bytecode = False
             return None
 
-        result = self.namespace[function_name](**params)
+        func = self.namespace[function_name]
+        sig = inspect.signature(func)
+        valid_params = {k: v for k, v in params.items() if k in sig.parameters}
+        result = self.namespace[function_name](**valid_params)
         sys.dont_write_bytecode = False
         return result
 
