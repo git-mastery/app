@@ -5,6 +5,8 @@ from typing import Dict, Optional
 
 import click
 import pytz
+from git import Repo
+from repo_smith.repo_smith import RepoSmith
 
 from app.commands.check.git import git
 from app.commands.check.github import github
@@ -251,9 +253,11 @@ def setup_exercise_folder(
             empty_commit(initial_commit_message)
 
     info("Executing download setup")
+    current_repo = Repo(".")
+    repo_smith = RepoSmith(current_repo, get_verbose())
     namespace.execute_function(
         "setup",
-        {"verbose": get_verbose()},
+        {"rs": repo_smith},
     )
 
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
