@@ -254,10 +254,11 @@ def setup_exercise_folder(
 
     info("Executing download setup")
     current_repo = Repo(".")
-    repo_smith = RepoSmith(current_repo, get_verbose())
+    verbose = get_verbose()
+    repo_smith = RepoSmith(current_repo, verbose)
     namespace.execute_function(
         "setup",
-        {"rs": repo_smith},
+        {"rs": repo_smith, "verbose": verbose},
     )
 
     success(f"Completed setting up {click.style(exercise, bold=True, italic=True)}")
