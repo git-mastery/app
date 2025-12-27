@@ -10,6 +10,10 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: tag-main
+      cancel-in-progress: false
+
     permissions:
       contents: write
 
