@@ -1,6 +1,12 @@
 name: Build and release Git-Mastery CLI
 
 on:
+  workflow_run:
+    workflows: [Bump version tag on merge]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
   push:
     tags:
@@ -18,6 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout source
@@ -74,6 +81,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout source
@@ -187,6 +195,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   debian-publish-apt:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     needs: debian-build
     permissions: write-all
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
@@ -199,6 +208,7 @@ jobs:
     # on supporting that first
     needs: linux-build
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
       ARCHITECTURE: amd64
@@ -293,6 +303,7 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout source
@@ -339,6 +350,7 @@ jobs:
           - os: macos-latest
             arch: arm64
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
       sha256-arm64: ${{ steps.checksum-arm64.outputs.sha256 }}
       sha256-amd64: ${{ steps.checksum-amd64.outputs.sha256 }}
@@ -389,6 +401,7 @@ jobs:
 
   macos-publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     needs: macos-build
 
@@ -447,6 +460,7 @@ jobs:
         os: [macos-15-intel, macos-latest]
 
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     needs: macos-publish
 
