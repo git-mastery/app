@@ -6,9 +6,7 @@ from app.commands.progress.sync.on import on
 
 @click.group()
 def sync() -> None:
-    """
-    Synchronize your local progress remotely.
-    """
+    """Synchronize your local progress remotely."""
     pass
 
 

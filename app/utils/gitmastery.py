@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 import tempfile
@@ -8,136 +7,16 @@ from typing import (
     Dict,
     Optional,
     Self,
-    Tuple,
     Type,
     TypeVar,
     Union,
 )
 
-import click
 from git import Repo
 
-from app.exercise_config import ExerciseConfig
-from app.gitmastery_config import GIT_MASTERY_EXERCISES_SOURCE, GitMasteryConfig
-from app.utils.click import (
-    error,
-    get_exercise_root_config,
-    get_gitmastery_root_config,
-    info,
-)
+from app.configs.gitmastery_config import GIT_MASTERY_EXERCISES_SOURCE
+from app.utils.click import get_gitmastery_root_config, info
 from app.utils.general import ensure_str
-
-GITMASTERY_CONFIG_NAME = ".gitmastery.json"
-GITMASTERY_EXERCISE_CONFIG_NAME = ".gitmastery-exercise.json"
-
-
-def _find_root(filename: str) -> Optional[Tuple[Path, int]]:
-    current = Path.cwd()
-    steps = 0
-    for parent in [current] + list(current.parents):
-        if (parent / filename).is_file():
-            return parent, steps
-        steps += 1
-
-    return None
-
-
-def _read_config(path: Path, filename: str) -> Dict:
-    with open(path / filename, "r") as f:
-        contents = f.read()
-        if contents.strip() == "":
-            return {}
-        return json.loads(contents)
-
-
-def find_gitmastery_root() -> Optional[Tuple[Path, int]]:
-    return _find_root(GITMASTERY_CONFIG_NAME)
-
-
-def is_in_gitmastery_root() -> GitMasteryConfig:
-    config = get_gitmastery_root_config()
-    if config is None:
-        error(
-            f"You are not in a Git-Mastery root folder. Navigate to an appropriate folder or use {click.style('gitmastery setup', bold=True, italic=True)}"
-        )
-    return config
-
-
-def must_be_in_gitmastery_root() -> GitMasteryConfig:
-    config = is_in_gitmastery_root()
-    cds = config.cds
-    if cds != 0:
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the Git-Mastery root folder."
-        )
-    return config
-
-
-def read_gitmastery_config(gitmastery_config_path: Path, cds: int) -> GitMasteryConfig:
-    raw_config = _read_config(gitmastery_config_path, GITMASTERY_CONFIG_NAME)
-
-    exercises_source_raw = raw_config.get("exercises_source", {})
-    return GitMasteryConfig(
-        path=gitmastery_config_path,
-        cds=cds,
-        progress_local=raw_config.get("progress_local", True),
-        progress_remote=raw_config.get("progress_remote", False),
-        exercises_source=GitMasteryConfig.ExercisesSource(
-            username=exercises_source_raw.get("username", "git-mastery"),
-            repository=exercises_source_raw.get("repository", "exercises"),
-            branch=exercises_source_raw.get("branch", "main"),
-        ),
-    )
-
-
-def find_exercise_root() -> Optional[Tuple[Path, int]]:
-    return _find_root(GITMASTERY_EXERCISE_CONFIG_NAME)
-
-
-def is_in_exercise_root() -> ExerciseConfig:
-    config = get_exercise_root_config()
-    if config is None:
-        error("You are not inside a Git-Mastery exercise folder.")
-    return config
-
-
-def must_be_in_exercise_root() -> ExerciseConfig:
-    config = is_in_exercise_root()
-    cds = config.cds
-    if cds != 0:
-        exercise_name = config.exercise_name
-        error(
-            f"Use {click.style('cd ' + generate_cds_string(cds), bold=True, italic=True)} to move to the root of the {click.style(exercise_name, bold=True, italic=True)} exercise folder."
-        )
-    return config
-
-
-def read_exercise_config(exercise_config_path: Path, cds: int) -> ExerciseConfig:
-    raw_config = _read_config(exercise_config_path, GITMASTERY_EXERCISE_CONFIG_NAME)
-    exercise_repo = raw_config["exercise_repo"]
-    return ExerciseConfig(
-        path=exercise_config_path,
-        cds=cds,
-        exercise_name=raw_config["exercise_name"],
-        tags=raw_config["tags"],
-        requires_git=raw_config["requires_git"],
-        requires_github=raw_config["requires_github"],
-        base_files=raw_config["base_files"],
-        exercise_repo=ExerciseConfig.ExerciseRepoConfig(
-            repo_type=exercise_repo["repo_type"],  # type: ignore
-            repo_name=exercise_repo["repo_name"],
-            repo_title=exercise_repo["repo_title"],
-            create_fork=exercise_repo["create_fork"],
-            init=exercise_repo["init"],
-        ),
-        downloaded_at=None,
-    )
-
-
-def generate_cds_string(cds: int) -> str:
-    # TODO: Maybe support Windows as well?
-    return "/".join([".."] * cds)
-
 
 T = TypeVar("T")
 

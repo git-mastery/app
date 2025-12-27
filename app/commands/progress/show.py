@@ -5,19 +5,17 @@ import click
 
 from app.commands.check.github import github
 from app.commands.progress.constants import PROGRESS_LOCAL_FOLDER_NAME
-from app.utils.click import error, info, invoke_command
+from app.hooks import in_gitmastery_root
+from app.utils.click import error, info, invoke_command, must_get_gitmastery_root_config
 from app.utils.github_cli import get_username
-from app.utils.gitmastery import (
-    is_in_gitmastery_root,
-)
 
 
 @click.command()
+@in_gitmastery_root()
 def show() -> None:
-    """
-    View your progress made.
-    """
-    config = is_in_gitmastery_root()
+    """View your progress made."""
+
+    config = must_get_gitmastery_root_config()
     if not config.progress_local:
         error("You do not have progress tracking supported.")
 

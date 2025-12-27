@@ -38,7 +38,17 @@ def setup() -> None:
     os.makedirs(PROGRESS_LOCAL_FOLDER_NAME, exist_ok=True)
     with open(".gitmastery.json", "w") as gitmastery_file:
         gitmastery_file.write(
-            json.dumps({"progress_local": True, "progress_remote": False})
+            json.dumps(
+                {
+                    "progress_local": True,
+                    "progress_remote": False,
+                    "exercises_source": {
+                        "username": "git-mastery",
+                        "repository": "exercises",
+                        "branch": "main",
+                    },
+                }
+            )
         )
 
     with open("progress/progress.json", "a") as progress_file:

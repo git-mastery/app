@@ -10,8 +10,15 @@ from app.commands.progress.constants import (
     PROGRESS_REPOSITORY_NAME,
     STUDENT_PROGRESS_FORK_NAME,
 )
+from app.hooks import in_gitmastery_root
 from app.utils.cli import rmtree
-from app.utils.click import info, invoke_command, success, warn
+from app.utils.click import (
+    info,
+    invoke_command,
+    must_get_gitmastery_root_config,
+    success,
+    warn,
+)
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import (
     clone_with_custom_name,
@@ -21,18 +28,15 @@ from app.utils.github_cli import (
     has_fork,
     pull_request,
 )
-from app.utils.gitmastery import (
-    GITMASTERY_CONFIG_NAME,
-    must_be_in_gitmastery_root,
-)
 
 
 @click.command()
+@in_gitmastery_root(must=True)
 def on() -> None:
     """
     Enables sync between your local progress and remote progress.
     """
-    config = must_be_in_gitmastery_root()
+    config = must_get_gitmastery_root_config()
 
     invoke_command(git)
     invoke_command(github)
@@ -112,5 +116,4 @@ def on() -> None:
     success("You have setup the progress tracker for Git-Mastery!")
 
     config.progress_remote = True
-    with open(config.path / GITMASTERY_CONFIG_NAME, "w") as gitmastery_config_file:
-        gitmastery_config_file.write(config.to_json())
+    config.write()

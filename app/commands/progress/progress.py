@@ -7,9 +7,7 @@ from app.commands.progress.sync.sync import sync
 
 @click.group()
 def progress() -> None:
-    """
-    Tracks the progress made by students on Git-Mastery exercises.
-    """
+    """Tracks the progress made by students on Git-Mastery exercises."""
     pass
 
 
