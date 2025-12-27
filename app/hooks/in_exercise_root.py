@@ -2,8 +2,9 @@ from functools import wraps
 from typing import Any, Callable
 
 import click
-from app.configs.configs import find_root
+
 from app.configs.exercise_config import GITMASTERY_EXERCISE_CONFIG_NAME, ExerciseConfig
+from app.configs.utils import find_root
 from app.hooks.utils import generate_cds_string
 from app.utils.click import CliContextKey, error
 

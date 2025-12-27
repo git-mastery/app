@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self, Type
 
-from app.configs.configs import read_config
+from app.configs.utils import read_config
 
 GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 

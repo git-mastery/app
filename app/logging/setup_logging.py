@@ -1,8 +1,8 @@
 import logging
 import re
 
-from app.configs.configs import find_root
 from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME
+from app.configs.utils import find_root
 
 
 class GitMasteryFileHandler(logging.Handler):
