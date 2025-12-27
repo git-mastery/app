@@ -1,6 +1,11 @@
 name: Build and release Git-Mastery CLI
 
 on:
+  workflow_run:
+    workflows:
+      - Bump version tag on merge
+    types:
+      - completed
   workflow_dispatch:
   push:
     tags:
