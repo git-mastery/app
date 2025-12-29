@@ -126,7 +126,7 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
     with ExercisesRepo() as repo:
         info(f"Checking if {hands_on} is available")
 
-        hands_on_without_prefix = formatted_hands_on[len("hp_") :]
+        hands_on_without_prefix = formatted_hands_on.removeprefix("hp_")
 
         if not repo.has_file(f"hands_on/{hands_on_without_prefix}.py"):
             error(
