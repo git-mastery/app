@@ -5,8 +5,7 @@ from typing import Dict, Optional
 
 import click
 import pytz
-from git import Repo
-from repo_smith.repo_smith import RepoSmith, create_repo_smith
+from repo_smith.repo_smith import create_repo_smith
 
 from app.commands.check.git import git
 from app.commands.check.github import github
@@ -183,7 +182,7 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
         with create_repo_smith(verbose, null_repo=True) as repo_smith:
             hands_on_namespace.execute_function(
                 "download",
-                {"rs": repo_smith, "verbose": get_verbose()},
+                {"rs": repo_smith, "verbose": verbose},
             )
         success(f"Completed setting up {click.style(hands_on, bold=True, italic=True)}")
 
