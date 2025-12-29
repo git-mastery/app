@@ -22,9 +22,6 @@ from app.utils.general import ensure_str
 T = TypeVar("T")
 
 
-# We hardcode this list because to fetch it dynamically requires a Github API call
-# which we only have 60/hour so it's unwise to do it
-# TODO(woojiahao): Find a better way around this
 EXERCISE_UTILS_FILES = [
     "__init__",
     "cli",
