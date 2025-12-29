@@ -1,3 +1,4 @@
+import inspect
 import os
 import sys
 import tempfile
@@ -21,10 +22,15 @@ from app.utils.general import ensure_str
 T = TypeVar("T")
 
 
-# We hardcode this list because to fetch it dynamically requires a Github API call
-# which we only have 60/hour so it's unwise to do it
-# TODO(woojiahao): Find a better way around this
-EXERCISE_UTILS_FILES = ["__init__", "cli", "git", "file", "gitmastery", "github_cli"]
+EXERCISE_UTILS_FILES = [
+    "__init__",
+    "cli",
+    "git",
+    "file",
+    "gitmastery",
+    "github_cli",
+    "test",
+]
 
 
 class ExercisesRepo:
@@ -147,7 +153,10 @@ class Namespace:
             sys.dont_write_bytecode = False
             return None
 
-        result = self.namespace[function_name](**params)
+        func = self.namespace[function_name]
+        sig = inspect.signature(func)
+        valid_params = {k: v for k, v in params.items() if k in sig.parameters}
+        result = self.namespace[function_name](**valid_params)
         sys.dont_write_bytecode = False
         return result
 
