@@ -1,10 +1,11 @@
 import logging
+import platform
 import sys
 
 import click
 import requests
 
-from app.commands import check, download, progress, setup, verify
+from app.commands import check, download, progress, setup, update, verify
 from app.commands.version import version
 from app.utils.click import ClickColor, CliContextKey, warn
 from app.utils.version import Version
@@ -43,14 +44,20 @@ def cli(ctx, verbose) -> None:
                 fg=ClickColor.BRIGHT_RED,
             )
         )
-        warn("We strongly recommend upgrading your app.")
-        warn(
-            f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
-        )
+        # Auto-update only supported on macOS
+        # TODO: Add support for other platforms
+        if platform.system().lower() == "darwin":
+            warn("Attempting automatic update...")
+            ctx.invoke(update)
+        else:
+            warn("We strongly recommend upgrading your app.")
+            warn(
+                f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
+            )
 
 
 def start() -> None:
-    commands = [check, download, progress, setup, verify, version]
+    commands = [check, download, progress, setup, update, verify, version]
     for command in commands:
         cli.add_command(command)
     cli(obj={})
