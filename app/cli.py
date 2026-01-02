@@ -21,7 +21,7 @@ class LoggingGroup(click.Group):
 @click.group(cls=LoggingGroup)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
-def cli(ctx, verbose) -> None:
+def cli(ctx: click.Context, verbose: bool) -> None:
     """Git-Mastery app"""
     ctx.ensure_object(dict)
 
