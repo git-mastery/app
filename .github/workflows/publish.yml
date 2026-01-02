@@ -252,7 +252,7 @@ jobs:
     permissions: write-all
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
     with:
-      version: ${{ github.ref_name }}
+      version: ${{ needs.prepare.outputs.ref_name }}
     secrets: inherit
 
   arch-publish:
