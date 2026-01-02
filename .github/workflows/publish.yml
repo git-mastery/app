@@ -110,6 +110,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/${{ steps.binary-name.outputs.binary }}
+          tag_name: ${{ needs.prepare.outputs.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -239,6 +240,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: gitmastery_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
+          tag_name: ${{ needs.prepare.outputs.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -398,6 +400,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/gitmastery.exe
+          tag_name: ${{ needs.prepare.outputs.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -460,6 +463,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/gitmastery-${{ matrix.arch }}
+          tag_name: ${{ needs.prepare.outputs.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
