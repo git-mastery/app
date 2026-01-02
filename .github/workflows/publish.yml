@@ -18,7 +18,53 @@ permissions:
   issues: read
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      ref_name: ${{ steps.resolve.outputs.ref_name }}
+      version_number: ${{ steps.resolve.outputs.version_number }}
+      should_publish: ${{ steps.resolve.outputs.should_publish }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag if not push on tags
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          EVENT="${{ github.event_name }}"
+
+          if [[ "$EVENT" == "push" && "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG=$(git describe --tags --abbrev=0)
+          fi
+
+          echo "Using tag: $TAG"
+
+          # Check if release exists
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            SHOULD_PUBLISH=false
+            echo "Release already exists for $TAG"
+          else
+            SHOULD_PUBLISH=true
+            echo "No release exists for $TAG"
+          fi
+
+          echo "ref_name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version_number=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
+
   linux-build:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
@@ -26,7 +72,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,20 +88,22 @@ jobs:
         id: binary-name
         env:
           OS_VERSION: ${{ matrix.os }}
+          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
         run: |
           if [ $OS_VERSION = "ubuntu-latest" ]; then
             ARCHITECTURE=amd64
           else
             ARCHITECTURE=arm64
           fi
-          FILENAME=gitmastery-${GITHUB_REF_NAME#v}-linux-$ARCHITECTURE
+          FILENAME=gitmastery-$VERSION_NUMBER-linux-$ARCHITECTURE
           echo "binary=$FILENAME" >> $GITHUB_OUTPUT
 
       - name: Build binary
         env:
           BINARY_NAME: ${{ steps.binary-name.outputs.binary }}
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
+          echo "__version__ = \"$REF_NAME\"" > app/version.py
           pyinstaller --onefile main.py --name $BINARY_NAME
 
       - name: Create GitHub Release
@@ -74,7 +122,9 @@ jobs:
   debian-build:
     # We support both ARM64 and AMD64 since Debian comes with support for
     # these two out of the box
-    needs: linux-build
+    needs: [prepare, linux-build]
+    if: needs.prepare.outputs.should_publish == 'true'
+
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
@@ -82,26 +132,27 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: "app"
 
       - name: Extract variables
         env:
-          ARCHITECTURE: ${{ matrix.architecture }}
           OS_VERSION: ${{ matrix.os }}
+          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           if [ $OS_VERSION = "ubuntu-latest" ]; then
             ARCHITECTURE=amd64
           else
             ARCHITECTURE=arm64
           fi
-          echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+          echo "VERSION=$VERSION_NUMBER" >> $GITHUB_ENV
           echo "ARCHITECTURE=${ARCHITECTURE}" >> $GITHUB_ENV
 
           # Get the tag's commit message
           cd app/
-          CHANGELOG_MESSAGE=$(git show ${GITHUB_REF_NAME} --no-patch --pretty=format:%s)
+          CHANGELOG_MESSAGE=$(git show $REF_NAME --no-patch --pretty=format:%s)
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
 
       - name: Install Debian packaging tools
@@ -192,7 +243,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   debian-publish-apt:
-    needs: debian-build
+    needs: [prepare, debian-build]
+    if: needs.prepare.outputs.should_publish == 'true'
+
     permissions: write-all
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
     with:
@@ -202,7 +255,9 @@ jobs:
   arch-publish:
     # Since Arch linux currently only supports x86_64 out of the box, we will focus
     # on supporting that first
-    needs: linux-build
+    needs: [prepare, linux-build]
+    if: needs.prepare.outputs.should_publish == 'true'
+
     runs-on: ubuntu-latest
 
     env:
@@ -212,17 +267,20 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: "app"
 
       - name: Set environment variables
+        env:
+          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+          echo "VERSION=$VERSION_NUMBER" >> $GITHUB_ENV
 
           # Get the tag's commit message
           cd app/
-          CHANGELOG_MESSAGE=$(git show ${GITHUB_REF_NAME} --no-patch --pretty=format:%s)
+          CHANGELOG_MESSAGE=$(git show $REF_NAME --no-patch --pretty=format:%s)
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
 
       - name: Setup SSH for Github Actions
@@ -244,6 +302,7 @@ jobs:
       - name: Publish to AUR
         env:
           RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ github.ref_name }}/gitmastery-${{ env.VERSION }}-linux-amd64
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           cd aur-pkg
 
@@ -255,7 +314,7 @@ jobs:
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
           pkgname=gitmastery-bin
-          pkgver=\"${GITHUB_REF_NAME}\"
+          pkgver=\"$REF_NAME\"
           pkgrel=1
           pkgdesc=\"Git-Mastery CLI for practicing Git\"
           arch=('x86_64')
@@ -297,11 +356,14 @@ jobs:
           git push
 
   windows:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     runs-on: windows-latest
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -316,14 +378,19 @@ jobs:
       - name: Get version from tag
         id: get_version
         shell: pwsh
+        env:
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          $version = "${{ github.ref_name }}"
+          $version = "$REF_NAME"
           echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Build binary
         shell: pwsh
+        env:
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          $version_content = "__version__ = `"${{ github.ref_name }}`""
+          $version = "$REF_NAME"
+          $version_content = "__version__ = `"$version`""
           $version_content | Out-File -FilePath app/version.py -Encoding utf8
           pyinstaller --onefile --name gitmastery main.py
 
@@ -335,6 +402,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   macos-build:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     # We use macos-15-intel since it's the latest image that currently supports AMD64
     strategy:
       matrix:
@@ -350,7 +420,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -365,8 +435,9 @@ jobs:
       - name: Build binary
         env:
           ARCHITECTURE: ${{ matrix.arch }}
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          echo "__version__ = \"${GITHUB_REF_NAME}\"" > app/version.py
+          echo "__version__ = \"$REF_NAME\"" > app/version.py
           pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
 
       - name: Generate SHA256 (amd64)
@@ -393,14 +464,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   macos-publish:
-    runs-on: ubuntu-latest
+    needs: [prepare, macos-build]
+    if: needs.prepare.outputs.should_publish == 'true'
 
-    needs: macos-build
+    runs-on: ubuntu-latest
 
     steps:
       - name: Update Homebrew Tap
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
+          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -412,15 +486,15 @@ jobs:
           class Gitmastery < Formula
             desc "CLI tool for Git-Mastery"
             homepage "https://github.com/git-mastery/cli"
-            version "${GITHUB_REF_NAME#v}"
+            version "$VERSION_NUMBER"
 
             on_arm do
-              url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-arm64"
+              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/gitmastery-arm64"
               sha256 "${{ needs.macos-build.outputs.sha256-arm64 }}"
             end
 
             on_intel do
-              url "https://github.com/git-mastery/cli/releases/download/${GITHUB_REF_NAME}/gitmastery-amd64"
+              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/gitmastery-amd64"
               sha256 "${{ needs.macos-build.outputs.sha256-amd64 }}"
             end
 
@@ -443,7 +517,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           git remote -v
           git add gitmastery.rb
-          git commit -m "Update to ${GITHUB_REF_NAME}"
+          git commit -m "Update to ${REF_NAME}"
           git push origin main
 
   macos-test:
