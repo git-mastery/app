@@ -136,6 +136,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: "app"
+          fetch-depth: 0
 
       - name: Extract variables
         env:
@@ -148,12 +149,12 @@ jobs:
           else
             ARCHITECTURE=arm64
           fi
-          echo "VERSION=$VERSION_NUMBER" >> $GITHUB_ENV
+          echo "VERSION=${VERSION_NUMBER}" >> $GITHUB_ENV
           echo "ARCHITECTURE=${ARCHITECTURE}" >> $GITHUB_ENV
 
           # Get the tag's commit message
           cd app/
-          CHANGELOG_MESSAGE=$(git show $REF_NAME --no-patch --pretty=format:%s)
+          CHANGELOG_MESSAGE=$(git show ${REF_NAME} --no-patch --pretty=format:%s)
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
 
       - name: Install Debian packaging tools
@@ -272,17 +273,18 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: "app"
+          fetch-depth: 0
 
       - name: Set environment variables
         env:
           VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          echo "VERSION=$VERSION_NUMBER" >> $GITHUB_ENV
+          echo "VERSION=${VERSION_NUMBER}" >> $GITHUB_ENV
 
           # Get the tag's commit message
           cd app/
-          CHANGELOG_MESSAGE=$(git show $REF_NAME --no-patch --pretty=format:%s)
+          CHANGELOG_MESSAGE=$(git show ${REF_NAME} --no-patch --pretty=format:%s)
           echo "CHANGELOG_MESSAGE=${CHANGELOG_MESSAGE}" >> $GITHUB_ENV
 
       - name: Setup SSH for Github Actions
