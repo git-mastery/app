@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ref_name: ${{ steps.resolve.outputs.ref_name }}
+      version_number: ${{ steps.resolve.outputs.version_number }}
       should_publish: ${{ steps.resolve.outputs.should_publish }}
 
     steps:
@@ -57,6 +58,7 @@ jobs:
           fi
 
           echo "ref_name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version_number=${TAG#v}" >> "$GITHUB_OUTPUT"
           echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
 
   linux-build:
