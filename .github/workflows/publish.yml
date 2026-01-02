@@ -19,47 +19,7 @@ permissions:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      ref_name: ${{ steps.resolve.outputs.ref_name }}
-      version_number: ${{ steps.resolve.outputs.version_number }}
-      should_publish: ${{ steps.resolve.outputs.should_publish }}
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Get latest tag if not push on tags
-        id: resolve
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-
-          EVENT="${{ github.event_name }}"
-
-          if [[ "$EVENT" == "push" && "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            TAG="${GITHUB_REF_NAME}"
-          else
-            TAG=$(git describe --tags --abbrev=0)
-          fi
-
-          echo "Using tag: $TAG"
-
-          # Check if release exists
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            SHOULD_PUBLISH=false
-            echo "Release already exists for $TAG"
-          else
-            SHOULD_PUBLISH=true
-            echo "No release exists for $TAG"
-          fi
-
-          echo "ref_name=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version_number=${TAG#v}" >> "$GITHUB_OUTPUT"
-          echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
+    uses: git-mastery/actions/.github/workflows/get-latest-tag.yml@main
 
   linux-build:
     needs: prepare
