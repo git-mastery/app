@@ -18,7 +18,51 @@ permissions:
   issues: read
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      ref_name: ${{ steps.resolve.outputs.ref_name }}
+      should_publish: ${{ steps.resolve.outputs.should_publish }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag if not push on tags
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          EVENT="${{ github.event_name }}"
+
+          if [[ "$EVENT" == "push" && "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG=$(git describe --tags --abbrev=0)
+          fi
+
+          echo "Using tag: $TAG"
+
+          # Check if release exists
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            SHOULD_PUBLISH=false
+            echo "Release already exists for $TAG"
+          else
+            SHOULD_PUBLISH=true
+            echo "No release exists for $TAG"
+          fi
+
+          echo "ref_name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
+
   linux-build:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
@@ -297,6 +341,9 @@ jobs:
           git push
 
   windows:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     runs-on: windows-latest
 
     steps:
@@ -335,6 +382,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   macos-build:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
     # We use macos-15-intel since it's the latest image that currently supports AMD64
     strategy:
       matrix:
