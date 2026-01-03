@@ -27,8 +27,19 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+
     runs-on: ${{ matrix.os }}
+
+    env:
+      ARCHITECTURE: ${{ matrix.arch }}
+      VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
+      FILENAME: gitmastery-${{ needs.prepare.outputs.version_number }}-linux-${{ matrix.arch }}
+      REF_NAME: ${{ needs.prepare.outputs.ref_name }}
 
     steps:
       - name: Checkout source
@@ -44,24 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Get binary name
-        id: binary-name
-        env:
-          OS_VERSION: ${{ matrix.os }}
-          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
-        run: |
-          if [ $OS_VERSION = "ubuntu-latest" ]; then
-            ARCHITECTURE=amd64
-          else
-            ARCHITECTURE=arm64
-          fi
-          FILENAME=gitmastery-$VERSION_NUMBER-linux-$ARCHITECTURE
-          echo "binary=$FILENAME" >> $GITHUB_OUTPUT
-
       - name: Build binary
-        env:
-          BINARY_NAME: ${{ steps.binary-name.outputs.binary }}
-          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
           pyinstaller --onefile main.py --name $BINARY_NAME
@@ -69,16 +63,16 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ steps.binary-name.outputs.binary }}
-          tag_name: ${{ needs.prepare.outputs.ref_name }}
+          files: dist/${{ env.FILENAME }}
+          tag_name: ${{ env.REF_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish package as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.binary-name.outputs.binary }}
-          path: dist/${{ steps.binary-name.outputs.binary }}
+          name: ${{ env.FILENAME }}
+          path: dist/${{ env.FILENAME }}
 
   debian-build:
     # We support both ARM64 and AMD64 since Debian comes with support for
@@ -88,8 +82,17 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+
     runs-on: ${{ matrix.os }}
+
+    env:
+      ARCHITECTURE: ${{ matrix.arch }}
+      VERSION: ${{ needs.prepare.outputs.version_number }}
 
     steps:
       - name: Checkout source
@@ -100,18 +103,8 @@ jobs:
 
       - name: Extract variables
         env:
-          OS_VERSION: ${{ matrix.os }}
-          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          if [ $OS_VERSION = "ubuntu-latest" ]; then
-            ARCHITECTURE=amd64
-          else
-            ARCHITECTURE=arm64
-          fi
-          echo "VERSION=${VERSION_NUMBER}" >> $GITHUB_ENV
-          echo "ARCHITECTURE=${ARCHITECTURE}" >> $GITHUB_ENV
-
           # Get the tag's commit message
           cd app/
           CHANGELOG_MESSAGE=$(git show ${REF_NAME} --no-patch --pretty=format:%s)
@@ -225,6 +218,7 @@ jobs:
 
     env:
       ARCHITECTURE: amd64
+      VERSION: ${{ needs.prepare.outputs.version_number }}
 
     environment: Main
 
@@ -237,11 +231,8 @@ jobs:
 
       - name: Set environment variables
         env:
-          VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          echo "VERSION=${VERSION_NUMBER}" >> $GITHUB_ENV
-
           # Get the tag's commit message
           cd app/
           CHANGELOG_MESSAGE=$(git show ${REF_NAME} --no-patch --pretty=format:%s)
@@ -379,9 +370,14 @@ jobs:
           - os: macos-latest
             arch: arm64
     runs-on: ${{ matrix.os }}
+
     outputs:
       sha256-arm64: ${{ steps.checksum-arm64.outputs.sha256 }}
       sha256-amd64: ${{ steps.checksum-amd64.outputs.sha256 }}
+
+    env:
+      ARCHITECTURE: ${{ matrix.arch }}
+      REF_NAME: ${{ needs.prepare.outputs.ref_name }}
 
     steps:
       - name: Checkout source
@@ -398,9 +394,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build binary
-        env:
-          ARCHITECTURE: ${{ matrix.arch }}
-          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
           pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
