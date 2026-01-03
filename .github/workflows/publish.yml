@@ -58,7 +58,7 @@ jobs:
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
-          pyinstaller --onefile main.py --name $BINARY_NAME
+          pyinstaller --onefile main.py --name $FILENAME
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
