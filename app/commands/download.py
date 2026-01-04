@@ -198,7 +198,7 @@ def setup_exercise_folder(
     with open(".gitmastery-exercise.json", "w") as gitmastery_exercise_file:
         gitmastery_exercise_file.write(config.to_json())
 
-    if config.exercise_repo.repo_type == "local":
+    if config.exercise_repo.repo_type == "local" or config.exercise_repo.repo_type == "local-ignore":
         info("Creating custom exercise folder")
         os.makedirs(config.exercise_repo.repo_name, exist_ok=True)
     elif config.exercise_repo.repo_type == "remote":
