@@ -40,8 +40,9 @@ jobs:
             -v $PWD:/pkg \
             archlinux:base-devel \
             bash -c "
-              pacman -Sy --noconfirm python pyinstaller openssl git &&
+              pacman -Sy --noconfirm python openssl git &&
               cd /app &&
+              pip install -r requirements.txt &&
               pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
             "
 
