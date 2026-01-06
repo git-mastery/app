@@ -45,7 +45,7 @@ def cli(ctx: click.Context, verbose: bool) -> None:
         )
         warn("We strongly recommend upgrading your app.")
         warn(
-            f"Follow the update guide here: {click.style('https://git-mastery.github.io/app/update', bold=True)}"
+            f"Follow the update guide here: {click.style('https://git-mastery.org/companion-app/index.html#updating-the-git-mastery-app', bold=True)}"
         )
 
 
