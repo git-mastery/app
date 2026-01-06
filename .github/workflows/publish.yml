@@ -330,22 +330,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Get version from tag
-        id: get_version
-        shell: pwsh
-        env:
-          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
-        run: |
-          $version = "$REF_NAME"
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
       - name: Build binary
         shell: pwsh
         env:
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          $version = "$REF_NAME"
-          $version_content = "__version__ = `"$version`""
+          $version_content = '__version__ = "{0}"' -f $env:REF_NAME
           $version_content | Out-File -FilePath app/version.py -Encoding utf8
           pyinstaller --onefile --name gitmastery main.py
 
