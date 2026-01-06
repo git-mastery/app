@@ -255,8 +255,8 @@ def setup_exercise_folder(
 
     info("Executing download setup")
     verbose = get_verbose()
-
     null_repo = not config.exercise_repo.init
+    
     with create_repo_smith(verbose, existing_path=".", null_repo=null_repo) as repo_smith:
         namespace.execute_function(
             "setup",
