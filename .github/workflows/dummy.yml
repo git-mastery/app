@@ -39,7 +39,6 @@ jobs:
         env:
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
-          $version_content = '__version__ = "$($env:REF_NAME)"'
+          $version_content = '__version__ = "{0}"' -f $env:REF_NAME
           $version_content | Out-File -FilePath app/version.py -Encoding utf8
           Get-Content app/version.py
-          pyinstaller --onefile --name gitmastery main.py
