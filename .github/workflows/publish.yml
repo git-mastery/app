@@ -355,7 +355,7 @@ jobs:
 
           git add .
           git commit -m "Update package"
-          git push
+          git push --force
 
   windows:
     needs: prepare
