@@ -208,10 +208,59 @@ jobs:
       version: ${{ needs.prepare.outputs.ref_name }}
     secrets: inherit
 
+  arch-build:
+    needs: prepare
+    if: needs.prepare.outputs.should_publish == 'true'
+
+    runs-on: ubuntu-latest
+
+    env:
+      ARCHITECTURE: amd64
+      VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
+      FILENAME: gitmastery-${{ needs.prepare.outputs.version_number }}-arch-amd64
+      REF_NAME: ${{ needs.prepare.outputs.ref_name }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Build binary
+        run: |
+          echo "__version__ = \"$REF_NAME\"" > app/version.py
+
+          docker run --rm \
+            -v $PWD:/pkg \
+            archlinux:base-devel \
+            bash -c "
+              pacman -Sy --noconfirm python python-pip openssl git &&
+              cd /pkg &&
+              python -m venv venv &&
+              source venv/bin/activate &&
+              pip install -r requirements.txt &&
+              pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
+            "
+
+          # Fix file ownership after Docker run
+          sudo chown -R $(id -u):$(id -g) .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ env.FILENAME }}
+          tag_name: ${{ env.REF_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish package as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILENAME }}
+          path: dist/${{ env.FILENAME }}
+
   arch-publish:
     # Since Arch linux currently only supports x86_64 out of the box, we will focus
     # on supporting that first
-    needs: [prepare, linux-build]
+    needs: [prepare, arch-build]
     if: needs.prepare.outputs.should_publish == 'true'
 
     runs-on: ubuntu-latest
@@ -256,7 +305,7 @@ jobs:
 
       - name: Publish to AUR
         env:
-          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ github.ref_name }}/gitmastery-${{ env.VERSION }}-linux-amd64
+          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ github.ref_name }}/gitmastery-${{ env.VERSION }}-arch-amd64
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           cd aur-pkg
@@ -303,8 +352,6 @@ jobs:
             "
           # Fix file ownership after Docker run
           sudo chown -R $(id -u):$(id -g) .
-
-          tree
 
           git add .
           git commit -m "Update package"
