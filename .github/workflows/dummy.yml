@@ -40,10 +40,10 @@ jobs:
             -v $PWD:/pkg \
             archlinux:base-devel \
             bash -c "
-              pacman -Sy --noconfirm python openssl git &&
+              pacman -Sy --noconfirm python python-pip openssl git &&
               cd /pkg &&
-              python -m pip install -r requirements.txt &&
-              python -m pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
+              pip install -r requirements.txt &&
+              pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
             "
 
           # Fix file ownership after Docker run
