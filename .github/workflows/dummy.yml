@@ -1,0 +1,54 @@
+name: Test Windows
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
+  issues: read
+
+jobs:
+  prepare:
+    uses: git-mastery/actions/.github/workflows/get-latest-tag.yml@main
+
+  windows:
+    needs: prepare
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Get version from tag
+        id: get_version
+        shell: pwsh
+        env:
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
+        run: |
+          $version = "$REF_NAME"
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build binary
+        shell: pwsh
+        env:
+          REF_NAME: ${{ needs.prepare.outputs.ref_name }}
+        run: |
+          $version = "$REF_NAME"
+          $version_content = "__version__ = `"$version`""
+          $version_content | Out-File -FilePath app/version.py -Encoding utf8
+          pyinstaller --onefile --name gitmastery main.py
