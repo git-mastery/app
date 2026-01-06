@@ -41,7 +41,7 @@ jobs:
             archlinux:base-devel \
             bash -c "
               pacman -Sy --noconfirm python openssl git &&
-              cd /app &&
+              cd /pkg &&
               pip install -r requirements.txt &&
               pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
             "
