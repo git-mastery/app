@@ -255,7 +255,9 @@ def setup_exercise_folder(
 
     info("Executing download setup")
     verbose = get_verbose()
-    with create_repo_smith(verbose, existing_path=".") as repo_smith:
+    # disable local initialization only if init is False, do not disable for remote repositories if set to null
+    null_repo = config.exercise_repo.init is False
+    with create_repo_smith(verbose, existing_path=".", null_repo=null_repo) as repo_smith:
         namespace.execute_function(
             "setup",
             {"rs": repo_smith, "verbose": verbose},
