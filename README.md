@@ -47,11 +47,7 @@ pip install -r requirements.txt
 
 ## Publishing
 
-```bash
-pyinstaller gitmastery.spec
-git tag v*.*.*
-git push --tags
-```                                                 
+Tag the PR with the `bump:{major | minor | patch}` label and the CI will automatically perform the publish.                                  
 
 A Github Actions workflow exists to automatically publish the changes to Homebrew.
 
