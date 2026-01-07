@@ -20,6 +20,7 @@ permissions:
 jobs:
   prepare:
     uses: git-mastery/actions/.github/workflows/get-latest-tag.yml@main
+    secrets: inherit
 
   linux-build:
     needs: prepare
