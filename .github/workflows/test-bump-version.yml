@@ -1,0 +1,11 @@
+name: Bump version tag on merge
+
+on:
+  pull_request:
+    types: [opened, reopened]
+    branches: [main]
+
+jobs:
+  tag:
+    uses: git-mastery/actions/.github/workflows/bump-version.yml@main
+    secrets: inherit
