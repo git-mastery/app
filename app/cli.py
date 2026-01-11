@@ -18,7 +18,10 @@ class LoggingGroup(click.Group):
         return super().invoke(ctx)
 
 
-@click.group(cls=LoggingGroup)
+CONTEXT_SETTINGS = {"max_content_width": 120}
+
+
+@click.group(cls=LoggingGroup, context_settings=CONTEXT_SETTINGS)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def cli(ctx: click.Context, verbose: bool) -> None:
