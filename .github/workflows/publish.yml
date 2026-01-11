@@ -306,7 +306,7 @@ jobs:
 
       - name: Publish to AUR
         env:
-          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ github.ref_name }}/gitmastery-${{ env.VERSION }}-arch-amd64
+          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ needs.prepare.outputs.ref_name }}/gitmastery-${{ env.VERSION }}-arch-amd64
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           cd aur-pkg
