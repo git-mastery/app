@@ -5,6 +5,9 @@ import time
 from pathlib import Path
 from typing import Union
 
+MAX_DELETE_RETRIES = 20
+MAX_RETRY_INTERVAL = 0.2
+
 
 def rmtree(folder_name: Union[str, Path]) -> None:
     """
@@ -22,11 +25,11 @@ def rmtree(folder_name: Union[str, Path]) -> None:
     shutil.rmtree(folder_name, onerror=force_remove_readonly)
 
     # Wait for folder to be fully deleted (Windows can be slow with permissions)
-    max_retries = 20
+    max_retries = MAX_DELETE_RETRIES
     for _ in range(max_retries):
         if not os.path.exists(folder_name):
             return
-        time.sleep(0.2)
+        time.sleep(MAX_RETRY_INTERVAL)
 
     # If folder still exists after retries, raise error
     raise RuntimeError(f"Failed to delete {folder_name} after {max_retries} retries")

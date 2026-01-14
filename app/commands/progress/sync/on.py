@@ -69,14 +69,14 @@ def on() -> None:
 
     clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
 
-    # Verify clone succeeded by checking folder exists
+    # Verify clone succeeded, else restore local progress before failing
     if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
-        # Clone failed: recreate the local progress to avoid data loss
-        os.makedirs(PROGRESS_LOCAL_FOLDER_NAME)
+        os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
         with open(local_progress_filepath, "w") as file:
             file.write(json.dumps(local_progress, indent=2))
         raise RuntimeError(
-            f"Clone failed - {PROGRESS_LOCAL_FOLDER_NAME} does not exist. Your local progress has been restored."
+            f"Clone failed for {PROGRESS_LOCAL_FOLDER_NAME}. "
+            "Your local progress has been restored."
         )
 
     # To reconcile the difference between local and remote progress, we merge by
