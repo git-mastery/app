@@ -2,7 +2,6 @@ import json
 import os
 
 import click
-import time
 
 from app.commands.check.git import git
 from app.commands.check.github import github
@@ -67,19 +66,6 @@ def on() -> None:
         with open(local_progress_filepath, "r") as file:
             local_progress = json.load(file)
     rmtree(PROGRESS_LOCAL_FOLDER_NAME)
-
-    # Wait for folder to be fully deleted (Windows can be slow with deleting folder)
-    max_retries = 20
-    for _ in range(max_retries):
-        if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
-            break
-        time.sleep(0.2)
-
-    # If folder still exists after retries, force fail
-    if os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
-        raise RuntimeError(
-            f"Failed to delete {PROGRESS_LOCAL_FOLDER_NAME} before cloning"
-        )
 
     clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
 
