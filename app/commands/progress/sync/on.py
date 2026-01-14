@@ -90,6 +90,9 @@ def on() -> None:
         key=lambda entry: (entry["exercise_name"], entry["started_at"])
     )
 
+    # Ensure the directory exists before writing
+    os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
+
     with open(local_progress_filepath, "w") as file:
         file.write(json.dumps(synced_progress, indent=2))
 
