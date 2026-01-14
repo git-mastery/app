@@ -2,6 +2,7 @@ import json
 import os
 
 import click
+import time
 
 from app.commands.check.git import git
 from app.commands.check.github import github
@@ -67,7 +68,29 @@ def on() -> None:
             local_progress = json.load(file)
     rmtree(PROGRESS_LOCAL_FOLDER_NAME)
 
+    # Wait for folder to be fully deleted (Windows can be slow with deleting folder)
+    max_retries = 10
+    for _ in range(max_retries):
+        if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
+            break
+        time.sleep(0.1)
+
+    # If folder still exists after retries, force fail
+    if os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
+        raise Exception(f"Failed to delete {PROGRESS_LOCAL_FOLDER_NAME} before cloning")
+
     clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
+
+    # Verify clone succeeded by checking folder exists
+    if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
+        # Clone failed: recreate the local progress to avoid data loss
+        os.makedirs(PROGRESS_LOCAL_FOLDER_NAME)
+        os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
+        with open(local_progress_filepath, "w") as file:
+            file.write(json.dumps(local_progress, indent=2))
+        raise Exception(
+            f"Clone failed - {PROGRESS_LOCAL_FOLDER_NAME} does not exist. Your local progress has been restored."
+        )
 
     # To reconcile the difference between local and remote progress, we merge by
     # (exercise_name, start_time) which should be unique
@@ -89,9 +112,6 @@ def on() -> None:
     synced_progress.sort(
         key=lambda entry: (entry["exercise_name"], entry["started_at"])
     )
-
-    # Ensure the directory exists before writing
-    os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
 
     with open(local_progress_filepath, "w") as file:
         file.write(json.dumps(synced_progress, indent=2))
