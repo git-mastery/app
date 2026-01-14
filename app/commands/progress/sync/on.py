@@ -69,15 +69,17 @@ def on() -> None:
     rmtree(PROGRESS_LOCAL_FOLDER_NAME)
 
     # Wait for folder to be fully deleted (Windows can be slow with deleting folder)
-    max_retries = 10
+    max_retries = 20
     for _ in range(max_retries):
         if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
             break
-        time.sleep(0.1)
+        time.sleep(0.2)
 
     # If folder still exists after retries, force fail
     if os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
-        raise Exception(f"Failed to delete {PROGRESS_LOCAL_FOLDER_NAME} before cloning")
+        raise RuntimeError(
+            f"Failed to delete {PROGRESS_LOCAL_FOLDER_NAME} before cloning"
+        )
 
     clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
 
@@ -85,10 +87,9 @@ def on() -> None:
     if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
         # Clone failed: recreate the local progress to avoid data loss
         os.makedirs(PROGRESS_LOCAL_FOLDER_NAME)
-        os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
         with open(local_progress_filepath, "w") as file:
             file.write(json.dumps(local_progress, indent=2))
-        raise Exception(
+        raise RuntimeError(
             f"Clone failed - {PROGRESS_LOCAL_FOLDER_NAME} does not exist. Your local progress has been restored."
         )
 
