@@ -77,6 +77,7 @@ def on() -> None:
         raise RuntimeError(
             f"Clone failed for {PROGRESS_LOCAL_FOLDER_NAME}. "
             "Your local progress has been restored."
+            "Re-run the command `gitmastery progress sync on` to try again."
         )
 
     # To reconcile the difference between local and remote progress, we merge by
