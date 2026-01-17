@@ -1,6 +1,10 @@
+import re
 from typing import Optional
 
 from app.utils.command import run
+from app.utils.version import Version
+
+MIN_GIT_VERSION = Version(2, 25, 0)
 
 
 def init() -> None:
@@ -23,11 +27,22 @@ def push(remote: str, branch: str) -> None:
     run(["git", "push", "-u", remote, branch])
 
 
-def is_git_installed() -> bool:
+def get_git_version() -> Optional[Version]:
+    """Get the installed git version.
+
+    Returns None if git is not installed or version cannot be parsed.
+    """
     # If git is not installed yet, we should expect a 127 exit code
     # 127 indicating that the command not found: https://stackoverflow.com/questions/1763156/127-return-code-from
     result = run(["git", "--version"])
-    return result.is_success()
+    if not result.is_success():
+        return None
+
+    match = re.search(r"(\d+\.\d+\.\d+)", result.stdout)
+    if not match:
+        return None
+
+    return Version.parse(match.group(1))
 
 
 def remove_remote(remote: str) -> None:

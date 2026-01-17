@@ -9,8 +9,15 @@ class Version:
 
     @staticmethod
     def parse_version_string(version: str) -> "Version":
+        """Parse a version string with 'v' prefix (e.g., 'v1.2.3')."""
         only_version = version[1:]
         [major, minor, patch] = only_version.split(".")
+        return Version(int(major), int(minor), int(patch))
+
+    @staticmethod
+    def parse(version: str) -> "Version":
+        """Parse a plain version string (e.g., '1.2.3')."""
+        [major, minor, patch] = version.split(".")
         return Version(int(major), int(minor), int(patch))
 
     def is_behind(self, other: "Version") -> bool:
