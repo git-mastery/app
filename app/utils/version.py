@@ -17,8 +17,18 @@ class Version:
     @staticmethod
     def parse(version: str) -> "Version":
         """Parse a plain version string (e.g., '1.2.3')."""
-        [major, minor, patch] = version.split(".")
-        return Version(int(major), int(minor), int(patch))
+        parts = version.split(".")
+        if len(parts) != 3:
+            raise ValueError(
+                f"Invalid version string (expected 'MAJOR.MINOR.PATCH'): {version!r}"
+            )
+        try:
+            major, minor, patch = (int(part) for part in parts)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid numeric components in version string: {version!r}"
+            ) from exc
+        return Version(major, minor, patch)
 
     def is_behind(self, other: "Version") -> bool:
         """Returns if the current version is behind the other version based on major and minor versions."""

@@ -38,7 +38,7 @@ def get_git_version() -> Optional[Version]:
     if not result.is_success():
         return None
 
-    match = re.search(r"(\d+\.\d+\.\d+)", result.stdout)
+    match = re.search(r"^git version (\d+\.\d+\.\d+)", result.stdout)
     if not match:
         return None
 
