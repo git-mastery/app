@@ -4,7 +4,7 @@ from typing import Optional
 from app.utils.command import run
 from app.utils.version import Version
 
-MIN_GIT_VERSION = Version(2, 25, 0)
+MIN_GIT_VERSION = Version(2, 37, 0)
 
 
 def init() -> None:
