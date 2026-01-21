@@ -37,7 +37,7 @@ class GitMasteryConfig:
             if isinstance(raw, dict):
                 typ = raw.get("type")
                 # explicit local
-                if typ == "local" or ("path" in raw and typ is None and raw.get("path")):
+                if typ == "local":
                     return cls(type="local", path=raw.get("path"))
                 # legacy/detected remote
                 return cls(
