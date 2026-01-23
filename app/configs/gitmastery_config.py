@@ -39,7 +39,7 @@ class GitMasteryConfig:
                 # explicit local
                 if typ == "local":
                     return cls(type="local", path=raw.get("path"))
-                # legacy/detected remote
+                # fallthrough for None (legacy)/detected remote
                 return cls(
                     type="remote",
                     username=raw.get("username", "git-mastery"),
