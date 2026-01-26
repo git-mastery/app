@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import click
 import pytz
@@ -67,8 +68,21 @@ def reset() -> None:
         # student has already created the sub-folder needed
         rmtree(exercise_config.path / exercise_config.exercise_repo.repo_name)
 
-    if exercise_config.exercise_repo.repo_type != "ignore":
-        with ExercisesRepo() as repo:
+    with ExercisesRepo() as repo:
+        formatted_exercise_name = exercise_config.formatted_exercise_name
+
+        if len(exercise_config.base_files) > 0:
+            info("Re-downloading exercise base files...")
+            for resource, path in exercise_config.base_files.items():
+                os.makedirs(Path(path).parent, exist_ok=True)
+                is_binary = Path(path).suffix in [".png", ".jpg", ".jpeg", ".gif"]
+                repo.download_file(
+                    f"{formatted_exercise_name}/res/{resource}",
+                    path,
+                    is_binary,
+                )
+
+        if exercise_config.exercise_repo.repo_type != "ignore":
             setup_exercise_folder(repo, download_time, exercise_config)
             info(
                 click.style(
