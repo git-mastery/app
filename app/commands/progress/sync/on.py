@@ -69,6 +69,17 @@ def on() -> None:
 
     clone_with_custom_name(f"{username}/{fork_name}", PROGRESS_LOCAL_FOLDER_NAME)
 
+    # Verify clone succeeded, else restore local progress before failing
+    if not os.path.exists(PROGRESS_LOCAL_FOLDER_NAME):
+        os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
+        with open(local_progress_filepath, "w") as file:
+            file.write(json.dumps(local_progress, indent=2))
+        raise RuntimeError(
+            f"Clone failed for {PROGRESS_LOCAL_FOLDER_NAME}. "
+            "Your local progress has been restored."
+            "Re-run the command `gitmastery progress sync on` to try again."
+        )
+
     # To reconcile the difference between local and remote progress, we merge by
     # (exercise_name, start_time) which should be unique
     remote_progress = []

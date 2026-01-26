@@ -53,6 +53,7 @@ def off() -> None:
         local_progress = json.load(file)
 
     rmtree(PROGRESS_LOCAL_FOLDER_NAME)
+    os.makedirs(os.path.dirname(local_progress_filepath), exist_ok=True)
 
     # Re-create just the progress folder
     with open(local_progress_filepath, "a") as progress_file:
