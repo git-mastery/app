@@ -1,7 +1,7 @@
 name: Bump version tag on merge
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     branches: [main]
 
