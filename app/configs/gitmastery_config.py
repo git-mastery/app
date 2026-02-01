@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Self, Type
+from typing import Self, Type, Optional, Union
 
 from app.configs.utils import read_config
 
@@ -12,12 +12,42 @@ GITMASTERY_CONFIG_NAME = ".gitmastery.json"
 class GitMasteryConfig:
     @dataclass
     class ExercisesSource:
-        username: str
-        repository: str
-        branch: str
+        # "remote" or "local"
+        type: str = "remote"
+        # remote fields (legacy uses username/repository/branch)
+        username: Optional[str] = None
+        repository: Optional[str] = None
+        branch: Optional[str] = "main"
+        # local field
+        path: Optional[str] = None
 
         def to_url(self) -> str:
+            if self.type != "remote":
+                raise ValueError("to_url only valid for remote ExercisesSource")
             return f"https://github.com/{self.username}/{self.repository}.git"
+
+        @classmethod
+        def from_raw(cls, raw: Union["GitMasteryConfig.ExercisesSource", dict, None]) -> "GitMasteryConfig.ExercisesSource":
+            # Pass-through if already the correct instance
+            if isinstance(raw, cls):
+                return raw
+            # Default remote
+            if raw is None:
+                return cls(type="remote", username="git-mastery", repository="exercises", branch="main")
+            if isinstance(raw, dict):
+                typ = raw.get("type")
+                # explicit local
+                if typ == "local":
+                    return cls(type="local", path=raw.get("path"))
+                # fallthrough for None (legacy)/detected remote
+                return cls(
+                    type="remote",
+                    username=raw.get("username", "git-mastery"),
+                    repository=raw.get("repository", "exercises"),
+                    branch=raw.get("branch", "main"),
+                )
+            raise ValueError("Unsupported exercises_source shape")
+
 
     progress_local: bool
     progress_remote: bool
@@ -44,19 +74,17 @@ class GitMasteryConfig:
         raw_config = read_config(path, GITMASTERY_CONFIG_NAME)
 
         exercises_source_raw = raw_config.get("exercises_source", {})
+        exercises_source = GitMasteryConfig.ExercisesSource.from_raw(exercises_source_raw)
+
         return cls(
             path=path,
             cds=cds,
             progress_local=raw_config.get("progress_local", True),
             progress_remote=raw_config.get("progress_remote", False),
-            exercises_source=GitMasteryConfig.ExercisesSource(
-                username=exercises_source_raw.get("username", "git-mastery"),
-                repository=exercises_source_raw.get("repository", "exercises"),
-                branch=exercises_source_raw.get("branch", "main"),
-            ),
+            exercises_source=exercises_source,
         )
 
 
-GIT_MASTERY_EXERCISES_SOURCE = GitMasteryConfig.ExercisesSource(
-    username="git-mastery", repository="exercises", branch="main"
+GIT_MASTERY_EXERCISES_SOURCE = GitMasteryConfig.ExercisesSource.from_raw(
+    {"type": "remote", "username": "git-mastery", "repository": "exercises", "branch": "main"}
 )

@@ -12,6 +12,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import shutil
 
 from git import Repo
 
@@ -91,17 +92,28 @@ class ExercisesRepo:
         else:
             exercises_source = GIT_MASTERY_EXERCISES_SOURCE
 
-        info(
-            f"Fetching exercise information from {exercises_source.to_url()} on branch {exercises_source.branch}"
-        )
+        if exercises_source.type == "local":
+            # copy local repo into temp dir for isolation
+            if exercises_source.path is None:
+                raise ValueError("Path is required for using local exercises source")
+            info(f"Using local exercises source at {exercises_source.path}")
+            src = Path(exercises_source.path).expanduser().resolve()
+            if not src.exists():
+                raise FileNotFoundError(f"Local exercises source not found: {src}")
+            shutil.copytree(src, self.__temp_dir.name, dirs_exist_ok=True, symlinks=False, copy_function=shutil.copy2)
+            self.__repo = Repo(self.__temp_dir.name)
+        else:
+            info(
+                f"Fetching exercise information from {exercises_source.to_url()} on branch {exercises_source.branch}"
+            )
 
-        self.__repo = Repo.clone_from(
-            exercises_source.to_url(),
-            self.__temp_dir.name,
-            depth=1,
-            branch=exercises_source.branch,
-            multi_options=["--filter=blob:none", "--sparse"],
-        )
+            self.__repo = Repo.clone_from(
+                exercises_source.to_url(),
+                self.__temp_dir.name,
+                depth=1,
+                branch=exercises_source.branch,
+                multi_options=["--filter=blob:none", "--sparse"],
+            )
         return self
 
     def __exit__(
