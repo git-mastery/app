@@ -16,6 +16,7 @@ class ExerciseConfig:
         repo_name: str
         repo_title: Optional[str]
         create_fork: Optional[bool]
+        fork_all_branches: Optional[bool]
         init: Optional[bool]
 
     exercise_name: str
@@ -72,6 +73,7 @@ class ExerciseConfig:
                 repo_name=exercise_repo["repo_name"],
                 repo_title=exercise_repo["repo_title"],
                 create_fork=exercise_repo["create_fork"],
+                fork_all_branches=exercise_repo["fork_all_branches"],
                 init=exercise_repo["init"],
             ),
             downloaded_at=None,

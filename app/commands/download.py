@@ -214,7 +214,7 @@ def setup_exercise_folder(
                 info("You already have a fork, deleting it")
                 delete_repo(fork_name)
             info("Creating fork of exercise repository")
-            fork(exercise_repo, fork_name)
+            fork(exercise_repo, fork_name, config.exercise_repo.fork_all_branches)
             info("Creating clone of your fork")
             clone_with_custom_name(
                 f"{username}/{fork_name}", config.exercise_repo.repo_name
