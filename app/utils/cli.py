@@ -20,7 +20,7 @@ def rmtree(folder_name: Union[str, Path]) -> None:
     ensuring no data loss occurs.
     
     Raises RuntimeError if the folder still exists after max retries,
-    or the original exception if deletion fails.
+    or displays error message if deletion fails.
     """
     if not os.path.exists(folder_name):
         return
