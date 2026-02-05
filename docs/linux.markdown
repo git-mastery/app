@@ -63,10 +63,10 @@ Ensure you are running `libc` version 2.38 or newer.
 Then install the following:
 
 ```bash
-echo "deb [trusted=yes] https://git-mastery.github.io/gitmastery-apt-repo any main" | \
+echo "deb [trusted=yes] https://git-mastery.org/gitmastery-apt-repo any main" | \
   sudo tee /etc/apt/sources.list.d/gitmastery.list > /dev/null
 sudo apt install software-properties-common
-sudo add-apt-repository "deb https://git-mastery.github.io/gitmastery-apt-repo any main"
+sudo add-apt-repository "deb https://git-mastery.org/gitmastery-apt-repo any main"
 sudo apt update
 sudo apt-get install gitmastery
 ```
