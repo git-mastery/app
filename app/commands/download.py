@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -76,7 +77,7 @@ def _download_exercise(
                     os.chdir("..")
                     rmtree(exercise)
                     warn("Setup Git before downloading this exercise")
-                    exit(1)
+                    sys.exit(1)
 
         # Check if the exercise requires Github/Github CLI to operate, if so, error if not present
         if config.requires_github:
@@ -91,7 +92,7 @@ def _download_exercise(
                     os.chdir("..")
                     rmtree(exercise)
                     warn("Setup Github and Github CLI before downloading this exercise")
-                    exit(1)
+                    sys.exit(1)
 
         if len(config.base_files) > 0:
             info("Downloading base files...")
@@ -162,7 +163,7 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
                     os.chdir("..")
                     rmtree(hands_on)
                     warn("Setup Git before downloading this hands-on")
-                    exit(1)
+                    sys.exit(1)
 
         if requires_github:
             try:
@@ -176,7 +177,7 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
                     os.chdir("..")
                     rmtree(hands_on)
                     warn("Setup Github and Github CLI before downloading this hands-on")
-                    exit(1)
+                    sys.exit(1)
 
         verbose = get_verbose()
         with create_repo_smith(verbose, null_repo=True) as repo_smith:
