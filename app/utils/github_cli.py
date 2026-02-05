@@ -29,8 +29,8 @@ def get_token_scopes() -> List[str]:
         match = regex.search(result.stdout)
         if match:
             scopes_str = match.group(1).strip()
-            scopes = re.findall(r"'([^']+)'", scopes_str)
-            scopes = [s.strip().lower() for s in scopes]
+            scopes = re.split(r"[,\s]+", scopes_str)
+            scopes = [s.strip().strip("'").lower() for s in scopes if s.strip()]
             return scopes
     return []
 
