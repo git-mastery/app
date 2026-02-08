@@ -77,8 +77,8 @@ class GitMasteryREPL(cmd.Cmd):
     def _run_gitmastery_command(self, command_name: str, args: List[str]) -> None:
         """Execute a gitmastery command."""
         command = GITMASTERY_COMMANDS[command_name]
+        original_cwd = os.getcwd()
         try:
-            # Initialize context with obj dict matching CLI setup
             ctx = command.make_context(command_name, args)
             ctx.ensure_object(dict)
             ctx.obj[CliContextKey.VERBOSE] = False
@@ -92,6 +92,8 @@ class GitMasteryREPL(cmd.Cmd):
             pass
         except Exception as e:
             click.echo(click.style(f"Error: {e}", fg=ClickColor.BRIGHT_RED))
+        finally:
+            os.chdir(original_cwd)
 
     def _run_shell_command(self, line: str) -> None:
         """Execute a shell command via subprocess."""
