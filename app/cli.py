@@ -4,7 +4,7 @@ import sys
 import click
 import requests
 
-from app.commands import check, download, progress, setup, verify
+from app.commands import check, download, progress, repl, setup, verify
 from app.commands.version import version
 from app.utils.click import ClickColor, CliContextKey, warn
 from app.utils.version import Version
@@ -53,7 +53,7 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
 
 def start() -> None:
-    commands = [check, download, progress, setup, verify, version]
+    commands = [check, download, progress, repl, setup, verify, version]
     for command in commands:
         cli.add_command(command)
     cli(obj={})

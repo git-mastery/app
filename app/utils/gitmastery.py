@@ -126,6 +126,16 @@ class Namespace:
         py_file = exercises_repo.fetch_file_contents(file_path, False)
         namespace: Dict[str, Any] = {}
 
+        # Clear any cached exercise_utils modules to ensure fresh imports
+        # This is especially important in REPL context where modules persist
+        modules_to_remove = [
+            key
+            for key in sys.modules
+            if key == "exercise_utils" or key.startswith("exercise_utils.")
+        ]
+        for mod in modules_to_remove:
+            del sys.modules[mod]
+
         with tempfile.TemporaryDirectory() as tmpdir:
             package_root = os.path.join(tmpdir, "exercise_utils")
             os.makedirs(package_root, exist_ok=True)
@@ -142,6 +152,14 @@ class Namespace:
                 exec(py_file, namespace)
             finally:
                 sys.path.remove(tmpdir)
+                # Clean up cached modules again after execution
+                modules_to_remove = [
+                    key
+                    for key in sys.modules
+                    if key == "exercise_utils" or key.startswith("exercise_utils.")
+                ]
+                for mod in modules_to_remove:
+                    del sys.modules[mod]
 
         sys.dont_write_bytecode = False
         return cls(namespace)
