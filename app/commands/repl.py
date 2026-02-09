@@ -14,6 +14,8 @@ from app.commands.setup_folder import setup
 from app.commands.verify import verify
 from app.commands.version import version
 from app.utils.click import CliContextKey, ClickColor
+from app.utils.version import Version
+from app.version import __version__
 
 
 GITMASTERY_COMMANDS = {
@@ -82,6 +84,7 @@ class GitMasteryREPL(cmd.Cmd):
             ctx = command.make_context(command_name, args)
             ctx.ensure_object(dict)
             ctx.obj[CliContextKey.VERBOSE] = False
+            ctx.obj[CliContextKey.VERSION] = Version.parse_version_string(__version__)
             with ctx:
                 command.invoke(ctx)
         except click.ClickException as e:
