@@ -63,7 +63,12 @@ class GitMasteryREPL(cmd.Cmd):
 
     def default(self, line: str) -> None:
         """Handle commands not recognized by cmd module."""
-        parts = shlex.split(line)
+        try:
+            parts = shlex.split(line)
+        except ValueError as e:
+            click.echo(click.style(f"Input error: {e}", fg=ClickColor.BRIGHT_RED))
+            return
+
         if not parts:
             return
 
@@ -96,7 +101,15 @@ class GitMasteryREPL(cmd.Cmd):
         except Exception as e:
             click.echo(click.style(f"Error: {e}", fg=ClickColor.BRIGHT_RED))
         finally:
-            os.chdir(original_cwd)
+            try:
+                os.chdir(original_cwd)
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                click.echo(
+                    click.style(
+                        f"Warning: Could not restore original directory: {e}",
+                        fg=ClickColor.BRIGHT_YELLOW,
+                    )
+                )
 
     def _run_shell_command(self, line: str) -> None:
         """Execute a shell command via subprocess."""
