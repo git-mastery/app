@@ -129,6 +129,12 @@ class GitMasteryREPL(cmd.Cmd):
         """Change directory."""
         if not path:
             path = os.path.expanduser("~")
+        else:
+            try:
+                parts = shlex.split(path)
+                path = parts[0] if parts else ""
+            except ValueError:
+                pass
         try:
             os.chdir(os.path.expanduser(path))
         except FileNotFoundError:
@@ -171,14 +177,14 @@ class GitMasteryREPL(cmd.Cmd):
         )
         for name, command in GITMASTERY_COMMANDS.items():
             help_text = command.help or "No description available."
-            click.echo(f"  {click.style(name, bold=True):20} {help_text}")
+            click.echo(f"  {click.style(f'{name:<20}', bold=True)} {help_text}")
 
         click.echo(
             click.style("\nBuilt-in Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)
         )
-        click.echo(f"  {click.style('help', bold=True):20} Show this help message")
-        click.echo(f"  {click.style('exit', bold=True):20} Exit the REPL")
-        click.echo(f"  {click.style('quit', bold=True):20} Exit the REPL")
+        click.echo(f"  {click.style(f'{'help':<20}', bold=True)} Show this help message")
+        click.echo(f"  {click.style(f'{'exit':<20}', bold=True)} Exit the REPL")
+        click.echo(f"  {click.style(f'{'quit':<20}', bold=True)} Exit the REPL")
 
         click.echo(
             click.style(
