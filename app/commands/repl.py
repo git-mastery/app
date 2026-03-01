@@ -31,11 +31,25 @@ GITMASTERY_COMMANDS = {
 class GitMasteryREPL(cmd.Cmd):
     """Interactive REPL for Git-Mastery commands."""
 
+    intro_msg = r"""
+ _____ _ _  ___  ___          _                  
+|  __ (_) | |  \/  |         | |                 
+| |  \/_| |_| .  . | __ _ ___| |_ ___ _ __ _   _ 
+| | __| | __| |\/| |/ _` / __| __/ _ \ '__| | | |
+| |_\ \ | |_| |  | | (_| \__ \ ||  __/ |  | |_| |
+ \____/_|\__\_|  |_/\__,_|___/\__\___|_|   \__, |
+                                            __/ |
+                                           |___/ 
+
+Welcome to the Git-Mastery REPL!
+Type 'help' for available commands, or 'exit' to quit.
+Git-Mastery commands work with or without the 'gitmastery' prefix.
+Shell commands are also supported.
+     """
+
     intro = click.style(
-        "\nWelcome to the Git-Mastery REPL!\n"
-        "Type 'help' for available commands, or 'exit' to quit.\n"
-        "Git-Mastery commands work with or without the 'gitmastery' prefix.\n"
-        "Shell commands are also supported.\n",
+        intro_msg,
+        bold=True,
         fg=ClickColor.BRIGHT_CYAN,
     )
 
@@ -56,8 +70,8 @@ class GitMasteryREPL(cmd.Cmd):
     def precmd(self, line: str) -> str:
         """Pre-process command line before execution."""
         stripped = line.strip()
-        if stripped.startswith("gitmastery "):
-            return stripped[len("gitmastery ") :]
+        if stripped.lower().startswith("gitmastery "):
+            return stripped[len("gitmastery ") :].lstrip()
         return line
 
     def default(self, line: str) -> None:
@@ -187,7 +201,7 @@ class GitMasteryREPL(cmd.Cmd):
         click.echo()
         return False
 
-    def emptyline(self) -> bool:  # type: ignore[override]
+    def emptyline(self) -> bool:
         """Do nothing on empty line (don't repeat last command)."""
         return False
 
