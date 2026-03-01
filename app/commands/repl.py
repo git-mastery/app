@@ -55,7 +55,6 @@ class GitMasteryREPL(cmd.Cmd):
 
     def precmd(self, line: str) -> str:
         """Pre-process command line before execution."""
-        # Strip 'gitmastery' prefix if present
         stripped = line.strip()
         if stripped.startswith("gitmastery "):
             return stripped[len("gitmastery ") :]
@@ -145,6 +144,10 @@ class GitMasteryREPL(cmd.Cmd):
             click.echo(
                 click.style(f"Permission denied: {path}", fg=ClickColor.BRIGHT_RED)
             )
+        except OSError as e:
+            click.echo(
+                click.style(f"Cannot change directory: {e}", fg=ClickColor.BRIGHT_RED)
+            )
         return False
 
     def do_exit(self, arg: str) -> bool:
@@ -156,35 +159,24 @@ class GitMasteryREPL(cmd.Cmd):
         """Exit the Git-Mastery REPL."""
         return self.do_exit(arg)
 
-    def do_help(self, arg: str) -> bool:  # type: ignore[override]
+    def do_help(self, arg: str) -> bool:
         """Show help for commands."""
-        if arg:
-            # Check if it's a gitmastery command
-            if arg in GITMASTERY_COMMANDS:
-                command = GITMASTERY_COMMANDS[arg]
-                click.echo(f"\n{arg}: {command.help or 'No description available.'}\n")
-                # Show command usage
-                with click.Context(command) as ctx:
-                    click.echo(command.get_help(ctx))
-                return False
-            # Fall back to cmd module's help
-            super().do_help(arg)
-            return False
-
-        # Show general help
         click.echo(
             click.style("\nGit-Mastery Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)
         )
         for name, command in GITMASTERY_COMMANDS.items():
-            help_text = command.help or "No description available."
+            help_text = (command.help or "No description available.").strip()
             click.echo(f"  {click.style(f'{name:<20}', bold=True)} {help_text}")
 
         click.echo(
             click.style("\nBuilt-in Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)
         )
-        click.echo(f"  {click.style(f'{'help':<20}', bold=True)} Show this help message")
-        click.echo(f"  {click.style(f'{'exit':<20}', bold=True)} Exit the REPL")
-        click.echo(f"  {click.style(f'{'quit':<20}', bold=True)} Exit the REPL")
+        for name, desc in [
+            ("help", "Show this help message"),
+            ("exit", "Exit the REPL"),
+            ("quit", "Exit the REPL"),
+        ]:
+            click.echo(f"  {click.style(f'{name:<20}', bold=True)} {desc}")
 
         click.echo(
             click.style(
@@ -201,7 +193,7 @@ class GitMasteryREPL(cmd.Cmd):
 
     def do_EOF(self, arg: str) -> bool:
         """Handle Ctrl+D."""
-        click.echo()  # Print newline
+        click.echo()
         return self.do_exit(arg)
 
 

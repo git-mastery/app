@@ -162,8 +162,7 @@ class Namespace:
                 sys.path.remove(tmpdir)
                 # Clean up cached modules again after execution
                 _clear_exercise_utils_modules()
-
-        sys.dont_write_bytecode = False
+                sys.dont_write_bytecode = False
         return cls(namespace)
 
     def execute_function(
