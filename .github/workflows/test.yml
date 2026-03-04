@@ -26,6 +26,16 @@ jobs:
         python-version: ["3.13"]
 
     steps:
+      - name: Validate GH_PAT secret
+        shell: bash
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_PAT" ]; then
+            echo "GH_PAT secret is required to run E2E tests."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -79,6 +89,16 @@ jobs:
         python-version: ["3.13"]
 
     steps:
+      - name: Validate GH_PAT secret
+        shell: bash
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_PAT" ]; then
+            echo "GH_PAT secret is required to run E2E tests."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
