@@ -1,0 +1,116 @@
+name: Run tests on Git-Mastery
+
+on:
+  pull_request_target:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  test-e2e-pr:
+    name: E2E Tests (${{ matrix.os }})
+    if: github.event_name == 'pull_request_target'
+    # Require manual approval before secrets are exposed to untrusted PR code
+    environment: e2e-test
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Explicitly check out the PR branch so we build and test the submitted code
+          # pull_request_target checks out the base branch by default
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile main.py --name gitmastery
+
+      - name: Set binary path (Unix)
+        if: runner.os != 'Windows'
+        run: echo "GITMASTERY_BINARY=${{ github.workspace }}/dist/gitmastery" >> $GITHUB_ENV
+
+      - name: Set binary path (Windows)
+        if: runner.os == 'Windows'
+        run: echo "GITMASTERY_BINARY=${{ github.workspace }}/dist/gitmastery.exe" >> $env:GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run E2E tests
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          python -m pytest tests/e2e/ -v
+
+  test-e2e:
+    name: E2E Tests (${{ matrix.os }})
+    if: github.event_name != 'pull_request_target'
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile main.py --name gitmastery
+
+      - name: Set binary path (Unix)
+        if: runner.os != 'Windows'
+        run: echo "GITMASTERY_BINARY=${{ github.workspace }}/dist/gitmastery" >> $GITHUB_ENV
+
+      - name: Set binary path (Windows)
+        if: runner.os == 'Windows'
+        run: echo "GITMASTERY_BINARY=${{ github.workspace }}/dist/gitmastery.exe" >> $env:GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run E2E tests
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          python -m pytest tests/e2e/ -v
