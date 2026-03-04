@@ -60,7 +60,7 @@ Shell commands are also supported.
     def _update_prompt(self) -> None:
         """Update prompt to show current directory."""
         cwd = os.path.basename(os.getcwd()) or os.getcwd()
-        self.prompt = click.style(f"gitmastery [{cwd}]> ", fg=ClickColor.BRIGHT_GREEN)
+        self.prompt = f"gitmastery [{cwd}]> "
 
     def postcmd(self, stop: bool, line: str) -> bool:
         """Update prompt after each command."""
