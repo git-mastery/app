@@ -21,7 +21,11 @@ class LoggingGroup(click.Group):
 CONTEXT_SETTINGS = {"max_content_width": 120}
 
 
-@click.group(cls=LoggingGroup, context_settings=CONTEXT_SETTINGS)
+@click.group(
+    cls=LoggingGroup,
+    context_settings=CONTEXT_SETTINGS,
+    invoke_without_command=True,
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def cli(ctx: click.Context, verbose: bool) -> None:
@@ -50,6 +54,9 @@ def cli(ctx: click.Context, verbose: bool) -> None:
         warn(
             f"Follow the update guide here: {click.style('https://git-mastery.org/companion-app/index.html#updating-the-git-mastery-app', bold=True)}"
         )
+
+    if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
+        ctx.invoke(repl)
 
 
 def start() -> None:
