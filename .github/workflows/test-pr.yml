@@ -1,18 +1,17 @@
-name: Run tests on Git-Mastery
+name: Run tests on Git-Mastery (PR)
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+  pull_request_target:
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-  test-e2e:
+  test-e2e-pr:
     name: E2E Tests (${{ matrix.os }})
+    # Require manual approval before secrets are exposed to untrusted PR code
+    environment: e2e-test
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -22,18 +21,13 @@ jobs:
         python-version: ["3.13"]
 
     steps:
-      - name: Validate GH_PAT secret
-        shell: bash
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          if [ -z "$GH_PAT" ]; then
-            echo "GH_PAT secret is required to run E2E tests."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Explicitly check out the PR branch so we build and test the submitted code
+          # pull_request_target checks out the base branch by default
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
