@@ -10,6 +10,7 @@ permissions:
 jobs:
   test-e2e-pr:
     name: E2E Tests (${{ matrix.os }})
+    if: github.repository == 'git-mastery/app'
     # Require manual approval before secrets are exposed to untrusted PR code
     environment: e2e-test
     runs-on: ${{ matrix.os }}
@@ -21,6 +22,16 @@ jobs:
         python-version: ["3.13"]
 
     steps:
+      - name: Validate GH_PAT secret
+        shell: bash
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_PAT" ]; then
+            echo "GH_PAT secret is required to run E2E tests."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
