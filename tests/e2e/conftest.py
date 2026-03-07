@@ -19,19 +19,21 @@ def runner() -> BinaryRunner:
 @pytest.fixture
 def gitmastery_root(
     runner: BinaryRunner, tmp_path_factory: pytest.TempPathFactory
-) -> Generator[Path, None, None]:
+) -> Generator[Path]:
     """
     Run `setup` in a pytest base temp dir, yield the exercises path.
     """
     work_dir = tmp_path_factory.mktemp("gitmastery-e2e-test-tmp")
-    res = runner.run(["setup"], cwd=work_dir, stdin_text="\n") # setup with default options
+
+    # setup with default options
+    res = runner.run(["setup"], cwd=work_dir, stdin_text="\n")
     res.assert_success()
 
-    exercises_path = work_dir / "gitmastery-exercises"
-    assert exercises_path.is_dir()
+    gitmastery_root_folder = work_dir / "gitmastery-exercises"
+    assert gitmastery_root_folder.is_dir()
     
     try:
-        yield exercises_path
+        yield gitmastery_root_folder
     finally:
         rmtree(work_dir)
 
@@ -43,7 +45,9 @@ def downloaded_exercise_dir(runner: BinaryRunner, gitmastery_root: Path) -> Path
     """
     res = runner.run(["download", EXERCISE_NAME], cwd=gitmastery_root)
     res.assert_success()
-    return gitmastery_root / EXERCISE_NAME
+    exercise_dir = gitmastery_root / EXERCISE_NAME
+    assert exercise_dir.is_dir()
+    return exercise_dir
 
 
 @pytest.fixture
