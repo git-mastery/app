@@ -401,6 +401,9 @@ jobs:
 
     runs-on: windows-latest
 
+    permissions:
+      contents: read
+
     steps:
       - name: Submit to WinGet
         uses: vedantmgoyal9/winget-releaser@v2
