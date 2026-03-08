@@ -395,6 +395,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  winget-publish:
+    needs: [prepare, windows]
+    if: needs.prepare.outputs.should_publish == 'true'
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Submit to WinGet
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: GitMastery.GitMastery
+          version: ${{ needs.prepare.outputs.version_number }}
+          token: ${{ secrets.ORG_PAT }}
+          installers-regex: '\.exe$'
+
   macos-build:
     needs: prepare
     if: needs.prepare.outputs.should_publish == 'true'
