@@ -51,20 +51,6 @@ def rmtree(folder_name: Union[str, Path]) -> None:
     try:
         shutil.rmtree(folder_path, onerror=force_remove_readonly)
         
-        # Wait for folder to be fully deleted (Windows can be slow with permissions)
-        max_retries = MAX_DELETE_RETRIES
-        for _ in range(max_retries):
-            if not os.path.exists(folder_path):
-                break
-            time.sleep(MAX_RETRY_INTERVAL)
-        
-        # If folder still exists after retries, raise error
-        if os.path.exists(folder_path):
-            raise RuntimeError(f"Failed to delete {folder_name} after {max_retries} retries")
-        
-        # Deletion succeeded, clean up backup
-        shutil.rmtree(backup_path, ignore_errors=True)
-        
     except Exception as deletion_error:
         try:
             shutil.copytree(backup_path, folder_path, dirs_exist_ok=True)
@@ -80,3 +66,18 @@ def rmtree(folder_name: Union[str, Path]) -> None:
         error(
             f"Failed to delete {folder_name}. Please make sure it is not accessed by other process."
         )
+        
+    finally:
+        # Wait for folder to be fully deleted (Windows can be slow with permissions)
+        max_retries = MAX_DELETE_RETRIES
+        for _ in range(max_retries):
+            if not os.path.exists(folder_path):
+                break
+            time.sleep(MAX_RETRY_INTERVAL)
+        
+        # If folder still exists after retries, raise error
+        if os.path.exists(folder_path):
+            raise RuntimeError(f"Failed to delete {folder_name} after {max_retries} retries")
+        
+        # Deletion succeeded, clean up backup
+        shutil.rmtree(backup_path, ignore_errors=True)
