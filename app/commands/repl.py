@@ -42,8 +42,8 @@ class GitMasteryREPL(cmd.Cmd):
                                            |___/ 
 
 Welcome to the Git-Mastery REPL!
-Type 'help' for available commands, or 'exit' to quit.
-Git-Mastery commands work with or without the 'gitmastery' prefix.
+Type '/help' for available commands, or '/exit' to quit.
+Use /command to run Git-Mastery commands (e.g. /verify), or 'gitmastery command'.
 Shell commands are also supported.
      """
 
@@ -70,29 +70,43 @@ Shell commands are also supported.
     def precmd(self, line: str) -> str:
         """Pre-process command line before execution."""
         stripped = line.strip()
-        if stripped.lower().startswith("gitmastery "):
-            return stripped[len("gitmastery ") :].lstrip()
+        if stripped.startswith("/"):
+            return "gitmastery " + stripped[1:]
         return line
 
-    def default(self, line: str) -> None:
+    def default(self, line: str) -> bool:
         """Handle commands not recognized by cmd module."""
         try:
             parts = shlex.split(line)
         except ValueError as e:
             click.echo(click.style(f"Input error: {e}", fg=ClickColor.BRIGHT_RED))
-            return
+            return False
 
         if not parts:
-            return
+            return False
 
         command_name = parts[0]
         args = parts[1:]
 
-        if command_name in GITMASTERY_COMMANDS:
-            self._run_gitmastery_command(command_name, args)
-            return
+        if command_name.lower() == "gitmastery":
+            gitmastery_command = args[0]
+            if gitmastery_command in ("exit", "quit"):
+                return self.do_exit("")
+            elif gitmastery_command == "help":
+                return self.do_help("")
+            elif gitmastery_command in GITMASTERY_COMMANDS:
+                self._run_gitmastery_command(gitmastery_command, args[1:])
+            else:
+                click.echo(
+                    click.style(
+                        f"Unknown Git-Mastery command: {gitmastery_command}",
+                        fg=ClickColor.BRIGHT_RED,
+                    )
+                )
+            return False
 
         self._run_shell_command(line)
+        return False
 
     def _run_gitmastery_command(self, command_name: str, args: List[str]) -> None:
         """Execute a gitmastery command."""
@@ -127,14 +141,7 @@ Shell commands are also supported.
     def _run_shell_command(self, line: str) -> None:
         """Execute a shell command via subprocess."""
         try:
-            result = subprocess.run(line, shell=True)
-            if result.returncode != 0:
-                click.echo(
-                    click.style(
-                        f"Command exited with code {result.returncode}",
-                        fg=ClickColor.BRIGHT_YELLOW,
-                    )
-                )
+            subprocess.run(line, shell=True)
         except Exception as e:
             click.echo(click.style(f"Shell error: {e}", fg=ClickColor.BRIGHT_RED))
 
@@ -164,40 +171,33 @@ Shell commands are also supported.
             )
         return False
 
-    def do_exit(self, arg: str) -> bool:
+    def do_exit(self, args: str) -> bool:
         """Exit the Git-Mastery REPL."""
         click.echo(click.style("Goodbye!", fg=ClickColor.BRIGHT_CYAN))
         return True
 
-    def do_quit(self, arg: str) -> bool:
+    def do_quit(self, args: str) -> bool:
         """Exit the Git-Mastery REPL."""
-        return self.do_exit(arg)
+        return self.do_exit(args)
 
-    def do_help(self, arg: str) -> bool:
+    def do_help(self, args: str) -> bool:
         """Show help for commands."""
         click.echo(
             click.style("\nGit-Mastery Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)
         )
         for name, command in GITMASTERY_COMMANDS.items():
             help_text = (command.help or "No description available.").strip()
-            click.echo(f"  {click.style(f'{name:<20}', bold=True)} {help_text}")
+            click.echo(f"  {click.style(f'/{name:<20}', bold=True)} {help_text}")
 
         click.echo(
             click.style("\nBuilt-in Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)
         )
         for name, desc in [
-            ("help", "Show this help message"),
-            ("exit", "Exit the REPL"),
-            ("quit", "Exit the REPL"),
+            ("/help", "Show this help message"),
+            ("/exit", "Exit the REPL"),
+            ("/quit", "Exit the REPL"),
         ]:
             click.echo(f"  {click.style(f'{name:<20}', bold=True)} {desc}")
-
-        click.echo(
-            click.style(
-                "\nAll other commands are passed to the shell.",
-                fg=ClickColor.BRIGHT_YELLOW,
-            )
-        )
         click.echo()
         return False
 
@@ -205,10 +205,10 @@ Shell commands are also supported.
         """Do nothing on empty line (don't repeat last command)."""
         return False
 
-    def do_EOF(self, arg: str) -> bool:
+    def do_EOF(self, _arg: str) -> bool:
         """Handle Ctrl+D."""
         click.echo()
-        return self.do_exit(arg)
+        return self.do_exit(_arg)
 
 
 @click.command()
