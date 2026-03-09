@@ -31,6 +31,7 @@ EXERCISE_UTILS_FILES = [
     "gitmastery",
     "github_cli",
     "test",
+    "roles",
 ]
 
 
