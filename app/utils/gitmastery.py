@@ -31,6 +31,7 @@ EXERCISE_UTILS_FILES = [
     "github_cli",
     "test",
     "roles",
+    "exercise_config",
 ]
 
 
