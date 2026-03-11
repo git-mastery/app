@@ -74,16 +74,16 @@ Shell commands are also supported.
             return "gitmastery " + stripped[1:]
         return line
 
-    def default(self, line: str) -> bool:
+    def default(self, line: str) -> None:
         """Handle commands not recognized by cmd module."""
         try:
             parts = shlex.split(line)
         except ValueError as e:
             click.echo(click.style(f"Input error: {e}", fg=ClickColor.BRIGHT_RED))
-            return False
+            return
 
         if not parts:
-            return False
+            return
 
         command_name = parts[0]
         args = parts[1:]
@@ -91,9 +91,9 @@ Shell commands are also supported.
         if command_name.lower() == "gitmastery":
             gitmastery_command = args[0]
             if gitmastery_command in ("exit", "quit"):
-                return self.do_exit("")
+                self.do_exit("")
             elif gitmastery_command == "help":
-                return self.do_help("")
+                self.do_help("")
             elif gitmastery_command in GITMASTERY_COMMANDS:
                 self._run_gitmastery_command(gitmastery_command, args[1:])
             else:
@@ -103,10 +103,9 @@ Shell commands are also supported.
                         fg=ClickColor.BRIGHT_RED,
                     )
                 )
-            return False
+            return
 
         self._run_shell_command(line)
-        return False
 
     def _run_gitmastery_command(self, command_name: str, args: List[str]) -> None:
         """Execute a gitmastery command."""
