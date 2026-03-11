@@ -91,7 +91,7 @@ Shell commands are also supported.
         if command_name.lower() == "gitmastery":
             gitmastery_command = args[0]
             if gitmastery_command in ("exit", "quit"):
-                self.do_exit("")
+                return self.do_exit("")
             elif gitmastery_command == "help":
                 self.do_help("")
             elif gitmastery_command in GITMASTERY_COMMANDS:
