@@ -73,7 +73,7 @@ class ExerciseConfig:
                 repo_name=exercise_repo["repo_name"],
                 repo_title=exercise_repo["repo_title"],
                 create_fork=exercise_repo["create_fork"],
-                fork_all_branches=exercise_repo["fork_all_branches"],
+                fork_all_branches=exercise_repo.get("fork_all_branches", None),
                 init=exercise_repo["init"],
             ),
             downloaded_at=None,
