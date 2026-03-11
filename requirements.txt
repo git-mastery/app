@@ -1,4 +1,5 @@
 click
+pytest
 mypy
 pyinstaller
 requests
