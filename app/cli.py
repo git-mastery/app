@@ -6,6 +6,7 @@ import requests
 
 from app.commands import check, download, progress, repl, setup, verify
 from app.commands.version import version
+from app.configs.gitmastery_config import migrate_to_gitmastery_folder
 from app.utils.click import ClickColor, CliContextKey, warn
 from app.utils.version import Version
 from app.version import __version__
@@ -31,6 +32,9 @@ CONTEXT_SETTINGS = {"max_content_width": 120}
 def cli(ctx: click.Context, verbose: bool) -> None:
     """Git-Mastery app"""
     ctx.ensure_object(dict)
+
+    if migrate_to_gitmastery_folder() is not None:
+        warn("Migrated .gitmastery.json and .gitmastery.log into .gitmastery/ folder.")
 
     ctx.obj[CliContextKey.VERBOSE] = verbose
 
