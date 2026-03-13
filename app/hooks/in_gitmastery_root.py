@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Tuple
 
 import click
 
-from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME, GitMasteryConfig
+from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME, GITMASTERY_FOLDER_NAME, GitMasteryConfig
 from app.configs.utils import find_root
 from app.hooks.utils import generate_cds_string
 from app.utils.click import CliContextKey, error
@@ -18,7 +18,7 @@ def in_gitmastery_root(
         def wrapper(
             ctx: click.Context, *args: Tuple[Any, ...], **kwargs: Dict[str, Any]
         ) -> Any:
-            root = find_root(GITMASTERY_CONFIG_NAME)
+            root = find_root(f"{GITMASTERY_FOLDER_NAME}/{GITMASTERY_CONFIG_NAME}")
             if root is None:
                 error(
                     f"You are not in a Git-Mastery root folder. Navigate to an appropriate folder or use "
