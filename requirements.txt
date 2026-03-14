@@ -1,5 +1,6 @@
 click
 pytest
+pytest-order
 mypy
 pyinstaller
 requests

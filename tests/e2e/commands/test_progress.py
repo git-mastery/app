@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import pytest
 
 from ..runner import BinaryRunner
 
@@ -27,6 +28,7 @@ def test_progress_sync_on_then_off(runner: BinaryRunner, gitmastery_root: Path) 
     assert json.loads((gitmastery_root / ".gitmastery.json").read_text())["progress_remote"] is False
 
 
+@pytest.mark.order(after="tests/e2e/commands/test_verify.py::test_verify_exercise")
 def test_progress_reset(runner: BinaryRunner, verified_exercise_dir: Path) -> None:
     """progress reset removes the current exercise's entry from progress.json."""
     res = runner.run(["progress", "reset"], cwd=verified_exercise_dir)
