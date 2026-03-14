@@ -1,7 +1,7 @@
 import logging
 import re
 
-from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME
+from app.configs.gitmastery_config import GITMASTERY_CONFIG_NAME, GITMASTERY_FOLDER_NAME
 from app.configs.utils import find_root
 
 
@@ -10,11 +10,11 @@ class GitMasteryFileHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record: logging.LogRecord) -> None:
-        gitmastery_root = find_root(GITMASTERY_CONFIG_NAME)
+        gitmastery_root = find_root(f"{GITMASTERY_FOLDER_NAME}/{GITMASTERY_CONFIG_NAME}")
         if gitmastery_root is None:
             return
 
-        log_path = gitmastery_root[0] / ".gitmastery.log"
+        log_path = gitmastery_root[0] / GITMASTERY_FOLDER_NAME / "gitmastery.log"
         handler = logging.FileHandler(log_path, mode="a")
         # TODO: This feels inefficient for logging but I can't think of a good
         # alternative
