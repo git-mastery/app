@@ -1,19 +1,20 @@
+import json
 from pathlib import Path
 
 
-def test_setup(exercises_dir: Path) -> None:
-    """
-    Test that setup creates the progress directory, progress.json, .gitmastery.json and .gitmastery.log
-    Setup command already called in conftest.py for test setup
-    """
-    progress_dir = exercises_dir / "progress"
-    assert progress_dir.is_dir(), f"Expected {progress_dir} to exist"
+def test_setup(setup_gitmastery_root: Path) -> None:
+    """setup creates the expected directory structure, config, and empty progress file."""
+    progress_dir = setup_gitmastery_root / "progress"
+    assert progress_dir.is_dir()
 
     progress_file = progress_dir / "progress.json"
-    assert progress_file.is_file(), f"Expected {progress_file} to exist"
+    assert progress_file.is_file()
+    assert json.loads(progress_file.read_text()) == []
 
-    config_file = exercises_dir / ".gitmastery.json"
-    assert config_file.is_file(), f"Expected {config_file} to exist"
+    config_file = setup_gitmastery_root / ".gitmastery.json"
+    assert config_file.is_file()
+    config = json.loads(config_file.read_text())
+    assert config["progress_local"] is True
+    assert config["progress_remote"] is False
 
-    log_file = exercises_dir / ".gitmastery.log"
-    assert log_file.is_file(), f"Expected {log_file} to exist"
+    assert (setup_gitmastery_root / ".gitmastery.log").is_file()

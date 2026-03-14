@@ -1,28 +1,20 @@
+import json
 from pathlib import Path
 
-from ..constants import EXERCISE_NAME, HANDS_ON_NAME
-from ..runner import BinaryRunner
+from ..constants import EXERCISE_NAME
 
 
-def test_download_exercise(runner: BinaryRunner, exercises_dir: Path) -> None:
-    """Test the download command output successfully performs the download for exercise."""
-    res = runner.run(["download", EXERCISE_NAME], cwd=exercises_dir)
-    res.assert_success()
+def test_download_exercise(downloaded_exercise_dir: Path) -> None:
+    """download creates the exercise folder with its config and README."""
+    assert downloaded_exercise_dir.is_dir()
 
-    exercise_folder = exercises_dir / EXERCISE_NAME
-    assert exercise_folder.is_dir()
-
-    exercise_config = exercise_folder / ".gitmastery-exercise.json"
+    exercise_config = downloaded_exercise_dir / ".gitmastery-exercise.json"
     assert exercise_config.is_file()
+    assert json.loads(exercise_config.read_text())["exercise_name"] == EXERCISE_NAME
 
-    exercise_readme = exercise_folder / "README.md"
-    assert exercise_readme.is_file()
+    assert (downloaded_exercise_dir / "README.md").is_file()
 
 
-def test_download_hands_on(runner: BinaryRunner, exercises_dir: Path) -> None:
-    """Test the download command output successfully performs the download for hands-on."""
-    res = runner.run(["download", HANDS_ON_NAME], cwd=exercises_dir)
-    res.assert_success()
-
-    hands_on_folder = exercises_dir / HANDS_ON_NAME
-    assert hands_on_folder.is_dir()
+def test_download_hands_on(downloaded_hands_on_dir: Path) -> None:
+    """download creates the hands-on folder."""
+    assert downloaded_hands_on_dir.is_dir()
