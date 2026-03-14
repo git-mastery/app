@@ -71,18 +71,18 @@ def get_repo_https_url(repo: str) -> Optional[str]:
     return None
 
 
-def fork(repository_name: str, fork_name: str) -> None:
-    run(
-        [
-            "gh",
-            "repo",
-            "fork",
-            repository_name,
-            "--default-branch-only",
-            "--fork-name",
-            fork_name,
-        ],
-    )
+def fork(repository_name: str, fork_name: str, all_branches: bool | None = False) -> None:
+    fork_command = [
+        "gh",
+        "repo",
+        "fork",
+        repository_name,
+        "--fork-name",
+        fork_name,
+    ]
+    if all_branches == None or not all_branches:
+        fork_command.append("--default-branch-only")
+    run(fork_command)
 
 
 def clone(repository_name: str) -> None:
