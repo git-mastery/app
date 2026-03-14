@@ -3,7 +3,7 @@ email: woojiahao1234@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   Git-Mastery app installation and usage guide
 baseurl: "/app"
-url: "https://git-mastery.github.io"
+url: "https://git-mastery.org"
 github_username: git-mastery
 
 theme: minima

@@ -28,7 +28,7 @@ If you wish to contribute to the packaging support, file a PR!
 ### Debian-based distros
 
 1. Install `add-apt-repository`: `sudo apt update && sudo apt-get install software-properties-common`
-2. Add the `gitmastery-apt-repo` repository: `sudo add-apt-repository "deb https://git-mastery.github.io/gitmastery-apt-repo any main"`
+2. Add the `gitmastery-apt-repo` repository: `sudo add-apt-repository "deb https://git-mastery.org/gitmastery-apt-repo any main"`
 3. Install the package: `sudo apt update && sudo apt-get install gitmastery`
 
 ### Arch-based distros
