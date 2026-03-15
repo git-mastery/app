@@ -19,7 +19,7 @@ class GitMasteryConfig:
         repository: Optional[str] = None
         branch: Optional[str] = "main"
         # local field
-        path: Optional[str] = None
+        repo_path: Optional[str] = None
 
         def to_url(self) -> str:
             if self.type != "remote":
@@ -38,7 +38,7 @@ class GitMasteryConfig:
                 typ = raw.get("type")
                 # explicit local
                 if typ == "local":
-                    return cls(type="local", path=raw.get("path"))
+                    return cls(type="local", repo_path=raw.get("repo_path"))
                 # fallthrough for None (legacy)/detected remote
                 return cls(
                     type="remote",
