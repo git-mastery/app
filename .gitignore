@@ -176,3 +176,6 @@ cython_debug/
 gitmastery-exercises/
 
 Gemfile.lock
+
+# AI settings
+.claude/

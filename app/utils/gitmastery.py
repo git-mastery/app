@@ -34,6 +34,21 @@ EXERCISE_UTILS_FILES = [
 ]
 
 
+def _clear_exercise_utils_modules() -> None:
+    """Clear cached exercise_utils modules from sys.modules.
+
+    This is especially important in REPL context where modules persist
+    between command invocations.
+    """
+    modules_to_remove = [
+        key
+        for key in sys.modules
+        if key == "exercise_utils" or key.startswith("exercise_utils.")
+    ]
+    for mod in modules_to_remove:
+        del sys.modules[mod]
+
+
 class ExercisesRepo:
     def __init__(self) -> None:
         """Creates a sparse clone of the exercises repository.
@@ -138,6 +153,9 @@ class Namespace:
         py_file = exercises_repo.fetch_file_contents(file_path, False)
         namespace: Dict[str, Any] = {}
 
+        # Clear any cached exercise_utils modules to ensure fresh imports
+        _clear_exercise_utils_modules()
+
         with tempfile.TemporaryDirectory() as tmpdir:
             package_root = os.path.join(tmpdir, "exercise_utils")
             os.makedirs(package_root, exist_ok=True)
@@ -154,8 +172,9 @@ class Namespace:
                 exec(py_file, namespace)
             finally:
                 sys.path.remove(tmpdir)
-
-        sys.dont_write_bytecode = False
+                # Clean up cached modules again after execution
+                _clear_exercise_utils_modules()
+                sys.dont_write_bytecode = False
         return cls(namespace)
 
     def execute_function(
