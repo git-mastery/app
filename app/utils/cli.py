@@ -35,8 +35,8 @@ def rmtree(folder_name: Union[str, Path]) -> None:
     
     # Create backup
     try:
-        shutil.copytree(folder_path, backup_path, symlinks=True, ignore_dangling_symlinks=True)
-    except Exception as backup_error:
+        shutil.copytree(folder_path, backup_path)
+    except Exception as e:
         error(
             f"Failed to create backup of {folder_name}. Deletion aborted."
         )
@@ -47,10 +47,10 @@ def rmtree(folder_name: Union[str, Path]) -> None:
     
     try:
         shutil.rmtree(folder_path, onerror=force_remove_readonly)
-    except Exception as deletion_error:
+    except Exception as e:
         try:
             shutil.copytree(backup_path, folder_path, dirs_exist_ok=True)
-        except Exception as restoration_error:
+        except Exception as e:
             error(
                 f"Failed to delete {folder_name}. Please make sure it is not accessed by other process. "
                 f"Your data is preserved at: {backup_path}"
