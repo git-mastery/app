@@ -112,7 +112,7 @@ Shell commands are also supported.
         command = GITMASTERY_COMMANDS[command_name]
         original_cwd = os.getcwd()
         try:
-            ctx = command.make_context(command_name, args)
+            ctx = command.make_context(f"/{command_name}", args)
             ctx.ensure_object(dict)
             ctx.obj[CliContextKey.VERBOSE] = False
             ctx.obj[CliContextKey.VERSION] = Version.parse_version_string(__version__)
