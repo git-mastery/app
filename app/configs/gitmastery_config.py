@@ -13,7 +13,7 @@ class GitMasteryConfig:
     @dataclass
     class ExercisesSource:
         # "remote" or "local"
-        type: str = "remote"
+        type: Optional[str] = "remote"
         # remote fields (legacy uses username/repository/branch)
         username: Optional[str] = None
         repository: Optional[str] = None
@@ -22,8 +22,10 @@ class GitMasteryConfig:
         repo_path: Optional[str] = None
 
         def to_url(self) -> str:
-            if self.type != "remote":
+            if self.type == "local":
                 raise ValueError("to_url only valid for remote ExercisesSource")
+            if not self.username or not self.repository:
+                raise ValueError("Username and repository are both required for remote ExercisesSource")
             return f"https://github.com/{self.username}/{self.repository}.git"
 
         @classmethod
@@ -36,7 +38,6 @@ class GitMasteryConfig:
                 return cls(type="remote", username="git-mastery", repository="exercises", branch="main")
             if isinstance(raw, dict):
                 typ = raw.get("type")
-                # explicit local
                 if typ == "local":
                     return cls(type="local", repo_path=raw.get("repo_path"))
                 # fallthrough for None (legacy)/detected remote
