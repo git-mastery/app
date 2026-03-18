@@ -18,12 +18,23 @@ permissions:
   issues: read
 
 jobs:
+  check-e2e:
+    name: Verify E2E tests passed
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check E2E test status for tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list --repo ${{ github.repository }} --workflow test.yml --commit ${{ github.sha }} --status success --json conclusion --jq '.[0].conclusion' | grep -q success || (echo "E2E tests have not passed for commit ${{ github.sha }}. Publish aborted." && exit 1)
+
   prepare:
     uses: git-mastery/actions/.github/workflows/get-latest-tag.yml@main
     secrets: inherit
 
   linux-build:
-    needs: prepare
+    needs: [prepare, check-e2e]
     if: needs.prepare.outputs.should_publish == 'true'
 
     strategy:
@@ -210,7 +221,7 @@ jobs:
     secrets: inherit
 
   arch-build:
-    needs: prepare
+    needs: [prepare, check-e2e]
     if: needs.prepare.outputs.should_publish == 'true'
 
     runs-on: ubuntu-latest
@@ -359,7 +370,7 @@ jobs:
           git push --force
 
   windows:
-    needs: prepare
+    needs: [prepare, check-e2e]
     if: needs.prepare.outputs.should_publish == 'true'
 
     runs-on: windows-latest
@@ -414,7 +425,7 @@ jobs:
           installers-regex: '\.exe$'
 
   macos-build:
-    needs: prepare
+    needs: [prepare, check-e2e]
     if: needs.prepare.outputs.should_publish == 'true'
 
     # We use macos-15-intel since it's the latest image that currently supports AMD64
