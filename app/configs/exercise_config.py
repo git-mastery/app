@@ -18,6 +18,8 @@ class ExerciseConfig:
         create_fork: Optional[bool]
         fork_all_branches: Optional[bool]
         init: Optional[bool]
+        pr_number: Optional[int]
+        pr_repo_full_name: Optional[str]
 
     exercise_name: str
     tags: List[str]
@@ -75,6 +77,8 @@ class ExerciseConfig:
                 create_fork=exercise_repo["create_fork"],
                 fork_all_branches=exercise_repo.get("fork_all_branches", None),
                 init=exercise_repo["init"],
+                pr_number=exercise_repo.get("pr_number", None),
+                pr_repo_full_name=exercise_repo.get("pr_repo_full_name", None),
             ),
             downloaded_at=None,
         )
