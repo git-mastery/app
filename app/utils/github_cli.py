@@ -198,3 +198,41 @@ def get_user_prs(repo: str, owner: str) -> List[str]:
         prs = result.stdout.splitlines()
         return prs
     return []
+
+
+def close_pr(repo: str) -> None:
+    username = get_username()
+
+    result = run(
+        [
+            "gh",
+            "pr",
+            "list",
+            "--repo",
+            repo,
+            "--author",
+            username,
+            "--state",
+            "open",
+            "--json",
+            "number",
+            "--jq",
+            ".[].number",
+        ],
+        env={"GH_PAGER": "cat"},
+    )
+
+    if not result.is_success():
+        return
+
+    for pr_number in result.stdout.splitlines():
+        run(
+            [
+                "gh",
+                "pr",
+                "close",
+                pr_number,
+                "--repo",
+                repo,
+            ],
+        )
