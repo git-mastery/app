@@ -7,7 +7,7 @@ Git-Mastery CLI to centralize and perform key operations of adapters
 We currently support:
 
 1. Windows `.exe` (amd64)
-2. MacOS Homebrew  (arm64)
+2. MacOS Homebrew (arm64)
 3. Debian `.deb` and APT (amd64 and arm64)
 4. Arch AUR (amd64)
 
@@ -43,11 +43,12 @@ To develop the app locally, create a virtualenv and download the requirements to
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+lefthook install # set up pre-commit hooks
 ```
 
 ## Publishing
 
-Tag the PR with the `bump:{major | minor | patch}` label and the CI will automatically perform the publish.                                  
+Tag the PR with the `bump:{major | minor | patch}` label and the CI will automatically perform the publish.
 
 A Github Actions workflow exists to automatically publish the changes to Homebrew.
 
