@@ -411,7 +411,7 @@ jobs:
         uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: GitMastery.GitMastery
-          version: ${{ needs.prepare.outputs.version_number }}
+          version: ${{ needs.prepare.outputs.ref_name }}
           token: ${{ secrets.ORG_PAT }}
           installers-regex: '\.exe$'
 
