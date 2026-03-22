@@ -46,21 +46,19 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
           python-version: "3.13"
-          cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
-          pyinstaller --onefile main.py --name $FILENAME
+          uv run pyinstaller --onefile main.py --name $FILENAME
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -234,12 +232,12 @@ jobs:
             -v $PWD:/pkg \
             archlinux:base-devel \
             bash -c "
-              pacman -Sy --noconfirm python python-pip openssl git &&
+              pacman -Sy --noconfirm curl openssl git &&
+              curl -LsSf https://astral.sh/uv/install.sh | sh &&
+              export PATH=\"/root/.local/bin:\$PATH\" &&
               cd /pkg &&
-              python -m venv venv &&
-              source venv/bin/activate &&
-              pip install -r requirements.txt &&
-              pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
+              uv sync &&
+              uv run pyinstaller --onefile main.py --name $FILENAME --distpath /pkg/dist
             "
 
           # Fix file ownership after Docker run
@@ -369,16 +367,14 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
           python-version: "3.13"
-          cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: Build binary
         shell: pwsh
@@ -387,7 +383,7 @@ jobs:
         run: |
           $version_content = '__version__ = "{0}"' -f $env:REF_NAME
           $version_content | Out-File -FilePath app/version.py -Encoding utf8
-          pyinstaller --onefile --name gitmastery main.py
+          uv run pyinstaller --onefile --name gitmastery main.py
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -442,21 +438,19 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
           python-version: "3.13"
-          cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
-          pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
+          uv run pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
 
       - name: Generate SHA256 (amd64)
         if: matrix.arch == 'amd64'

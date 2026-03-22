@@ -5,9 +5,9 @@ set -e
 FILENAME="gitmastery"
 
 echo "Building gitmastery binary..."
-pyinstaller --onefile main.py --name $FILENAME
+uv run pyinstaller --onefile main.py --name $FILENAME
 
 echo "Running E2E tests..."
-pytest tests/e2e -v
+uv run pytest tests/e2e -v
 
 echo "All E2E tests passed!"

@@ -37,12 +37,10 @@ If you wish to contribute to the packaging support, file a PR!
 
 ## Local development
 
-To develop the app locally, create a virtualenv and download the requirements to start.
+To develop the app locally, install dependencies and set up pre-commit hooks:
 
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv sync
 lefthook install # set up pre-commit hooks
 ```
 

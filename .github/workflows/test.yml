@@ -34,20 +34,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: Build binary
         run: |
-          pyinstaller --onefile main.py --name gitmastery
+          uv run pyinstaller --onefile main.py --name gitmastery
 
       - name: Set binary path (Unix)
         if: runner.os != 'Windows'
@@ -66,4 +64,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          python -m pytest tests/e2e/ -v
+          uv run pytest tests/e2e/ -v
