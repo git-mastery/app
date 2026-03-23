@@ -39,7 +39,6 @@ jobs:
     env:
       ARCHITECTURE: ${{ matrix.arch }}
       VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
-      FILENAME: gitmastery-${{ needs.prepare.outputs.version_number }}-linux-${{ matrix.arch }}
       REF_NAME: ${{ needs.prepare.outputs.ref_name }}
 
     steps:
@@ -58,21 +57,28 @@ jobs:
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
+          if [[ "$REF_NAME" == *"-beta"* ]]; then
+            FILENAME="gitmastery-beta-${VERSION_NUMBER}-linux-${ARCHITECTURE}"
+          else
+            FILENAME="gitmastery-${VERSION_NUMBER}-linux-${ARCHITECTURE}"
+          fi
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
           uv run pyinstaller --onefile main.py --name $FILENAME
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ env.FILENAME }}
+          files: dist/${{ steps.build.outputs.filename }}
           tag_name: ${{ env.REF_NAME }}
+          prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish package as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.FILENAME }}
-          path: dist/${{ env.FILENAME }}
+          name: ${{ steps.build.outputs.filename }}
+          path: dist/${{ steps.build.outputs.filename }}
 
   debian-build:
     # We support both ARM64 and AMD64 since Debian comes with support for
@@ -114,50 +120,60 @@ jobs:
         run: |
           sudo apt-get install devscripts build-essential debhelper-compat
 
+      - name: Set package name
+        id: pkg
+        run: |
+          if [[ "${{ needs.prepare.outputs.ref_name }}" == *"-beta"* ]]; then
+            echo "prefix=gitmastery-beta" >> $GITHUB_OUTPUT
+          else
+            echo "prefix=gitmastery" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create folder structure for ${{ env.ARCHITECTURE }} distribution
         run: |
-          mkdir gitmastery-${VERSION}-${ARCHITECTURE}
+          mkdir ${{ steps.pkg.outputs.prefix }}-${VERSION}-${ARCHITECTURE}
 
       - name: Download ${{ env.ARCHITECTURE }} binaries from artifacts
         uses: actions/download-artifact@v8
         with:
-          name: gitmastery-${{ env.VERSION }}-linux-${{ env.ARCHITECTURE }}
-          path: gitmastery-${{ env.VERSION }}-${{ env.ARCHITECTURE }}/
+          name: ${{ steps.pkg.outputs.prefix }}-${{ env.VERSION }}-linux-${{ env.ARCHITECTURE }}
+          path: ${{ steps.pkg.outputs.prefix }}-${{ env.VERSION }}-${{ env.ARCHITECTURE }}/
 
       - name: Create upstream tarball .orig.tar.gz
         run: |
           # Create .orig.tar.gz file
-          tar -czf gitmastery_${VERSION}.orig.tar.gz gitmastery-${VERSION}-${ARCHITECTURE}/gitmastery-${VERSION}-linux-${ARCHITECTURE}
+          tar -czf ${{ steps.pkg.outputs.prefix }}_${VERSION}.orig.tar.gz ${{ steps.pkg.outputs.prefix }}-${VERSION}-${ARCHITECTURE}/${{ steps.pkg.outputs.prefix }}-${VERSION}-linux-${ARCHITECTURE}
 
       - name: Generate Debian packaging files
-        working-directory: gitmastery-${{ env.VERSION }}-${{ env.ARCHITECTURE }}
+        working-directory: ${{ steps.pkg.outputs.prefix }}-${{ env.VERSION }}-${{ env.ARCHITECTURE }}
         # TODO: Update to something agnostic
         env:
           EMAIL: woojiahao1234@gmail.com
           NAME: Jiahao, Woo
+          PKG: ${{ steps.pkg.outputs.prefix }}
         run: |
-          file gitmastery-${VERSION}-linux-${ARCHITECTURE}
+          file ${PKG}-${VERSION}-linux-${ARCHITECTURE}
           # Create the debian folder
           mkdir debian
 
           # Generate the changelog
           # TODO: Maybe detect if major version change, then make it urgent
-          dch --create -v ${VERSION}-1 -u low --package gitmastery "$CHANGELOG_MESSAGE"
+          dch --create -v ${VERSION}-1 -u low --package ${PKG} "$CHANGELOG_MESSAGE"
 
           # Create the control file
           # TODO: Maybe detect if major version change, then make it mandatory
-          echo """Source: gitmastery
+          echo """Source: ${PKG}
           Maintainer: $NAME <$EMAIL>
           Section: misc
           Priority: optional
           Standards-Version: 4.7.0
           Build-Depends: debhelper-compat (= 13)
 
-          Package: gitmastery
+          Package: ${PKG}
           Architecture: ${ARCHITECTURE}
           Depends: ${shlibs:Depends}, ${misc:Depends}, libc6 (>= 2.35), python3
           Description: execute Git-Mastery
-            gitmastery is a Git learning tool built by the National University of Singapore School of Computing
+            ${PKG} is a Git learning tool built by the National University of Singapore School of Computing
           """ > debian/control
 
           # Copy over the MIT license from the main app to this release
@@ -175,14 +191,14 @@ jobs:
           \tdh \$@
           \n
           override_dh_auto_install:
-          \tinstall -D -m 0755 gitmastery-${VERSION}-linux-${ARCHITECTURE} debian/gitmastery/usr/bin/gitmastery
+          \tinstall -D -m 0755 ${PKG}-${VERSION}-linux-${ARCHITECTURE} debian/${PKG}/usr/bin/${PKG}
           """ > debian/rules
 
           echo """usr/bin
-          """ > debian/gitmastery.dirs
+          """ > debian/${PKG}.dirs
 
           mkdir -p debian/source
-          echo """gitmastery-${VERSION}-linux-${ARCHITECTURE}
+          echo """${PKG}-${VERSION}-linux-${ARCHITECTURE}
           """ > debian/source/include-binaries
 
           cat debian/rules
@@ -193,17 +209,28 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: gitmastery_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
+          files: ${{ steps.pkg.outputs.prefix }}_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
           tag_name: ${{ needs.prepare.outputs.ref_name }}
+          prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  debian-publish-apt:
+  debian-publish-apt-stable:
     needs: [prepare, debian-build]
-    if: needs.prepare.outputs.should_publish == 'true'
+    if: needs.prepare.outputs.should_publish == 'true' && !contains(needs.prepare.outputs.ref_name, 'beta')
 
     permissions: write-all
     uses: git-mastery/gitmastery-apt-repo/.github/workflows/debian-apt-repo.yml@main
+    with:
+      version: ${{ needs.prepare.outputs.ref_name }}
+    secrets: inherit
+
+  debian-publish-apt-beta:
+    needs: [prepare, debian-build]
+    if: needs.prepare.outputs.should_publish == 'true' && contains(needs.prepare.outputs.ref_name, 'beta')
+
+    permissions: write-all
+    uses: git-mastery/gitmastery-beta-apt-repo/.github/workflows/debian-apt-repo-beta.yml@main
     with:
       version: ${{ needs.prepare.outputs.ref_name }}
     secrets: inherit
@@ -217,7 +244,6 @@ jobs:
     env:
       ARCHITECTURE: amd64
       VERSION_NUMBER: ${{ needs.prepare.outputs.version_number }}
-      FILENAME: gitmastery-${{ needs.prepare.outputs.version_number }}-arch-amd64
       REF_NAME: ${{ needs.prepare.outputs.ref_name }}
 
     steps:
@@ -227,6 +253,13 @@ jobs:
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
+
+          if [[ "$REF_NAME" == *"-beta"* ]]; then
+            FILENAME="gitmastery-beta-${VERSION_NUMBER}-arch-amd64"
+          else
+            FILENAME="gitmastery-${VERSION_NUMBER}-arch-amd64"
+          fi
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
 
           docker run --rm \
             -v $PWD:/pkg \
@@ -246,16 +279,17 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ env.FILENAME }}
+          files: dist/${{ steps.build.outputs.filename }}
           tag_name: ${{ env.REF_NAME }}
+          prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish package as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.FILENAME }}
-          path: dist/${{ env.FILENAME }}
+          name: ${{ steps.build.outputs.filename }}
+          path: dist/${{ steps.build.outputs.filename }}
 
   arch-publish:
     # Since Arch linux currently only supports x86_64 out of the box, we will focus
@@ -300,24 +334,34 @@ jobs:
           git config --global user.email "woojiahao1234@gmail.com"
           git config --global init.defaultBranch master
 
+      - name: Select AUR package
+        run: |
+          if [[ "$REF_NAME" == *"-beta"* ]]; then
+            echo "AUR_PKG=gitmastery-beta-bin" >> $GITHUB_ENV
+            echo "INSTALL_NAME=gitmastery-beta" >> $GITHUB_ENV
+          else
+            echo "AUR_PKG=gitmastery-bin" >> $GITHUB_ENV
+            echo "INSTALL_NAME=gitmastery" >> $GITHUB_ENV
+          fi
+
       - name: Create AUR package repository
-        run: git clone ssh://aur@aur.archlinux.org/gitmastery-bin.git aur-pkg
+        run: git clone ssh://aur@aur.archlinux.org/${AUR_PKG}.git aur-pkg
 
       - name: Publish to AUR
         env:
-          RELEASE_AMD64_URL: https://github.com/git-mastery/app/releases/download/${{ needs.prepare.outputs.ref_name }}/gitmastery-${{ env.VERSION }}-arch-amd64
           REF_NAME: ${{ needs.prepare.outputs.ref_name }}
         run: |
           cd aur-pkg
 
-          BINARY_NAME=gitmastery-${VERSION}-linux-${ARCHITECTURE}
+          BINARY_NAME=${AUR_PKG}-${VERSION}-linux-${ARCHITECTURE}
+          RELEASE_AMD64_URL="https://github.com/git-mastery/app/releases/download/${REF_NAME}/${BINARY_NAME}"
 
           echo -e $"""$CHANGELOG_MESSAGE
           \n""" >> gitmastery.changelog
           cat gitmastery.changelog
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
-          pkgname=gitmastery-bin
+          pkgname=${AUR_PKG}
           pkgver=\"$REF_NAME\"
           pkgrel=1
           pkgdesc=\"Git-Mastery CLI for practicing Git\"
@@ -383,13 +427,19 @@ jobs:
         run: |
           $version_content = '__version__ = "{0}"' -f $env:REF_NAME
           $version_content | Out-File -FilePath app/version.py -Encoding utf8
-          uv run pyinstaller --onefile --name gitmastery main.py
+          if ($env:REF_NAME -like "*-beta*") {
+            $name = "gitmastery-beta"
+          } else {
+            $name = "gitmastery"
+          }
+          uv run pyinstaller --onefile --name $name main.py
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/gitmastery.exe
+          files: ${{ contains(needs.prepare.outputs.ref_name, 'beta') && 'dist/gitmastery-beta.exe' || 'dist/gitmastery.exe' }}
           tag_name: ${{ needs.prepare.outputs.ref_name }}
+          prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -406,7 +456,7 @@ jobs:
       - name: Submit to WinGet
         uses: vedantmgoyal9/winget-releaser@v2
         with:
-          identifier: GitMastery.GitMastery
+          identifier: ${{ contains(needs.prepare.outputs.ref_name, 'beta') && 'GitMastery.GitMasteryBeta' || 'GitMastery.GitMastery' }}
           version: ${{ needs.prepare.outputs.version_number }}
           release-tag: ${{ needs.prepare.outputs.ref_name }}
           token: ${{ secrets.ORG_PAT }}
@@ -450,13 +500,19 @@ jobs:
       - name: Build binary
         run: |
           echo "__version__ = \"$REF_NAME\"" > app/version.py
-          uv run pyinstaller --onefile --name "gitmastery-$ARCHITECTURE" main.py
+          if [[ "$REF_NAME" == *"-beta"* ]]; then
+            BINARY_PREFIX="gitmastery-beta"
+          else
+            BINARY_PREFIX="gitmastery"
+          fi
+          uv run pyinstaller --onefile --name "$BINARY_PREFIX-$ARCHITECTURE" main.py
 
       - name: Generate SHA256 (amd64)
         if: matrix.arch == 'amd64'
         id: checksum-amd64
         run: |
-          FILENAME=gitmastery-amd64
+          [[ "$REF_NAME" == *"-beta"* ]] && PREFIX="gitmastery-beta" || PREFIX="gitmastery"
+          FILENAME=$PREFIX-amd64
           SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
@@ -464,15 +520,17 @@ jobs:
         if: matrix.arch == 'arm64'
         id: checksum-arm64
         run: |
-          FILENAME=gitmastery-arm64
+          [[ "$REF_NAME" == *"-beta"* ]] && PREFIX="gitmastery-beta" || PREFIX="gitmastery"
+          FILENAME=$PREFIX-arm64
           SHA256=$(shasum -a 256 dist/$FILENAME | cut -d ' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/gitmastery-${{ matrix.arch }}
+          files: dist/${{ steps.build.outputs.binary_prefix }}-${{ matrix.arch }}
           tag_name: ${{ needs.prepare.outputs.ref_name }}
+          prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -495,41 +553,53 @@ jobs:
           git clone https://x-access-token:${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           cd homebrew-gitmastery
 
-          cat <<EOF > gitmastery.rb
-          class Gitmastery < Formula
+          if [[ "$REF_NAME" == *"-beta"* ]]; then
+            FORMULA="gitmastery-beta.rb"
+            CLASS="GitmasteryBeta"
+            BINARY_PREFIX="gitmastery-beta"
+            INSTALL_NAME="gitmastery-beta"
+          else
+            FORMULA="gitmastery.rb"
+            CLASS="Gitmastery"
+            BINARY_PREFIX="gitmastery"
+            INSTALL_NAME="gitmastery"
+          fi
+
+          cat <<EOF > $FORMULA
+          class $CLASS < Formula
             desc "CLI tool for Git-Mastery"
             homepage "https://github.com/git-mastery/cli"
             version "$VERSION_NUMBER"
 
             on_arm do
-              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/gitmastery-arm64"
+              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/${BINARY_PREFIX}-arm64"
               sha256 "${{ needs.macos-build.outputs.sha256-arm64 }}"
             end
 
             on_intel do
-              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/gitmastery-amd64"
+              url "https://github.com/git-mastery/cli/releases/download/${REF_NAME}/${BINARY_PREFIX}-amd64"
               sha256 "${{ needs.macos-build.outputs.sha256-amd64 }}"
             end
 
             def install
               if Hardware::CPU.arm?
-                chmod 0755, "gitmastery-arm64"
-                bin.install "gitmastery-arm64" => "gitmastery"
+                chmod 0755, "${BINARY_PREFIX}-arm64"
+                bin.install "${BINARY_PREFIX}-arm64" => "${INSTALL_NAME}"
               else
-                chmod 0755, "gitmastery-amd64"
-                bin.install "gitmastery-amd64" => "gitmastery"
+                chmod 0755, "${BINARY_PREFIX}-amd64"
+                bin.install "${BINARY_PREFIX}-amd64" => "${INSTALL_NAME}"
               end
             end
 
             test do
-              system "#{bin}/gitmastery", "--help"
+              system "#{bin}/${INSTALL_NAME}", "--help"
             end
           end
           EOF
 
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/git-mastery/homebrew-gitmastery.git
           git remote -v
-          git add gitmastery.rb
+          git add $FORMULA
           git commit -m "Update to ${REF_NAME}"
           git push origin main
 
@@ -540,11 +610,17 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    needs: macos-publish
+    needs: [prepare, macos-publish]
 
     steps:
       - run: |
           brew tap git-mastery/gitmastery
-          brew install gitmastery
-          file "$(brew --prefix)/bin/gitmastery"
-          gitmastery --help
+          if [[ "${{ needs.prepare.outputs.ref_name }}" == *"-beta"* ]]; then
+            brew install gitmastery-beta
+            file "$(brew --prefix)/bin/gitmastery-beta"
+            gitmastery-beta --help
+          else
+            brew install gitmastery
+            file "$(brew --prefix)/bin/gitmastery"
+            gitmastery --help
+          fi
