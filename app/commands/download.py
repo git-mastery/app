@@ -54,7 +54,7 @@ def _download_exercise(
             if old_config.exercise_repo.repo_type == "remote" and old_config.exercise_repo.create_fork:
                 pr_repo_full_name = old_config.exercise_repo.pr_repo_full_name
                 if pr_repo_full_name:
-                    info(f"Closing open PRs in {pr_repo_full_name} if exists...")
+                    info(f"Closing any open PRs in {pr_repo_full_name}...")
                     close_pr(pr_repo_full_name)
             rmtree(exercise)
 
