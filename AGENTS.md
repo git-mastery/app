@@ -18,7 +18,7 @@ You are an expert software developer handling this repo.
   - app/: CLI entry, commands, utils, configs, logging, hooks, __init__.py, cli.py, version.py
   - docs/: user documentation and platform-specific guides
   - main.py: entrypoint to start the CLI
-  - requirements.txt: Python dependencies
+  - pyproject.toml: Python dependencies
 
 **Important files and folders**:
 - main.py - entrypoint; sets up logging then starts the CLI
@@ -35,14 +35,11 @@ You are an expert software developer handling this repo.
 - docs/ - user documentation and platform guides
 
 ## Tools you can use
-**Run**: 
-- `python main.py`
+**Run**:
+- `uv run python main.py`
 
 **Install deps**:
-- `python -m venv venv`
-- Windows with Git-Bash: `source venv/Scripts/activate`
-- macOS: `source venv/bin/activate`
-- `pip install -r requirements.txt`
+- `uv sync`
 
 **Information Display**:
 - Use `info()` for normal user-facing status
