@@ -31,7 +31,7 @@ dev = [
     "setuptools==82.0.1",
     "types-pytz==2026.1.1.20260304",
     "types-pyyaml==6.0.12.20250915",
-    "types-requests==2.32.4.20260107",
+    "types-requests==2.32.4.20260324",
 ]
 
 [tool.uv]
