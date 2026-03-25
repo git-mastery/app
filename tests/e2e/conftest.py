@@ -6,6 +6,7 @@ import pytest
 from .constants import EXERCISE_NAME, HANDS_ON_NAME
 from .utils import rmtree
 from .runner import BinaryRunner
+from .result import RunResult
 
 
 @pytest.fixture(scope="session")
@@ -82,3 +83,35 @@ def verified_exercise_dir(runner: BinaryRunner, downloaded_exercise_dir: Path) -
     res = runner.run(["verify"], cwd=downloaded_exercise_dir)
     res.assert_success()
     return downloaded_exercise_dir
+
+
+@pytest.fixture(scope="session")
+def check_results(runner: BinaryRunner) -> RunResult:
+    """version + check git/github — no setup required."""
+    return runner.run_repl_session([
+        (["version"], None),
+        (["check", "git"], None),
+        (["check", "github"], None),
+    ])
+
+
+@pytest.fixture(scope="session")
+def progress_results(runner: BinaryRunner, gitmastery_root: Path) -> RunResult:
+    """progress show + sync commands — requires gitmastery_root setup."""
+    return runner.run_repl_session(
+        [
+            (["progress", "show"], None),
+            (["progress", "sync", "on"], None),
+            (["progress", "sync", "off"], "y\n"),
+        ],
+        cwd=gitmastery_root,
+    )
+
+
+@pytest.fixture(scope="session")
+def reset_results(runner: BinaryRunner, verified_exercise_dir: Path) -> RunResult:
+    """progress reset — requires verified exercise."""
+    return runner.run_repl_session(
+        [(["progress", "reset"], None)],
+        cwd=verified_exercise_dir,
+    )

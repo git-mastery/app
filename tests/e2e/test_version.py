@@ -1,9 +1,7 @@
-from .runner import BinaryRunner
+from .result import RunResult
 
 
-def test_version(runner: BinaryRunner) -> None:
+def test_version(check_results: RunResult) -> None:
     """Test the version command output."""
-    res = runner.run(["version"])
-    res.assert_success()
-    res.assert_stdout_contains("Git-Mastery app is")
-    res.assert_stdout_matches(r"v\d+\.\d+\.\d+")
+    check_results.assert_stdout_contains("Git-Mastery app is")
+    check_results.assert_stdout_matches(r"v\d+\.\d+\.\d+")
