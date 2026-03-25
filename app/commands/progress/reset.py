@@ -58,6 +58,7 @@ def reset() -> None:
     if is_remote_type and exercise_config.exercise_repo.create_fork:
         pr_repo_full_name = exercise_config.exercise_repo.pr_repo_full_name
         if pr_repo_full_name:
+            info(f"Closing open PRs in {pr_repo_full_name} if exists...")
             close_pr(pr_repo_full_name)
         exercise_config.exercise_repo.pr_number = None
         exercise_config.exercise_repo.pr_repo_full_name = None
