@@ -25,10 +25,11 @@ jobs:
       - name: Validate GH_PAT secret
         shell: bash
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ matrix.os == 'ubuntu-latest' && secrets.E2E_BOT_PAT_UBUNTU || (matrix.os != 'ubuntu-latest' && secrets.GH_PAT) || '' }}
+          OS_NAME: ${{ matrix.os }}
         run: |
           if [ -z "$GH_PAT" ]; then
-            echo "GH_PAT secret is required to run E2E tests."
+            echo "Required PAT secret is missing for $OS_NAME."
             exit 1
           fi
 
@@ -68,6 +69,6 @@ jobs:
 
       - name: Run E2E tests
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ matrix.os == 'ubuntu-latest' && secrets.E2E_BOT_PAT_UBUNTU || (matrix.os != 'ubuntu-latest' && secrets.GH_PAT) || '' }}
         run: |
           uv run pytest tests/e2e/ -v
