@@ -26,7 +26,7 @@ from app.utils.click import (
     warn,
 )
 from app.utils.git import add_all, commit, push
-from app.utils.github_cli import delete_repo, get_prs, get_username, pull_request
+from app.utils.github_cli import close_pr, delete_repo, get_prs, get_username, pull_request
 from app.utils.gitmastery import ExercisesRepo
 
 
@@ -56,6 +56,12 @@ def reset() -> None:
     os.chdir(exercise_config.path)
     info("Resetting the exercise folder")
     if is_remote_type and exercise_config.exercise_repo.create_fork:
+        pr_repo_full_name = exercise_config.exercise_repo.pr_repo_full_name
+        if pr_repo_full_name:
+            info(f"Closing any open PRs in {pr_repo_full_name}...")
+            close_pr(pr_repo_full_name)
+        exercise_config.exercise_repo.pr_number = None
+        exercise_config.exercise_repo.pr_repo_full_name = None
         # Remove the fork first
         exercise_fork_name = (
             f"{username}-gitmastery-{exercise_config.exercise_repo.repo_title}"

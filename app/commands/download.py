@@ -24,6 +24,7 @@ from app.utils.click import (
 from app.utils.git import add_all, commit, empty_commit, init
 from app.utils.github_cli import (
     clone_with_custom_name,
+    close_pr,
     delete_repo,
     fork,
     get_username,
@@ -47,8 +48,10 @@ def _download_exercise(
             f"Downloading {exercise} to {click.style(exercise + '/', bold=True, italic=True)}"
         )
 
+        old_config: Optional[ExerciseConfig] = None
         if os.path.isdir(exercise):
             warn(f"You already have {exercise}, removing it to download again")
+            old_config = ExerciseConfig.read(Path(exercise), 0)
             rmtree(exercise)
 
         os.makedirs(exercise)
@@ -93,6 +96,12 @@ def _download_exercise(
                     rmtree(exercise)
                     warn("Setup Github and Github CLI before downloading this exercise")
                     sys.exit(1)
+
+        if old_config and old_config.exercise_repo.repo_type == "remote" and old_config.exercise_repo.create_fork:
+            pr_repo_full_name = old_config.exercise_repo.pr_repo_full_name
+            if pr_repo_full_name:
+                info(f"Closing any open PRs in {pr_repo_full_name}...")
+                close_pr(pr_repo_full_name)
 
         if len(config.base_files) > 0:
             info("Downloading base files...")
