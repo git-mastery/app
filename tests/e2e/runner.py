@@ -3,7 +3,7 @@ import platform
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Sequence, Self
+from typing import Dict, List, Optional, Sequence, Self, Tuple
 from .result import RunResult
 
 
@@ -71,3 +71,23 @@ class BinaryRunner:
             returncode=proc.returncode,
             command=cmd,
         )
+
+    def run_repl_session(
+        self,
+        commands: List[Tuple[List[str], Optional[str]]],
+        *,
+        cwd: Optional[Path] = None,
+        timeout: int = 60,
+    ) -> RunResult:
+        """Run multiple commands in one REPL session via stdin.
+
+        Each entry is (args, stdin_fragment) where stdin_fragment is optional
+        extra input appended after the command (e.g. "y\\n" for confirmations).
+        EOF on stdin exits the REPL cleanly via do_EOF.
+        """
+        lines: List[str] = []
+        for args, fragment in commands:
+            lines.append("gitmastery " + " ".join(args) + "\n")
+            if fragment:
+                lines.append(fragment)
+        return self.run([], cwd=cwd, timeout=timeout, stdin_text="".join(lines))
