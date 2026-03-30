@@ -21,20 +21,24 @@ jobs:
         python-version: ["3.13"]
 
     steps:
-      - name: Validate GH_PAT secret
+      - name: Set GH_TOKEN
         shell: bash
         env:
           GH_PAT: >-
             ${{
-              matrix.os == 'ubuntu-latest' &&
-              secrets.E2E_BOT_PAT_UBUNTU ||
-              (matrix.os != 'ubuntu-latest' && secrets.GH_PAT) ||
-              ''
-            }}
-          OS_NAME: ${{ matrix.os }}
+                matrix.os == 'ubuntu-latest' &&
+                secrets.GH_PAT_UBUNTU ||
+                (matrix.os != 'ubuntu-latest' && secrets.GH_PAT) ||
+                ''
+              }}
         run: |
-          if [ -z "$GH_PAT" ]; then
-            echo "Required PAT secret is missing for $OS_NAME."
+          echo "GH_TOKEN=$GH_PAT" >> $GITHUB_ENV
+
+      - name: Validate GH_TOKEN
+        shell: bash
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "Required PAT secret is missing for ${{ matrix.os }}."
             exit 1
           fi
 
@@ -68,13 +72,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run E2E tests
-        env:
-          GH_TOKEN: >-
-            ${{
-              matrix.os == 'ubuntu-latest' &&
-              secrets.E2E_BOT_PAT_UBUNTU ||
-              (matrix.os != 'ubuntu-latest' && secrets.GH_PAT) ||
-              ''
-            }}
         run: |
           uv run pytest tests/e2e/ -v
