@@ -7,6 +7,7 @@ from typing import List
 
 import click
 
+from app.aliases import COMMAND_ALIASES, resolve_alias
 from app.commands.check import check
 from app.commands.download import download
 from app.commands.progress.progress import progress
@@ -91,7 +92,7 @@ Shell commands are also supported.
         if command_name.lower() == "gitmastery":
             if not args:
                 return
-            gitmastery_command = args[0]
+            gitmastery_command = resolve_alias(args[0])
             if gitmastery_command in ("exit", "quit"):
                 return self.do_exit("")  # type: ignore[return-value]
             elif gitmastery_command == "help":
@@ -188,7 +189,10 @@ Shell commands are also supported.
         )
         for name, command in GITMASTERY_COMMANDS.items():
             help_text = (command.help or "No description available.").strip()
-            click.echo(f"  {click.style(f'/{name:<20}', bold=True)} {help_text}")
+            aliases = COMMAND_ALIASES.get(name, [])
+            alias_str = f" (/{', /'.join(aliases)})" if aliases else ""
+            label = f"/{name}{alias_str}"
+            click.echo(f"  {click.style(f'{label:<25}', bold=True)} {help_text}")
 
         click.echo(
             click.style("\nBuilt-in Commands:", bold=True, fg=ClickColor.BRIGHT_CYAN)

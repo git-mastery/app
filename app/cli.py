@@ -3,7 +3,9 @@ import sys
 
 import click
 import requests
+from click_aliases import ClickAliasedGroup
 
+from app.aliases import COMMAND_ALIASES
 from app.commands import check, download, progress, setup, verify
 from app.commands.repl import repl
 from app.commands.version import version
@@ -12,7 +14,7 @@ from app.utils.version import Version
 from app.version import __version__
 
 
-class LoggingGroup(click.Group):
+class LoggingGroup(ClickAliasedGroup):
     def invoke(self, ctx: click.Context) -> None:
         logger = logging.getLogger(__name__)
         logger.info("Running command %s with arguments %s", ctx.command_path, sys.argv)
@@ -63,5 +65,8 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 def start() -> None:
     commands = [check, download, progress, setup, verify, version]
     for command in commands:
-        cli.add_command(command)
+        if command.name and command.name in COMMAND_ALIASES:
+            cli.add_command(command, aliases=COMMAND_ALIASES[command.name])
+        else:
+            cli.add_command(command)
     cli(obj={})
