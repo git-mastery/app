@@ -128,6 +128,8 @@ jobs:
           else
             echo "prefix=gitmastery" >> $GITHUB_OUTPUT
           fi
+          DEBIAN_VERSION=$(echo "${VERSION}" | sed 's/-beta\./~beta/g')
+          echo "debian_version=$DEBIAN_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create folder structure for ${{ env.ARCHITECTURE }} distribution
         run: |
@@ -142,7 +144,7 @@ jobs:
       - name: Create upstream tarball .orig.tar.gz
         run: |
           # Create .orig.tar.gz file
-          tar -czf ${{ steps.pkg.outputs.prefix }}_${VERSION}.orig.tar.gz ${{ steps.pkg.outputs.prefix }}-${VERSION}-${ARCHITECTURE}/${{ steps.pkg.outputs.prefix }}-${VERSION}-linux-${ARCHITECTURE}
+          tar -czf ${{ steps.pkg.outputs.prefix }}_${{ steps.pkg.outputs.debian_version }}.orig.tar.gz ${{ steps.pkg.outputs.prefix }}-${VERSION}-${ARCHITECTURE}/${{ steps.pkg.outputs.prefix }}-${VERSION}-linux-${ARCHITECTURE}
 
       - name: Generate Debian packaging files
         working-directory: ${{ steps.pkg.outputs.prefix }}-${{ env.VERSION }}-${{ env.ARCHITECTURE }}
@@ -158,7 +160,10 @@ jobs:
 
           # Generate the changelog
           # TODO: Maybe detect if major version change, then make it urgent
-          dch --create -v ${VERSION}-1 -u low --package ${PKG} "$CHANGELOG_MESSAGE"
+
+          # Changing -beta. to ~beta for Debian semver handling
+          DEBIAN_VERSION=$(echo "${VERSION}" | sed 's/-beta\./~beta/g')
+          dch --create -v ${DEBIAN_VERSION}-1 -u low --package ${PKG} "$CHANGELOG_MESSAGE"
 
           # Create the control file
           # TODO: Maybe detect if major version change, then make it mandatory
@@ -209,7 +214,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.pkg.outputs.prefix }}_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
+          files: ${{ steps.pkg.outputs.prefix }}_${{ steps.pkg.outputs.debian_version }}-1_${{ env.ARCHITECTURE }}.deb
           tag_name: ${{ needs.prepare.outputs.ref_name }}
           prerelease: ${{ contains(needs.prepare.outputs.ref_name, 'beta') }}
         env:
@@ -355,6 +360,7 @@ jobs:
 
           BINARY_NAME=${AUR_PKG}-${VERSION}-linux-${ARCHITECTURE}
           RELEASE_AMD64_URL="https://github.com/git-mastery/app/releases/download/${REF_NAME}/${BINARY_NAME}"
+          PKGVER=$(echo "$REF_NAME" | sed 's/-/_/g') # pkgver cannot have a hyphen (handles beta tags)
 
           echo -e $"""$CHANGELOG_MESSAGE
           \n""" >> gitmastery.changelog
@@ -362,7 +368,7 @@ jobs:
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
           pkgname=${AUR_PKG}
-          pkgver=\"$REF_NAME\"
+          pkgver=\"$PKGVER\"
           pkgrel=1
           pkgdesc=\"Git-Mastery CLI for practicing Git\"
           arch=('x86_64')
