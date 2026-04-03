@@ -1,4 +1,21 @@
 {
-  "projectName": "App",
-  "projectOwner": "Git-Mastery"
+  "projectName": "app",
+  "projectOwner": "git-mastery",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "woojiahao",
+      "name": "Jiahao",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29497029?v=4",
+      "profile": "https://blog.woojiahao.com",
+      "contributions": [
+        "code"
+      ]
+    }
+  ]
 }
