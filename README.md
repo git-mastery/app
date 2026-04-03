@@ -36,6 +36,13 @@ Linux packaging is performed to Debian and Arch based distros. Notes can be
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://blog.woojiahao.com"><img src="https://avatars.githubusercontent.com/u/29497029?v=4?s=100" width="100px;" alt="Jiahao"/><br /><sub><b>Jiahao</b></sub></a><br /><a href="#code-woojiahao" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
