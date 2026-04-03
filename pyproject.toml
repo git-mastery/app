@@ -22,7 +22,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "lefthook==2.1.4",
-    "mypy==1.19.1",
+    "mypy==1.20.0",
     "mypy_extensions==1.1.0",
     "pyinstaller==6.19.0",
     "pyinstaller-hooks-contrib==2026.3",
