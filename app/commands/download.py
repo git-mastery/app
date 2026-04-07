@@ -24,7 +24,7 @@ from app.utils.click import (
 from app.utils.git import add_all, commit, empty_commit, init
 from app.utils.github_cli import (
     clone_with_custom_name,
-    close_pr,
+    close_prs,
     delete_repo,
     fork,
     get_username,
@@ -101,7 +101,7 @@ def _download_exercise(
             pr_repo_full_name = old_config.exercise_repo.pr_repo_full_name
             if pr_repo_full_name:
                 info(f"Closing any open PRs in {pr_repo_full_name}...")
-                close_pr(pr_repo_full_name)
+                close_prs(pr_repo_full_name)
 
         if len(config.base_files) > 0:
             info("Downloading base files...")

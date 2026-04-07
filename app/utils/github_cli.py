@@ -200,8 +200,8 @@ def get_user_prs(repo: str, owner: str) -> List[str]:
     return []
 
 
-def close_pr(repo: str) -> None:
-    username = get_username()
+def close_prs(repo: str) -> None:
+    """Close all open pull requests authored by the current user in `repo`."""
 
     result = run(
         [
@@ -211,7 +211,7 @@ def close_pr(repo: str) -> None:
             "--repo",
             repo,
             "--author",
-            username,
+            "@me",
             "--state",
             "open",
             "--json",
@@ -235,4 +235,5 @@ def close_pr(repo: str) -> None:
                 "--repo",
                 repo,
             ],
+            env={"GH_PAGER": "cat"},
         )
