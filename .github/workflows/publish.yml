@@ -451,7 +451,7 @@ jobs:
 
   winget-publish:
     needs: [prepare, windows]
-    if: needs.prepare.outputs.should_publish == 'true'
+    if: needs.prepare.outputs.should_publish == 'true' && !contains(needs.prepare.outputs.ref_name, 'beta')
 
     runs-on: windows-latest
 
@@ -462,7 +462,7 @@ jobs:
       - name: Submit to WinGet
         uses: vedantmgoyal9/winget-releaser@v2
         with:
-          identifier: ${{ contains(needs.prepare.outputs.ref_name, 'beta') && 'GitMastery.GitMasteryBeta' || 'GitMastery.GitMastery' }}
+          identifier: GitMastery.GitMastery
           version: ${{ needs.prepare.outputs.version_number }}
           release-tag: ${{ needs.prepare.outputs.ref_name }}
           token: ${{ secrets.ORG_PAT }}
