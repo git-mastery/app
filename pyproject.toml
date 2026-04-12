@@ -31,7 +31,7 @@ dev = [
     "ruff==0.15.9",
     "setuptools==82.0.1",
     "types-pytz==2026.1.1.20260304",
-    "types-pyyaml==6.0.12.20250915",
+    "types-pyyaml==6.0.12.20260408",
     "types-requests==2.33.0.20260402",
 ]
 
