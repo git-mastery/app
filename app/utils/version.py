@@ -30,8 +30,8 @@ class Version:
             )
         try:
             if "beta" in version:
-                version_part, prerelease = version.split("-beta.")
-                prerelease = int(prerelease)
+                version_part, prerelease_str = version.split("-beta.")
+                prerelease = int(prerelease_str)
                 major, minor, patch = (int(part) for part in version_part.split("."))
             else:
                 major, minor, patch = (int(part) for part in parts)
