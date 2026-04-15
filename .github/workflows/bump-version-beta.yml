@@ -2,9 +2,6 @@ name: Bump beta version tag
 
 on:
   workflow_dispatch:
-    secrets:
-      ORG_PAT:
-        required: true
 
 permissions:
   contents: write
