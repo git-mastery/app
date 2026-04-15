@@ -2,12 +2,55 @@ name: Bump beta version tag
 
 on:
   workflow_dispatch:
+    secrets:
+      ORG_PAT:
+        required: true
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   tag:
-    uses: git-mastery/actions/.github/workflows/bump-version-beta.yml@main
-    secrets: inherit
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: tag-development
+      cancel-in-progress: false
+
+    env:
+      PAT: ${{ secrets.ORG_PAT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute next beta tag
+        id: version
+        run: |
+          git fetch --tags
+          STABLE=$(git tag --list "v*" \
+            | grep -Ev -- '-beta' \
+            | sort -V \
+            | tail -n 1)
+          STABLE=${STABLE:-v0.0.0}
+          BASE=${STABLE#v}
+          EXISTING=$(git tag -l "v$BASE-beta*" | sort -V | tail -n 1)
+          if [[ -z "$EXISTING" ]]; then
+            NEXT="v$BASE-beta.1"
+          else
+            NUM=$(echo "$EXISTING" | sed -E 's/.*beta\.?([0-9]*)/\1/')
+            NEXT="v$BASE-beta.$((NUM+1))"
+          fi
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+      - name: Create and push tag
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          TAG=${{ steps.version.outputs.next }}
+
+          git tag "$TAG"
+
+          git push https://x-access-token:${PAT}@github.com/${{ github.repository }}.git refs/tags/$TAG
