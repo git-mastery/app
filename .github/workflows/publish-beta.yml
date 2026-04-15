@@ -326,8 +326,8 @@ jobs:
           PKGVER=$(echo "$REF_NAME" | sed 's/-/_/g') # pkgver cannot have a hyphen (handles beta tags)
 
           echo -e $"""$CHANGELOG_MESSAGE
-          \n""" >> gitmastery.changelog
-          cat gitmastery.changelog
+          \n""" >> gitmastery-beta.changelog
+          cat gitmastery-beta.changelog
 
           echo """# Maintainer: Jiahao, Woo <woojiahao1234@gmail.com>
           pkgname=gitmastery-beta-bin
@@ -340,7 +340,7 @@ jobs:
           depends=(
             'python'
           )
-          changelog=\"gitmastery.changelog\"
+          changelog=\"gitmastery-beta.changelog\"
           source=(\"${BINARY_NAME}::${RELEASE_AMD64_URL}\")
           sha256sums=('SKIP')
 
