@@ -61,7 +61,7 @@ jobs:
           uv run pyinstaller --onefile main.py --name $FILENAME
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/${{ env.FILENAME }}
           tag_name: ${{ env.REF_NAME }}
@@ -192,7 +192,7 @@ jobs:
           dpkg-buildpackage -us -uc -a ${ARCHITECTURE}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: gitmastery_${{ env.VERSION }}-1_${{ env.ARCHITECTURE }}.deb
           tag_name: ${{ needs.prepare.outputs.ref_name }}
@@ -245,7 +245,7 @@ jobs:
           sudo chown -R $(id -u):$(id -g) .
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/${{ env.FILENAME }}
           tag_name: ${{ env.REF_NAME }}
@@ -387,7 +387,7 @@ jobs:
           uv run pyinstaller --onefile --name gitmastery main.py
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/gitmastery.exe
           tag_name: ${{ needs.prepare.outputs.ref_name }}
@@ -470,7 +470,7 @@ jobs:
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/gitmastery-${{ matrix.arch }}
           tag_name: ${{ needs.prepare.outputs.ref_name }}
