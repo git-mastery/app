@@ -32,7 +32,7 @@ dev = [
     "setuptools==83.0.0",
     "types-pytz==2026.2.0.20260518",
     "types-pyyaml==6.0.12.20260408",
-    "types-requests==2.33.0.20260408",
+    "types-requests==2.33.0.20260712",
 ]
 
 [tool.mypy]
