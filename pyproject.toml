@@ -7,7 +7,7 @@ dependencies = [
     "click-aliases==1.0.7",
     "difflib-parser==2.1.1",
     "git-autograder==6.8.0",
-    "gitpython==3.1.46",
+    "gitpython==3.1.54",
     "librt==0.9.0",
     "pygments==2.20.0",
     "pytermgui==7.7.4",
