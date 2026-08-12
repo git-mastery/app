@@ -23,6 +23,9 @@ class LoggingGroup(ClickAliasedGroup):
 
 CONTEXT_SETTINGS = {"max_content_width": 120}
 
+# Bound the release check so the CLI cannot hang on an unresponsive network
+LATEST_RELEASE_TIMEOUT_SECONDS = 5
+
 
 @click.group(
     cls=LoggingGroup,
@@ -39,14 +42,25 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
     current_version = Version.parse_version_string(__version__)
     ctx.obj[CliContextKey.VERSION] = current_version
-    latest_version = (
-        requests.get(
-            "https://github.com/git-mastery/app/releases/latest", allow_redirects=False
+
+    latest_version = None
+    try:
+        response = requests.get(
+            "https://github.com/git-mastery/app/releases/latest",
+            allow_redirects=False,
+            timeout=LATEST_RELEASE_TIMEOUT_SECONDS,
         )
-        .headers["Location"]
-        .rsplit("/", 1)[-1]
-    )
-    if current_version.is_behind(Version.parse_version_string(latest_version)):
+        # GitHub redirects to the tag of the latest release; without the redirect
+        # there is no version to compare against
+        location = response.headers.get("Location")
+        if location is not None:
+            latest_version = Version.parse_version_string(location.rsplit("/", 1)[-1])
+    except (requests.exceptions.RequestException, ValueError):
+        latest_version = None
+
+    if latest_version is None:
+        warn("Unable to verify the latest version release")
+    elif current_version.is_behind(latest_version):
         warn(
             click.style(
                 f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
