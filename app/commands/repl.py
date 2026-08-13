@@ -14,7 +14,7 @@ from app.commands.progress.progress import progress
 from app.commands.setup_folder import setup
 from app.commands.verify import verify
 from app.commands.version import version
-from app.utils.click import CliContextKey, ClickColor
+from app.utils.click import CliContextKey, ClickColor, handle_unexpected_error
 from app.utils.version import Version
 from app.version import __version__
 
@@ -128,7 +128,7 @@ Shell commands are also supported.
         except SystemExit:
             pass
         except Exception as e:
-            click.echo(click.style(f"Error: {e}", fg=ClickColor.BRIGHT_RED))
+            handle_unexpected_error(e)
         finally:
             try:
                 os.chdir(original_cwd)
