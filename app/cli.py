@@ -53,14 +53,17 @@ def cli(ctx: click.Context, verbose: bool) -> None:
         # GitHub redirects to the tag of the latest release; without the redirect
         # there is no version to compare against
         location = response.headers.get("Location")
-        if location is not None:
+        if location is None:
+            warn(
+                "Unable to verify the latest version release: no redirect to the latest "
+                f"release tag (status {response.status_code})"
+            )
+        else:
             latest_version = Version.parse_version_string(location.rsplit("/", 1)[-1])
-    except (requests.exceptions.RequestException, ValueError):
-        latest_version = None
+    except (requests.exceptions.RequestException, ValueError) as e:
+        warn(f"Unable to verify the latest version release: {e}")
 
-    if latest_version is None:
-        warn("Unable to verify the latest version release")
-    elif current_version.is_behind(latest_version):
+    if latest_version is not None and current_version.is_behind(latest_version):
         warn(
             click.style(
                 f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
