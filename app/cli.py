@@ -2,7 +2,6 @@ import logging
 import sys
 
 import click
-import requests
 from click_aliases import ClickAliasedGroup
 
 from app.aliases import COMMAND_ALIASES
@@ -10,7 +9,7 @@ from app.commands import check, download, progress, setup, verify
 from app.commands.repl import repl
 from app.commands.version import version
 from app.utils.click import ClickColor, CliContextKey, warn
-from app.utils.version import Version
+from app.utils.version import Version, fetch_latest_release_version
 from app.version import __version__
 
 
@@ -39,14 +38,13 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
     current_version = Version.parse_version_string(__version__)
     ctx.obj[CliContextKey.VERSION] = current_version
-    latest_version = (
-        requests.get(
-            "https://github.com/git-mastery/app/releases/latest", allow_redirects=False
-        )
-        .headers["Location"]
-        .rsplit("/", 1)[-1]
-    )
-    if current_version.is_behind(Version.parse_version_string(latest_version)):
+
+    # Latest version checking is a soft dependency, should not fail operation
+    latest_version, latest_version_error = fetch_latest_release_version()
+    if latest_version_error is not None:
+        warn(latest_version_error)
+
+    if latest_version is not None and current_version.is_behind(latest_version):
         warn(
             click.style(
                 f"Your version of Git-Mastery app {current_version} is behind the latest version {latest_version}.",
