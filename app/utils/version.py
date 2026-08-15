@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import requests
+
+LATEST_RELEASE_TIMEOUT_SECONDS = 5
+LATEST_RELEASE_URL = "https://github.com/git-mastery/app/releases/latest"
+
 
 @dataclass
 class Version:
@@ -24,7 +29,9 @@ class Version:
     def parse(version: str) -> "Version":
         """Parse a plain version string (e.g., '1.2.3')."""
         parts = version.split(".")
-        if ("beta" in version and len(parts) != 4) or ("beta" not in version and len(parts) != 3):
+        if ("beta" in version and len(parts) != 4) or (
+            "beta" not in version and len(parts) != 3
+        ):
             raise ValueError(
                 f"Invalid version string (expected 'MAJOR.MINOR.PATCH[-beta.PRERELEASE]'): {version!r}"
             )
@@ -57,3 +64,18 @@ class Version:
         if self.prerelease is not None:
             return f"v{self.major}.{self.minor}.{self.patch}-beta.{self.prerelease}"
         return f"v{self.major}.{self.minor}.{self.patch}"
+
+
+def fetch_latest_release_version() -> tuple[Optional["Version"], Optional[str]]:
+    try:
+        response = requests.get(
+            LATEST_RELEASE_URL,
+            allow_redirects=False,
+            timeout=LATEST_RELEASE_TIMEOUT_SECONDS,
+        )
+        location = response.headers.get("Location")
+        if location is None:
+            return None, "Unable to verify the latest version release"
+        return Version.parse_version_string(location.rsplit("/", 1)[-1]), None
+    except (requests.exceptions.RequestException, ValueError) as e:
+        return None, f"Unable to verify the latest version release: {e}"

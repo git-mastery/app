@@ -2,7 +2,6 @@ import logging
 import sys
 
 import click
-import requests
 from click_aliases import ClickAliasedGroup
 
 from app.aliases import COMMAND_ALIASES
@@ -10,7 +9,7 @@ from app.commands import check, download, progress, setup, verify
 from app.commands.repl import repl
 from app.commands.version import version
 from app.utils.click import ClickColor, CliContextKey, warn
-from app.utils.version import Version
+from app.utils.version import Version, fetch_latest_release_version
 from app.version import __version__
 
 
@@ -22,9 +21,6 @@ class LoggingGroup(ClickAliasedGroup):
 
 
 CONTEXT_SETTINGS = {"max_content_width": 120}
-
-# Bound the release check so the CLI cannot hang on an unresponsive network
-LATEST_RELEASE_TIMEOUT_SECONDS = 5
 
 
 @click.group(
@@ -43,25 +39,10 @@ def cli(ctx: click.Context, verbose: bool) -> None:
     current_version = Version.parse_version_string(__version__)
     ctx.obj[CliContextKey.VERSION] = current_version
 
-    latest_version = None
-    try:
-        response = requests.get(
-            "https://github.com/git-mastery/app/releases/latest",
-            allow_redirects=False,
-            timeout=LATEST_RELEASE_TIMEOUT_SECONDS,
-        )
-        # GitHub redirects to the tag of the latest release; without the redirect
-        # there is no version to compare against
-        location = response.headers.get("Location")
-        if location is None:
-            warn(
-                "Unable to verify the latest version release: no redirect to the latest "
-                f"release tag (status {response.status_code})"
-            )
-        else:
-            latest_version = Version.parse_version_string(location.rsplit("/", 1)[-1])
-    except (requests.exceptions.RequestException, ValueError) as e:
-        warn(f"Unable to verify the latest version release: {e}")
+    # Latest version checking is a soft dependency, should not fail operation
+    latest_version, latest_version_error = fetch_latest_release_version()
+    if latest_version_error is not None:
+        warn(latest_version_error)
 
     if latest_version is not None and current_version.is_behind(latest_version):
         warn(
