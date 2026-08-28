@@ -320,20 +320,28 @@ def setup_exercise_folder(
 @in_gitmastery_root(must=True)
 def download(exercise: str, force: bool) -> None:
     """Download an exercise"""
-    if os.path.isdir(exercise) and not force:
-        error(
-            f"You already have {click.style(exercise, bold=True)} downloaded at "
-            f"{click.style(exercise + '/', bold=True, italic=True)}. Nothing was downloaded.\n"
-            f"        To start the exercise over, run "
-            f"{click.style('gitmastery progress reset', bold=True, italic=True)} from inside it.\n"
-            f"        To delete the folder, along with any work in it, and download it again, run "
-            f"{click.style(f'gitmastery download {exercise} --force', bold=True, italic=True)}."
-        )
-
     download_time = datetime.now(tz=pytz.UTC)
 
     formatted_exercise = exercise.replace("-", "_")
     is_hands_on = exercise.startswith("hp-")
+
+    if os.path.isdir(exercise) and not force:
+        # Hands-on practices are not tracked, so progress reset does not apply to them
+        reset_hint = (
+            ""
+            if is_hands_on
+            else (
+                f"        To start the exercise over, run "
+                f"{click.style('gitmastery progress reset', bold=True, italic=True)} from inside it.\n"
+            )
+        )
+        error(
+            f"You already have {click.style(exercise, bold=True)} downloaded at "
+            f"{click.style(exercise + '/', bold=True, italic=True)}. Nothing was downloaded.\n"
+            f"{reset_hint}"
+            f"        To delete the folder, along with any work in it, and download it again, run "
+            f"{click.style(f'gitmastery download {exercise} --force', bold=True, italic=True)}."
+        )
 
     if is_hands_on:
         _download_hands_on(exercise, formatted_exercise)
