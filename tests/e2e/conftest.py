@@ -53,17 +53,6 @@ def setup_gitmastery_root(
     yield from _make_gitmastery_root(runner, tmp_path_factory)
 
 
-@pytest.fixture
-def isolated_gitmastery_root(
-    runner: BinaryRunner, tmp_path_factory: pytest.TempPathFactory
-) -> Generator[Path, None, None]:
-    """
-    A throwaway Git-Mastery root for tests that overwrite a downloaded exercise,
-    so that they do not disturb the session-scoped fixtures below.
-    """
-    yield from _make_gitmastery_root(runner, tmp_path_factory)
-
-
 @pytest.fixture(scope="session")
 def downloaded_exercise_dir(runner: BinaryRunner, gitmastery_root: Path) -> Path:
     """

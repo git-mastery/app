@@ -13,6 +13,7 @@ You are an expert software developer handling this repo.
 **Note**:
 - Git CLI commands should be taken from `git.py`.
 - GitHub CLI commands should be taken from `github_cli.py`.
+- E2E tests in `tests/e2e/` cover the happy path only. Do not add failure, edge case, or error handling tests there.
 
 **File Structure**:
   - app/: CLI entry, commands, utils, configs, logging, hooks, __init__.py, cli.py, version.py
