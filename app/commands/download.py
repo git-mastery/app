@@ -1,5 +1,8 @@
+import json
 import os
+import shutil
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -32,6 +35,27 @@ from app.utils.github_cli import (
 )
 from app.utils.gitmastery import ExercisesRepo, Namespace
 
+BASE_FILES = [".gitmastery-exercise.json", "README.md"]
+
+
+def _read_existing_config(path: Path) -> Optional[ExerciseConfig]:
+    """
+    Reads the exercise config of an already downloaded exercise, if it is readable.
+
+    A folder that is about to be overwritten may not hold a valid exercise config, e.g.
+    a partial download or a folder the student created themselves, so a failure to read
+    it is not fatal.
+
+    :param path: folder of the already downloaded exercise
+    :type path: Path
+    :return: the existing exercise config, or None if it cannot be read
+    :rtype: Optional[ExerciseConfig]
+    """
+    try:
+        return ExerciseConfig.read(path, 0)
+    except (FileNotFoundError, PermissionError, OSError, json.JSONDecodeError, KeyError):
+        return None
+
 
 def _download_exercise(
     exercise: str, formatted_exercise: str, download_time: datetime
@@ -49,53 +73,60 @@ def _download_exercise(
         )
 
         old_config: Optional[ExerciseConfig] = None
-        if os.path.isdir(exercise):
-            warn(f"You already have {exercise}, removing it to download again")
-            old_config = ExerciseConfig.read(Path(exercise), 0)
-            rmtree(exercise)
 
-        os.makedirs(exercise)
+        # The base files are staged outside of the exercise folder so that the Git and
+        # Github requirement checks can run before any existing folder is removed. A
+        # failed check must never leave the student without their work.
+        with tempfile.TemporaryDirectory() as staging_dir:
+            staging_path = Path(staging_dir)
+
+            info("Downloading base files...")
+            for file in BASE_FILES:
+                repo.download_file(
+                    f"{formatted_exercise}/{file}",
+                    staging_path / file,
+                    False,
+                )
+            staged_config = ExerciseConfig.read(staging_path, 0)
+
+            # Check if the exercise requires Git to operate, if so, error if not present
+            if staged_config.requires_git:
+                try:
+                    info("Exercise requires Git, checking if you have it setup")
+                    invoke_command(git)
+                except SystemExit as e:
+                    if e.code == 1:
+                        # Exited because of missing Git configuration
+                        # Nothing has been written yet, so there is nothing to roll back
+                        warn("Git is not setup. Cancelling the download")
+                        warn("Setup Git before downloading this exercise")
+                        sys.exit(1)
+
+            # Check if the exercise requires Github/Github CLI to operate, if so, error if not present
+            if staged_config.requires_github:
+                try:
+                    info("Exercise requires Github, checking if you have it setup")
+                    invoke_command(github)
+                except SystemExit as e:
+                    if e.code == 1:
+                        # Exited because of missing Github configuration
+                        # Nothing has been written yet, so there is nothing to roll back
+                        warn("Github is not setup. Cancelling the download")
+                        warn("Setup Github and Github CLI before downloading this exercise")
+                        sys.exit(1)
+
+            if os.path.isdir(exercise):
+                # Only reachable with --force, download() blocks otherwise
+                warn(f"Removing your existing {exercise} folder")
+                old_config = _read_existing_config(Path(exercise))
+                rmtree(exercise)
+
+            os.makedirs(exercise)
+            for file in BASE_FILES:
+                shutil.move(str(staging_path / file), str(Path(exercise) / file))
+
         os.chdir(exercise)
-
-        info("Downloading base files...")
-        base_files = [".gitmastery-exercise.json", "README.md"]
-        for file in base_files:
-            repo.download_file(
-                f"{formatted_exercise}/{file}",
-                f"./{file}",
-                False,
-            )
         config = ExerciseConfig.read(Path("./"), 0)
-
-        # Check if the exercise requires Git to operate, if so, error if not present
-        if config.requires_git:
-            try:
-                info("Exercise requires Git, checking if you have it setup")
-                invoke_command(git)
-            except SystemExit as e:
-                if e.code == 1:
-                    # Exited because of missing Github configuration
-                    # Rollback the download and remove the folder
-                    warn("Git is not setup. Rolling back the download")
-                    os.chdir("..")
-                    rmtree(exercise)
-                    warn("Setup Git before downloading this exercise")
-                    sys.exit(1)
-
-        # Check if the exercise requires Github/Github CLI to operate, if so, error if not present
-        if config.requires_github:
-            try:
-                info("Exercise requires Github, checking if you have it setup")
-                invoke_command(github)
-            except SystemExit as e:
-                if e.code == 1:
-                    # Exited because of missing Github configuration
-                    # Rollback the download and remove the folder
-                    warn("Github is not setup. Rolling back the download")
-                    os.chdir("..")
-                    rmtree(exercise)
-                    warn("Setup Github and Github CLI before downloading this exercise")
-                    sys.exit(1)
 
         if old_config and old_config.exercise_repo.repo_type == "remote" and old_config.exercise_repo.create_fork:
             pr_repo_full_name = old_config.exercise_repo.pr_repo_full_name
@@ -147,13 +178,8 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
             f"Downloading {hands_on} to {click.style(hands_on + '/', bold=True, italic=True)}"
         )
 
-        if os.path.isdir(hands_on):
-            warn(f"You already have {hands_on}, removing it to download again")
-            rmtree(hands_on)
-
-        os.makedirs(hands_on)
-        os.chdir(hands_on)
-
+        # The requirement checks run before any existing folder is removed so that a
+        # failed check never leaves the student without their work.
         hands_on_namespace = Namespace.load_file_as_namespace(
             repo, f"hands_on/{hands_on_without_prefix}.py"
         )
@@ -166,11 +192,9 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
                 invoke_command(git)
             except SystemExit as e:
                 if e.code == 1:
-                    # Exited because of missing Github configuration
-                    # Rollback the download and remove the folder
-                    warn("Git is not setup. Rolling back the download")
-                    os.chdir("..")
-                    rmtree(hands_on)
+                    # Exited because of missing Git configuration
+                    # Nothing has been written yet, so there is nothing to roll back
+                    warn("Git is not setup. Cancelling the download")
                     warn("Setup Git before downloading this hands-on")
                     sys.exit(1)
 
@@ -181,12 +205,18 @@ def _download_hands_on(hands_on: str, formatted_hands_on: str) -> None:
             except SystemExit as e:
                 if e.code == 1:
                     # Exited because of missing Github configuration
-                    # Rollback the download and remove the folder
-                    warn("Github is not setup. Rolling back the download")
-                    os.chdir("..")
-                    rmtree(hands_on)
+                    # Nothing has been written yet, so there is nothing to roll back
+                    warn("Github is not setup. Cancelling the download")
                     warn("Setup Github and Github CLI before downloading this hands-on")
                     sys.exit(1)
+
+        if os.path.isdir(hands_on):
+            # Only reachable with --force, download() blocks otherwise
+            warn(f"Removing your existing {hands_on} folder")
+            rmtree(hands_on)
+
+        os.makedirs(hands_on)
+        os.chdir(hands_on)
 
         verbose = get_verbose()
         with create_repo_smith(verbose, null_repo=True) as repo_smith:
@@ -281,13 +311,37 @@ def setup_exercise_folder(
 # TODO: Maybe store the random "keys" in config
 @click.command()
 @click.argument("exercise")
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Delete the existing exercise folder, along with any work in it, and download the exercise again",
+)
 @in_gitmastery_root(must=True)
-def download(exercise: str) -> None:
+def download(exercise: str, force: bool) -> None:
     """Download an exercise"""
     download_time = datetime.now(tz=pytz.UTC)
 
     formatted_exercise = exercise.replace("-", "_")
     is_hands_on = exercise.startswith("hp-")
+
+    if os.path.isdir(exercise) and not force:
+        # Hands-on practices are not tracked, so progress reset does not apply to them
+        reset_hint = (
+            ""
+            if is_hands_on
+            else (
+                f"        To start the exercise over, run "
+                f"{click.style('gitmastery progress reset', bold=True, italic=True)} from inside it.\n"
+            )
+        )
+        error(
+            f"You already have {click.style(exercise, bold=True)} downloaded at "
+            f"{click.style(exercise + '/', bold=True, italic=True)}. Nothing was downloaded.\n"
+            f"{reset_hint}"
+            f"        To delete the folder, along with any work in it, and download it again, run "
+            f"{click.style(f'gitmastery download {exercise} --force', bold=True, italic=True)}."
+        )
 
     if is_hands_on:
         _download_hands_on(exercise, formatted_exercise)
