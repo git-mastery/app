@@ -6,7 +6,13 @@ from typing import Any, NoReturn, Optional
 import click
 
 from app.configs.exercise_config import ExerciseConfig
-from app.configs.gitmastery_config import GitMasteryConfig
+from app.configs.gitmastery_config import (
+    GITMASTERY_CONFIG_NAME,
+    GITMASTERY_LOG_NAME,
+    METADATA_FOLDER_NAME,
+    GitMasteryConfig,
+)
+from app.configs.utils import find_root
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +49,16 @@ def error(message: str) -> NoReturn:
         f"{click.style(' ERROR ', fg=ClickColor.BLACK, bg=ClickColor.BRIGHT_RED, bold=True)} {message}"
     )
     sys.exit(1)
+
+
+def handle_unexpected_error(exception: Exception) -> None:
+    logger.exception("Unexpected error: %s", exception)
+    message = f"An unexpected error occurred: {type(exception).__name__}: {exception}"
+    if find_root(GITMASTERY_CONFIG_NAME, folder=METADATA_FOLDER_NAME) is not None:
+        message += f" See {METADATA_FOLDER_NAME}/{GITMASTERY_LOG_NAME} for details."
+    click.echo(
+        f"{click.style(' ERROR ', fg=ClickColor.BLACK, bg=ClickColor.BRIGHT_RED, bold=True)} {message}"
+    )
 
 
 def info(message: str) -> None:
