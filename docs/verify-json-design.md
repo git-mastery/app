@@ -54,7 +54,8 @@ These three fields cover the desktop's grading needs. Timestamps, numeric scores
 | [`app/commands/verify.py`](../app/commands/verify.py) | Add `@click.option("--json", "json_output", is_flag=True, default=False, ...)` and a typed `json_output: bool` callback parameter. Branch only the result renderer: serialize an explicit three-field dictionary or call the existing `_print_output`. Keep `_execute_verify` and `_submit_progress` behavior and ordering. Install the output scope outside the exercise/root guard decorators so their diagnostics are covered. |
 | [`app/utils/click.py`](../app/utils/click.py) | Add a reusable, scoped JSON output context: retain the original stdout stream for the JSON writer and redirect ordinary Python stdout to stderr using `contextlib.redirect_stdout`. Nested use should reuse the saved stream, and `finally` must restore it. This covers existing `info`/`warn`/`error`, `click.echo`, and `print` calls without changing their default behavior. |
 | [`app/cli.py`](../app/cli.py) | Extend `LoggingGroup.resolve_command` to identify JSON verification before the group callback runs and enter the same output scope around invocation. Resolve the command, including `v`, and inspect its options through Click rather than searching `sys.argv` substrings. This is necessary because `cli()` prints version warnings before `verify()` runs. Help and usage handling remain normal. |
-| [`tests/test_verify_json.py`](../tests/test_verify_json.py) | Add deterministic contract tests using `CliRunner`, temporary configurations, and mocked grading/version/GitHub operations, plus a binary smoke test using the existing runner and a local verifier. Cover legacy text output and unchanged progress records in isolated tests. Run this contract suite separately from the existing happy-path E2E workflow. |
+| [`tests/test_verify_json.py`](../tests/test_verify_json.py) | Cover the JSON contract and output routing with eight focused cases. Stub external grading and username lookup; exercise the real command, guards, rendering, and local progress saving. Run this contract suite separately from the existing E2E workflow. |
+| [`tests/e2e/commands/test_verify.py`](../tests/e2e/commands/test_verify.py) | Add one happy-path JSON verification test using the existing `BinaryRunner` and downloaded-exercise fixture. Copy the exercise into an isolated progress root so the extra attempt does not affect shared progress assertions. This test runs in the existing CI matrix. |
 | [`README.md`](../README.md) | Document `verify --json`, the three fields, separate streams, exit semantics, and continued progress submission; link this design. |
 
 The output context also wraps direct invocation of the verify command, which the REPL uses without `LoggingGroup`. The standalone subprocess contract does not include REPL banners or prompts. Avoid retaining JSON mode across subsequent commands.
@@ -83,18 +84,17 @@ Release the CLI option first. Because the desktop resolves a separately installe
 
 | Case | Expected result |
 | --- | --- |
-| Ordinary `verify`, including each grading status | Existing text, comment formatting, exit behavior, and progress submission remain unchanged. |
-| JSON for each grading status | The entire stdout parses as one object with the specified mapping; normal completion exits `0`. |
+| Ordinary `verify` after JSON verification | Status and comments remain on stdout; output routing is restored between commands. |
+| JSON for each grading status, including alias and verbose invocations | The entire stdout parses as one object with the specified mapping; normal completion exits `0`. |
 | No comments; multiple comments; quotes, newlines, Unicode | `[]` for absent feedback; all other strings round-trip in order without display bullets or placeholders. |
-| Version warning, repository message, grader `print`, migration warning, `--verbose` | Diagnostics appear on stderr; stdout remains valid JSON. Test the full group invocation, not just the verify callback. |
-| Missing exercise/root; repository initialization failure | Empty stdout, stderr diagnostic, nonzero exit, and no fabricated grade. |
-| Wrong-answer, invalid-state, unexpected exception inside grading | Existing `_execute_verify` conversion yields `Incomplete` or `Error` with comments in JSON. |
-| Progress save/sync succeeds, warns, or fails after grading | Submission is attempted once with the same output; JSON remains intact. Warnings preserve existing exit behavior; fatal failures remain nonzero. |
-| Alias `v --json`, help, invalid arguments, sequential invocations | Alias uses the contract; Click help/errors remain normal; later text commands retain their original stdout behavior. |
+| Version warning, grader `print`, progress-saving messages | Diagnostics appear on stderr; stdout remains valid JSON through the full group invocation. |
+| Missing exercise configuration | Empty stdout, stderr diagnostic, nonzero exit, and no fabricated grade. |
+| Progress saving fails after grading | JSON remains intact and the command exits nonzero. |
+| JSON help and direct command invocation | Help remains on stdout; direct invocation used by the REPL produces the same result as group invocation. |
 | Desktop receives JSON in arbitrary chunks; stderr warning; malformed/unknown/mismatched result | Parse only after complete stdout; valid results map correctly. Invalid results never mark completion or trigger another verify attempt. |
 | Desktop uses older CLI; capability probe fails; executable changes | Older CLI uses the legacy path; probe failure is reported; changed executable is probed again. |
-| Cross-platform binary smoke test | Separate stdout/stderr, JSON parsing, and unchanged progress persistence pass on the existing Windows, Linux, and macOS matrix. Desktop retains its existing Windows cwd gate. |
+| Binary JSON verification with an isolated progress root | Parsed JSON matches the saved grading record without modifying the shared fixture's attempts. Runs on the existing Windows, Linux, and macOS matrix. Desktop retains its existing Windows cwd gate. |
 
 Use isolated progress directories for new cases: the current `verified_exercise_dir` fixture is session-scoped, and its legacy test expects exactly one progress entry. Mock remote operations in contract tests so they do not submit real progress.
 
-Local validation passed: 25 CLI tests, including the packaged executable smoke test, plus Ruff and mypy checks for changed Python files. Run this contract suite on Windows and Linux as well; the existing CI matrix covers happy-path E2E tests. Desktop cases apply when that integration is implemented.
+The contract suite intentionally avoids retesting unchanged grader exception conversion, metadata migration, and remote PR creation. Those branches are not changed by this flag. The E2E suite contains only the additional happy-path JSON check; error handling stays in the focused contract suite.
