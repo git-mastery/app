@@ -8,7 +8,7 @@ from app.aliases import COMMAND_ALIASES
 from app.commands import check, download, progress, setup, verify
 from app.commands.repl import repl
 from app.commands.version import version
-from app.utils.click import ClickColor, CliContextKey, warn
+from app.utils.click import ClickColor, CliContextKey, json_output_scope, warn
 from app.utils.version import Version, fetch_latest_release_version
 from app.version import __version__
 
@@ -18,6 +18,26 @@ class LoggingGroup(ClickAliasedGroup):
         logger = logging.getLogger(__name__)
         logger.info("Running command %s with arguments %s", ctx.command_path, sys.argv)
         return super().invoke(ctx)
+
+    def resolve_command(
+        self, ctx: click.Context, args: list[str]
+    ) -> tuple[str | None, click.Command | None, list[str]]:
+        command_name, command, command_args = super().resolve_command(ctx, args)
+        if command is verify:
+            # Resolve aliases and parse options before the group callback prints
+            # version warnings. Resilient parsing leaves help/errors to Click.
+            with command.make_context(
+                command_name or "verify",
+                list(command_args),
+                parent=ctx,
+                resilient_parsing=True,
+            ) as command_ctx:
+                requesting_help = any(
+                    arg in command_ctx.help_option_names for arg in command_args
+                )
+                if command_ctx.params.get("json_output") and not requesting_help:
+                    ctx.with_resource(json_output_scope())
+        return command_name, command, command_args
 
 
 CONTEXT_SETTINGS = {"max_content_width": 120}

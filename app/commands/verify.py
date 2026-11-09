@@ -22,10 +22,12 @@ from app.hooks.in_exercise_root import in_exercise_root
 from app.utils.click import (
     ClickColor,
     error,
+    get_json_output_stream,
     info,
     must_get_exercise_root_config,
     must_get_gitmastery_root_config,
     warn,
+    with_json_output,
 )
 from app.utils.git import add_all, commit, push
 from app.utils.github_cli import get_prs, get_username, pull_request
@@ -67,6 +69,22 @@ def _print_output(output: GitAutograderOutput) -> None:
             [f"\t- {comment}" for comment in (output.comments or ["No comments"])]
         )
     )
+
+
+def _print_json_output(output: GitAutograderOutput, exercise_name: str) -> None:
+    statuses = {
+        GitAutograderStatus.SUCCESSFUL: "Completed",
+        GitAutograderStatus.UNSUCCESSFUL: "Incomplete",
+        GitAutograderStatus.ERROR: "Error",
+    }
+    payload = {
+        "exercise_name": exercise_name,
+        "status": statuses[output.status],
+        "comments": output.comments or [],
+    }
+    stdout = get_json_output_stream()
+    click.echo(json.dumps(payload), file=stdout, color=False)
+    stdout.flush()
 
 
 def _submit_progress(output: GitAutograderOutput) -> None:
@@ -183,9 +201,17 @@ def _execute_verify(
 
 
 @click.command()
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    default=False,
+    help="Output the grading result as JSON; send diagnostics to stderr.",
+)
+@with_json_output
 @in_exercise_root()
 @in_gitmastery_root()
-def verify() -> None:
+def verify(json_output: bool = False) -> None:
     """
     Verifies the state of the exercise attempt.
     """
@@ -204,5 +230,8 @@ def verify() -> None:
     output = _execute_verify(
         exercise_path, exercise_name, formatted_exercise_name, started_at
     )
-    _print_output(output)
+    if json_output:
+        _print_json_output(output, exercise_name)
+    else:
+        _print_output(output)
     _submit_progress(output)
