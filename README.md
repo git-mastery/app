@@ -22,6 +22,25 @@ Refer to the [installation guide](https://git-mastery.org/companion-app/index.ht
 
 To develop the app locally, refer to the [development setup guide](https://git-mastery.org/developers/docs/getting-started/setup/) for detailed instructions on how to set up your development environment and contribute to the project.
 
+## JSON verification output
+
+Run `gitmastery verify --json` inside an exercise to get its grading result on
+stdout:
+
+```json
+{"exercise_name": "under-control", "status": "Completed", "comments": []}
+```
+
+`status` is `Completed`, `Incomplete`, or `Error`. `comments` contains all grader
+feedback in order, or an empty array when there is none. Diagnostic messages go
+to stderr, so clients can parse the complete stdout as JSON.
+
+Verification still saves progress and performs any configured remote submission.
+Exit `0` means the command finished normally; read `status` to determine whether
+the answer is correct. A failure before grading leaves stdout empty and exits
+nonzero. A submission failure after grading retains the JSON result and exits
+nonzero. Ordinary `gitmastery verify` keeps its existing text output.
+
 ## Publishing
 
 Tag the PR with the `bump:{major | minor | patch}` label and the CI will automatically perform the publish.

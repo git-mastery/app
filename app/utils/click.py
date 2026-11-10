@@ -1,7 +1,11 @@
 import logging
 import sys
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, redirect_stdout
+from contextvars import ContextVar
 from enum import StrEnum
-from typing import Any, NoReturn, Optional
+from functools import wraps
+from typing import Any, NoReturn, Optional, ParamSpec, TextIO, TypeVar
 
 import click
 
@@ -9,6 +13,48 @@ from app.configs.exercise_config import ExerciseConfig
 from app.configs.gitmastery_config import GitMasteryConfig
 
 logger = logging.getLogger(__name__)
+
+_JSON_STDOUT: ContextVar[Optional[TextIO]] = ContextVar("json_stdout", default=None)
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+@contextmanager
+def json_output_scope(enabled: bool = True) -> Iterator[TextIO]:
+    """Reserve stdout for JSON and route Python diagnostics to stderr.
+
+    :param enabled: Whether to enable JSON output routing.
+    :yield: The original stdout stream for the JSON result.
+    """
+    saved_stdout = _JSON_STDOUT.get()
+    if not enabled or saved_stdout is not None:
+        yield saved_stdout if saved_stdout is not None else sys.stdout
+        return
+
+    saved_stdout = sys.stdout
+    token = _JSON_STDOUT.set(saved_stdout)
+    try:
+        with redirect_stdout(sys.stderr):
+            yield saved_stdout
+    finally:
+        _JSON_STDOUT.reset(token)
+
+
+def with_json_output(func: Callable[P, T]) -> Callable[P, T]:
+    """Route diagnostics before command guards when ``json_output`` is enabled."""
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        with json_output_scope(bool(kwargs.get("json_output", False))):
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def get_json_output_stream() -> TextIO:
+    """Return the stdout stream reserved for the JSON result."""
+    saved_stdout = _JSON_STDOUT.get()
+    return saved_stdout if saved_stdout is not None else sys.stdout
 
 
 class CliContextKey(StrEnum):

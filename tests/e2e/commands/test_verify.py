@@ -6,7 +6,9 @@ from ..constants import EXERCISE_NAME
 
 def test_verify_exercise(verified_exercise_dir: Path) -> None:
     """verify writes a progress entry with the expected fields."""
-    progress_json = verified_exercise_dir.parent / ".gitmastery" / "progress" / "progress.json"
+    progress_json = (
+        verified_exercise_dir.parent / ".gitmastery" / "progress" / "progress.json"
+    )
     entries = json.loads(progress_json.read_text())
     assert len(entries) == 1
     entry = entries[0]
