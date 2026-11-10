@@ -41,9 +41,6 @@ the answer is correct. A failure before grading leaves stdout empty and exits
 nonzero. A submission failure after grading retains the JSON result and exits
 nonzero. Ordinary `gitmastery verify` keeps its existing text output.
 
-See the [technical design](docs/verify-json-design.md) for the contract and desktop
-integration plan.
-
 ## Publishing
 
 Tag the PR with the `bump:{major | minor | patch}` label and the CI will automatically perform the publish.
